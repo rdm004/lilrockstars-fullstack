@@ -10,6 +10,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import Results from './pages/Results';
 import Gallery from './pages/Gallery';
 import Sponsors from './pages/Sponsors';
+import Racers from './pages/Racers';
 import './styles/main.css';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<RegisterRacer />} />
                 <Route path="/races" element={<RaceList />} />
+                <Route path="/racers" element={<Racers />} />
                 <Route path="/results" element={<Results />} />
                 <Route path="/gallery" element={<Gallery />} />
                 <Route path="/sponsors" element={<Sponsors />} />
