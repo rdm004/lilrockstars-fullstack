@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.Racer;
+<<<<<<< HEAD
 import com.example.demo.model.Parent;
 import com.example.demo.repository.RacerRepository;
 import com.example.demo.repository.ParentRepository;
@@ -11,6 +12,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+=======
+import com.example.demo.repository.RacerRepository;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+>>>>>>> 917952875e7a7d0b1831f67d8ef8afb31e438123
 
 @RestController
 @RequestMapping("/api/racers")
@@ -18,6 +25,7 @@ import java.util.Optional;
 public class RacerController {
 
     private final RacerRepository racerRepository;
+<<<<<<< HEAD
     private final ParentRepository parentRepository;
     private final JwtUtil jwtUtil;
 
@@ -127,5 +135,20 @@ public class RacerController {
 
         racerRepository.delete(racer);
         return ResponseEntity.ok("Racer deleted successfully.");
+=======
+
+    public RacerController(RacerRepository racerRepository) {
+        this.racerRepository = racerRepository;
+    }
+
+    @GetMapping
+    public List<Racer> getAllRacers() {
+        return racerRepository.findAll();
+    }
+
+    @PostMapping
+    public Racer addRacer(@RequestBody Racer racer) {
+        return racerRepository.save(racer);
+>>>>>>> 917952875e7a7d0b1831f67d8ef8afb31e438123
     }
 }
