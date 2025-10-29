@@ -1,14 +1,21 @@
 import axios from "axios";
 
-// ✅ Create a pre-configured Axios instance
+// 🌎 Auto-detect or use .env override
+const API_BASE_URL =
+    process.env.REACT_APP_API_BASE_URL ||
+    (process.env.NODE_ENV === "production"
+        ? "https://lilrockstars-backend.onrender.com" // ✅ Replace with your Render backend
+        : "http://localhost:8080"); // local backend for dev
+
+// 🧠 Create Axios instance
 const apiClient = axios.create({
-    baseURL: "http://localhost:8080", // adjust for prod later
+    baseURL: API_BASE_URL,
     headers: {
         "Content-Type": "application/json",
     },
 });
 
-// ✅ Automatically attach JWT token if it exists
+// 🔐 Automatically attach token if it exists
 apiClient.interceptors.request.use((config) => {
     const token = localStorage.getItem("token");
     if (token) {
