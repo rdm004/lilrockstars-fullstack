@@ -1,0 +1,287 @@
+/* --- DASHBOARD CONTAINER --- */
+.dashboard-container {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 30px;
+    background-color: #fffaf5;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    font-family: "Inter", sans-serif;
+    color: #222;
+}
+
+/* --- HEADER --- */
+.dashboard-container h1 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.dashboard-container h1 span {
+    color: #ff7a00;
+}
+
+.tagline {
+    font-style: italic;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+/* --- RACER SECTION --- */
+.racer-section {
+    margin-bottom: 40px;
+    border-top: 2px solid #ff7a00;
+    padding-top: 20px;
+}
+
+.racer-section h2 {
+    margin-bottom: 15px;
+}
+
+/* --- RACER LIST --- */
+.racer-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+}
+
+.racer-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff7f0;
+    border: 1px solid #f4e3d3;
+    border-radius: 8px;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+}
+
+.racer-info {
+    font-size: 1rem;
+}
+
+/* --- RACER ACTION BUTTONS --- */
+.racer-actions {
+    display: flex;
+    gap: 10px;
+    margin-left: 10px;
+}
+
+.racer-actions button {
+    border: none;
+    border-radius: 5px;
+    padding: 6px 14px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Orange Edit Button */
+.racer-actions .edit-btn {
+    background-color: #ff7a00;
+    color: #fff;
+}
+.racer-actions .edit-btn:hover {
+    background-color: #ff8f33;
+}
+
+/* Black Remove Button */
+.racer-actions .remove-btn {
+    background-color: #222;
+    color: #fff;
+}
+.racer-actions .remove-btn:hover {
+    background-color: #444;
+}
+
+/* --- EDIT RACER FORM --- */
+.edit-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+}
+
+.edit-form input {
+    flex: 1;
+    padding: 6px 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.edit-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.save-btn {
+    background-color: #ff7a00;
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.save-btn:hover {
+    background-color: #ff8f33;
+}
+
+.cancel-btn {
+    background-color: #ddd;
+    color: #333;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.cancel-btn:hover {
+    background-color: #ccc;
+}
+
+/* --- AGE NOTE --- */
+.age-note {
+    font-size: 0.85rem;
+    color: #666;
+    font-style: italic;
+    margin: 5px 0 10px;
+    flex-basis: 100%;
+}
+
+/* --- ADD RACER FORM --- */
+.racer-form {
+    background-color: #fff7f0;
+    border: 1px solid #f4e3d3;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 10px;
+}
+
+.racer-form h3 {
+    margin-bottom: 10px;
+}
+
+.racer-form input {
+    width: calc(25% - 10px);
+    margin: 5px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.racer-form button {
+    background-color: #ff7a00;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 20px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.racer-form button:hover {
+    background-color: #ff8f33;
+}
+
+/* --- RACE REGISTRATION SECTION --- */
+.race-registration {
+    border-top: 2px solid #ff7a00;
+    padding-top: 25px;
+    margin-top: 30px;
+}
+
+.race-registration h2 {
+    margin-bottom: 15px;
+    color: #222;
+}
+
+/* Each Racer’s Race Card */
+.racer-card {
+    background-color: #fff7f0;
+    border: 1px solid #f4e3d3;
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+}
+
+.racer-card h3 {
+    margin-bottom: 12px;
+}
+
+/* Race Checkboxes Section */
+.race-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Individual Race Checkbox Item */
+.race-item {
+    background: #fff;
+    border: 1px solid #f4e3d3;
+    border-radius: 6px;
+    padding: 8px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.race-item.registered {
+    background: #fef2e6;
+    border-color: #ffb86c;
+}
+
+.race-item label {
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.race-item input[type="checkbox"] {
+    accent-color: #ff7a00;
+    transform: scale(1.2);
+    margin-right: 8px;
+}
+
+/* --- STATUS MESSAGE --- */
+.status-message {
+    margin-top: 15px;
+    font-size: 0.95rem;
+    color: #007f00;
+    background-color: #eafbe8;
+    padding: 8px 12px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+/* --- RESPONSIVE DESIGN --- */
+@media (max-width: 768px) {
+    .racer-form input {
+        width: calc(50% - 10px);
+    }
+
+    .edit-form {
+        flex-direction: column;
+    }
+
+    .edit-form input {
+        width: 100%;
+    }
+
+    .racer-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .racer-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 5px;
+    }
+
+    .racer-actions button {
+        padding: 6px 12px;
+        border-radius: 4px;
+    }
+}
