@@ -1,16 +1,20 @@
-// frontend/src/utils/apiClient.js
 import axios from "axios";
-import API_BASE_URL from "../config/api";
 
+// ✅ Create a pre-configured Axios instance
 const apiClient = axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: "http://localhost:8080", // adjust for prod later
     headers: {
         "Content-Type": "application/json",
     },
 });
 
-<<<<<<< HEAD
-export default apiClient; // ✅ must use default export
-=======
+// ✅ Automatically attach JWT token if it exists
+apiClient.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
 export default apiClient;
->>>>>>> 917952875e7a7d0b1831f67d8ef8afb31e438123
