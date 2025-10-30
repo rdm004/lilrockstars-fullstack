@@ -27,7 +27,7 @@ function LoginPage() {
         setLoading(true);
 
         try {
-            const response = await apiClient.post("/api/auth/login", form);
+            const response = await apiClient.post("/auth/login", form);
             const { token, firstName } = response.data;
 
             localStorage.setItem("token", token);
