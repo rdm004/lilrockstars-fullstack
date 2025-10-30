@@ -1,4 +1,5 @@
 services:
+  # === Backend Service ===
   - type: web
     name: lilrockstars-backend
     env: java
@@ -20,3 +21,15 @@ services:
         value: "true"
       - key: SERVER_PORT
         value: 8080
+
+  # === Frontend Service ===
+  - type: web
+    name: lilrockstars-frontend
+    env: static
+    plan: free
+    buildCommand: npm run build
+    staticPublishPath: build
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://lilrockstars-backend.onrender.com/api/*
