@@ -1,13 +1,15 @@
 import axios from "axios";
 
-// 🌎 Auto-detect or use .env override
+// 🧭 Base URL setup
+// - In production (Render), we rely on the frontend rewrite rule (`/api/* → backend`)
+// - In development, we point to your local Spring Boot server
 const API_BASE_URL =
     process.env.REACT_APP_API_BASE_URL ||
     (process.env.NODE_ENV === "production"
-        ? "https://lilrockstars-backend.onrender.com" // ✅ Replace with your Render backend
-        : "http://localhost:8080"); // local backend for dev
+        ? "/api" // ✅ use relative path — Render will proxy this
+        : "http://localhost:8080/api"); // ✅ direct local backend for dev
 
-// 🧠 Create Axios instance
+// 🧠 Axios instance
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
     headers: {
@@ -15,7 +17,7 @@ const apiClient = axios.create({
     },
 });
 
-// 🔐 Automatically attach token if it exists
+// 🔐 Automatically attach JWT token (if exists)
 apiClient.interceptors.request.use((config) => {
     const token = localStorage.getItem("token");
     if (token) {
