@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import apiClient from "../utils/apiClient";
 
-function RegisterRacer() {
+function RegisterRacers() {
     const [racers, setRacers] = useState([]);
     const [races, setRaces] = useState([]);
     const [registration, setRegistration] = useState({
@@ -72,4 +72,4 @@ function RegisterRacer() {
     );
 }
 
-export default RegisterRacer;
+export default RegisterRacers;

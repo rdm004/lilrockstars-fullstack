@@ -31,10 +31,11 @@ function ParentDashboard() {
                     : day % 10 === 3 && day !== 13
                         ? "rd"
                         : "th";
-        return date.toLocaleString("en-US", {
-            month: "long",
-            year: "numeric",
-        }).replace(",", ` ${day}${suffix},`);
+
+        const month = date.toLocaleString("en-US", { month: "long" });
+        const year = date.getFullYear();
+
+        return `${month} ${day}${suffix}, ${year}`;
     };
 
     // ✅ Load parent info
@@ -67,20 +68,17 @@ function ParentDashboard() {
     }, []);
 
 // ✅ Fetch racers (no need to pass email, backend handles it)
-    const fetchRacers = () => {
+    const fetchRacers = (email) => {
         const token = localStorage.getItem("token");
-        if (!token) return;
-
-        console.log("🎯 Fetching racers from backend...");
         apiClient
             .get("/api/racers", {
                 headers: { Authorization: `Bearer ${token}` },
             })
             .then((res) => {
-                console.log("✅ Racers fetched:", res.data);
-                setRacers(res.data);
+                const parentRacers = res.data.filter((r) => r.parentEmail === email);
+                setRacers(parentRacers);
             })
-            .catch((err) => console.error("❌ Error fetching racers:", err));
+            .catch((err) => console.error("Error fetching racers:", err));
     };
 
     // ✅ Add Racer

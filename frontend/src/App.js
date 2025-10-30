@@ -4,7 +4,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import LoginPage from './pages/LoginPage';
-import RegisterRacer from './pages/RegisterRacer';
+import RegisterRacers from './pages/RegisterRacers';
 import RaceList from './pages/RaceList';
 import AdminDashboard from './pages/AdminDashboard';
 import Results from './pages/Results';
@@ -21,7 +21,7 @@ function App() {
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterRacer />} />
+                <Route path="/register" element={<RegisterRacers />} />
                 <Route path="/races" element={<RaceList />} />
                 <Route path="/racers" element={<Racers />} />
                 <Route path="/results" element={<Results />} />
