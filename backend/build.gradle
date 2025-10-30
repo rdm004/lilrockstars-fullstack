@@ -5,39 +5,37 @@ plugins {
 }
 
 group = 'com.example'
-version = '0.0.1-SNAPSHOT'
-description = 'Lil Rockstars Backend'
-
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
-}
+version = '1.0.0'
+sourceCompatibility = '21'
 
 repositories {
 	mavenCentral()
 }
 
 dependencies {
-	// --- Spring Boot core ---
+	// Spring Boot essentials
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-
-	// --- Databases ---
-	runtimeOnly 'com.h2database:h2' // for local testing
-	implementation 'org.postgresql:postgresql:42.7.3' // for Render
-
-	// --- Testing ---
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-<<<<<<< HEAD
-
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+
+	// PostgreSQL database driver
+	implementation 'org.postgresql:postgresql'
+
+	// ✅ Automatically load .env files into Spring environment
+	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+
+	// For JWT handling (if you’re using tokens)
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
-=======
->>>>>>> 917952875e7a7d0b1831f67d8ef8afb31e438123
+
+	// Lombok (optional, if you’re using annotations like @Getter/@Setter)
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	// Testing
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
