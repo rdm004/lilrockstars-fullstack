@@ -26,25 +26,31 @@ public class SecurityConfig {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
+    // ✅ Password encoder for authentication
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    // ✅ Authentication manager
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
+    // ✅ Main Spring Security configuration
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ enable CORS here
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ Enable global CORS
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // ✅ Allow login + registration for both `/auth/**` and `/api/auth/**`
+                        .requestMatchers("/api/auth/**", "/auth/**").permitAll()
+                        // ✅ Restrict protected routes
                         .requestMatchers("/api/protected/**").authenticated()
+                        // ✅ Everything else open
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -52,13 +58,13 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // ✅ CORS configuration for frontend + Render
+    // ✅ Global CORS Configuration
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
-                "http://localhost:3000",
-                "https://lilrockstars-frontend.onrender.com"
+                "http://localhost:3000",                          // Local React
+                "https://lilrockstars-fullstack.onrender.com"     // Deployed frontend
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
