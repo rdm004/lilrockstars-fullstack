@@ -5,7 +5,7 @@ COPY . .
 RUN gradle build -x test
 
 # 🚀 Stage 2: Run the application
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jdk-jammy
 WORKDIR /app
 COPY --from=builder /app/build/libs/*.jar app.jar
 EXPOSE 8080
