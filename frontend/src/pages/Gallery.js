@@ -1,13 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
 import "../styles/Gallery.css";
 // import "react-image-lightbox/style.css";
 // import Lightbox from "react-image-lightbox";
 
 const Gallery = () => {
-    const [lightboxOpen, setLightboxOpen] = useState(false);
-    const [photoIndex, setPhotoIndex] = useState(0);
-    const [currentImages, setCurrentImages] = useState([]);
-
     // Mock event galleries
     const galleryData = [
         {
@@ -31,12 +27,6 @@ const Gallery = () => {
         },
     ];
 
-    const openLightbox = (images, index) => {
-        setCurrentImages(images);
-        setPhotoIndex(index);
-        setLightboxOpen(true);
-    };
-
     return (
         <div className="gallery-container">
             <h1>📸  Race Gallery  📸</h1>
@@ -53,33 +43,11 @@ const Gallery = () => {
                                 src={img}
                                 alt={`${event.event} ${index + 1}`}
                                 className="gallery-photo"
-                                onClick={() => openLightbox(event.images, index)}
                             />
                         ))}
                     </div>
                 </div>
             ))}
-
-            {lightboxOpen && (
-                <Lightbox
-                    mainSrc={currentImages[photoIndex]}
-                    nextSrc={currentImages[(photoIndex + 1) % currentImages.length]}
-                    prevSrc={
-                        currentImages[
-                        (photoIndex + currentImages.length - 1) % currentImages.length
-                            ]
-                    }
-                    onCloseRequest={() => setLightboxOpen(false)}
-                    onMovePrevRequest={() =>
-                        setPhotoIndex(
-                            (photoIndex + currentImages.length - 1) % currentImages.length
-                        )
-                    }
-                    onMoveNextRequest={() =>
-                        setPhotoIndex((photoIndex + 1) % currentImages.length)
-                    }
-                />
-            )}
         </div>
     );
 };
