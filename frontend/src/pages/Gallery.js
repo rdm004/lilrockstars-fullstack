@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "../styles/Gallery.css";
-import "react-image-lightbox/style.css";
-import Lightbox from "react-image-lightbox";
+// import "react-image-lightbox/style.css";
+// import Lightbox from "react-image-lightbox";
 
 const Gallery = () => {
     const [lightboxOpen, setLightboxOpen] = useState(false);
