@@ -8,7 +8,11 @@ import axios from "axios";
 //         : "http://localhost:8080/api"); // local backend for dev
 
 
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL =
+    process.env.REACT_APP_API_BASE_URL ||
+    (process.env.NODE_ENV === "production"
+        ? "https://lilrockstars-fullstack-backend.onrender.com/api"
+        : "http://localhost:8080/api");
 
 
 // 🧠 Create Axios instance

@@ -13,10 +13,10 @@ public class WebConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/api/**")
-                        .allowedOrigins(
-                                "http://localhost:3000",
-                                "https://lilrockstars-fullstack-frontend.onrender.com"
+                registry.addMapping("/**") // ✅ covers all routes
+                        .allowedOriginPatterns(
+                                "https://lilrockstars-fullstack.onrender.com", // frontend+backend Render domain
+                                "http://localhost:3000" // for local dev
                         )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
