@@ -1,0 +1,78 @@
+.racers-container {
+    padding: 2rem;
+}
+
+.racers-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.racers-header h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+.add-btn {
+    background-color: #1e63ff;
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.add-btn:hover {
+    background-color: #164dc9;
+}
+
+.racers-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.racers-table th,
+.racers-table td {
+    text-align: left;
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.racers-table th {
+    background-color: #f9fafb;
+    font-weight: 600;
+}
+
+.edit-btn,
+.delete-btn {
+    border: none;
+    padding: 0.4rem 0.8rem;
+    margin-right: 0.4rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.edit-btn {
+    background-color: #ff9f1c;
+    color: white;
+}
+
+.delete-btn {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.edit-btn:hover {
+    background-color: #e88a0f;
+}
+
+.delete-btn:hover {
+    background-color: #c0392b;
+}
