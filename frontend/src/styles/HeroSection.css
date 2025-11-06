@@ -1,0 +1,56 @@
+.hero-section {
+    position: relative;
+    height:110px; /* adjust as needed */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #f47c2a;
+    font-size: 2.3rem;
+    font-weight: bold;
+    text-align: center;
+    overflow: hidden;
+    background-color: #e5e5e5; /* fallback gray */
+    border-bottom: 3px solid #f47c2a; /* 🔸 gives a nice divider above nav */
+}
+
+/* 🏁 Animated checkered background */
+.hero-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 100%;
+    background: url("../staticimages/checkerflagscroll.png") repeat-x;
+    background-size: contain;
+    animation: scrollFlag 120s linear infinite;
+    z-index: 0;
+}
+
+/* 🔶 Overlay behind text */
+.hero-overlay {
+    position: relative;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 0.8rem 1.5rem;
+    border-radius: 6px;
+    z-index: 1;
+    color: #f47c2a;
+}
+
+/* ⚡ Scrolling animation */
+@keyframes scrollFlag {
+    100% {
+        transform: translateX(0);
+    }
+    0% {
+        transform: translateX(-50%);
+    }
+}
+
+/* 📱 Responsive text sizing */
+@media (max-width: 768px) {
+    .hero-section {
+        height: 140px;
+        font-size: 1.6rem;
+    }
+}

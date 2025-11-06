@@ -1,0 +1,240 @@
+.results-container {
+    position: relative;
+    text-align: center;
+    background-image: url("../staticimages/rockstarslogowhite.png"); /* replace with your image */
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    overflow: hidden;
+    min-height: 100vh;
+    padding: 2rem;
+}
+
+.results-container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.95); /* light transparent overlay */
+    z-index: 0;
+}
+
+.results-container > * {
+    position: relative;
+    z-index: 1;
+}
+
+.results-container h1 {
+    color: #222;
+    margin-bottom: 0.5rem;
+}
+
+.results-container p {
+    color: #555;
+    margin-bottom: 1.5rem;
+}
+
+.filter-section {
+    margin-bottom: 2rem;
+}
+
+.filter-section select {
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    margin-left: 0.5rem;
+}
+
+.race-results {
+    background-color: white;
+    border: 1px solid #f47c2a;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    text-align: left;
+}
+
+.race-results h2 {
+    color: #f47c2a;
+    margin-bottom: 0.3rem;
+}
+
+.race-date {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+/* 🔶 Division layout */
+.division-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+}
+
+.division-column {
+    border: 1px solid #f47c2a;
+    border-radius: 6px;
+    padding: 1rem;
+    background-color: #fffaf5;
+}
+
+.division-column h3 {
+    text-align: center;
+    color: #d96a21;
+    margin-bottom: 0.6rem;
+    font-size: 1rem;
+}
+
+.division-column ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.division-column li {
+    padding: 0.3rem 0;
+    border-bottom: 1px solid #eee;
+    font-size: 0.95rem;
+}
+
+.division-column li:last-child {
+    border-bottom: none;
+}
+
+.time {
+    color: #777;
+    font-size: 0.85rem;
+    margin-left: 4px;
+}
+
+.no-results {
+    color: #999;
+    font-style: italic;
+    text-align: center;
+}
+
+/* === Division Colors === */
+.division-column[data-division="3 Year Old Division"] {
+    border-color: #FFD700;
+    background-color: #fffbea;
+}
+
+.division-column[data-division="4 Year Old Division"] {
+    border-color: #f47c2a;
+    background-color: #fff5ef;
+}
+
+.division-column[data-division="5 Year Old Division"] {
+    border-color: #e74c3c;
+    background-color: #fff1f0;
+}
+
+.division-column[data-division="Snack Pack Division"] {
+    border-color: #2196f3;
+    background-color: #f0f7ff;
+}
+
+/* Optional: Add subtle color to headers */
+.division-column[data-division="3 Year Old Division"] h3 {
+    color: #b58900; /* richer gold for contrast */
+}
+
+.division-column[data-division="4 Year Old Division"] h3 {
+    color: #f47c2a;
+}
+
+.division-column[data-division="5 Year Old Division"] h3 {
+    color: #e74c3c;
+}
+
+.division-column[data-division="Snack Pack Division"] h3 {
+    color: #2196f3;
+}
+.division-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-weight: bold;
+}
+
+.icon {
+    font-size: 1.1rem;
+}
+
+/* === Division Title Styling === */
+/* === Division Title Styling === */
+.division-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-weight: bold;
+}
+
+.icon {
+    font-size: 1.3rem;
+}
+
+/* 🎨 Match icon colors to divisions */
+[data-division="3 Year Old Division"] .icon {
+    color: #ffcc00; /* yellow */
+}
+
+[data-division="4 Year Old Division"] .icon {
+    color: #ff7b00; /* orange */
+}
+
+[data-division="5 Year Old Division"] .icon {
+    color: #e53935; /* red */
+}
+
+[data-division="Snack Pack Division"] .icon {
+    color: #1e88e5; /* blue */
+}
+
+.division-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-weight: bold;
+}
+
+.division-title .icon {
+    font-size: 1.2rem;
+    margin: 0 0.2rem;
+}
+
+/* 🎨 Optional fun animation on hover */
+.division-title:hover .icon {
+    transform: scale(1.1);
+    transition: transform 0.2s ease-in-out;
+}
+
+/* === 🏆 Championship Standings Section === */
+.championship-standings {
+    margin-bottom: 3rem;
+    border: 2px solid #1877f2;   /* 🟧 match race results border */
+    border-radius: 8px;
+    background-color: #fffaf5;   /* soft orange tint like race cards */
+    padding: 1.5rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.championship-standings h2 {
+    text-align: center;
+    color: #f47c2a;
+    font-size: 1.6rem;
+    margin-bottom: 0.3rem;
+}
+
+.championship-standings p {
+    text-align: center;
+    color: #555;
+    margin-bottom: 1.5rem;
+}

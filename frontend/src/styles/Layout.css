@@ -1,0 +1,26 @@
+.layout-container {
+    display: flex;
+    transition: all 0.3s ease;
+}
+
+/* main content section */
+.main-content {
+    flex-grow: 1;
+    margin-left: 240px; /* matches full sidebar width */
+    transition: all 0.3s ease;
+    background: #fcfaf8;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* when collapsed (icon-only mode) */
+.layout-container.sidebar-collapsed .main-content {
+    margin-left: 70px;
+}
+
+/* on small screens, sidebar overlays the content instead of pushing it */
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+    }
+}

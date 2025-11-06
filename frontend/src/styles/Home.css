@@ -1,0 +1,151 @@
+.home-container {
+    position: relative;
+    text-align: center;
+    background-image: url("../staticimages/rockstarslogowhite.png");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    overflow: hidden;
+}
+
+.home-container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(253, 251, 248, 0.95); /* white with 60% transparency */
+    z-index: 0;
+}
+
+.home-container > * {
+    position: relative;
+    z-index: 1;
+}
+
+
+
+
+
+
+
+
+/* === SECTIONS === */
+.home-section {
+    padding: 1rem 2rem;
+    border-bottom: 1px solid #eee;
+}
+
+.home-section h2 {
+    color: #f47c2a;
+    margin-bottom: 1rem;
+}
+
+.home-intro {
+    padding: 2rem 1rem 1rem;
+}
+
+.home-intro h1 {
+    font-size: 2.2rem;
+    margin-bottom: 0.3rem;
+}
+
+.home-intro p {
+    font-size: 1.1rem;
+    color: #555;
+}
+
+/* === RACE PREVIEW === */
+.race-preview-grid {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.race-card {
+    background: white;
+    border: 2px solid #f47c2a;
+    border-radius: 8px;
+    padding: 1rem;
+    width: 230px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.race-card h3 {
+    margin-bottom: 0.3rem;
+}
+
+.race-card .desc {
+    color: #555;
+    font-size: 0.9rem;
+}
+
+/* === STANDINGS === */
+.standings-grid {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.standing-card {
+    background: #fffaf5;
+    border: 1px solid #f47c2a;
+    border-radius: 6px;
+    padding: 1rem;
+    width: 275px;
+}
+
+.icon {
+    margin: 0 0.25rem;
+}
+
+/* === GALLERY PREVIEW === */
+.photo-carousel {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    overflow-x: auto;
+}
+
+.photo-carousel img {
+    width: 180px;
+    border-radius: 6px;
+}
+
+/* === SPONSORS STRIP === */
+.sponsor-strip {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.sponsor-logo {
+    width: 100px;
+    height: auto;
+    filter: grayscale(30%);
+    transition: transform 0.3s, filter 0.3s;
+}
+
+.sponsor-logo:hover {
+    transform: scale(1.1);
+    filter: none;
+}
+
+/* === LINK === */
+.view-all-link {
+    display: inline-block;
+    margin-top: 1rem;
+    color: #f47c2a;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.view-all-link:hover {
+    text-decoration: underline;
+}

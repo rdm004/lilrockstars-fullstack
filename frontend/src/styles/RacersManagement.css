@@ -9,70 +9,106 @@
     margin-bottom: 1.5rem;
 }
 
-.racers-header h1 {
-    font-size: 1.8rem;
-    font-weight: 600;
-}
-
 .add-btn {
-    background-color: #1e63ff;
-    color: #fff;
+    background-color: #f38b20;
     border: none;
-    padding: 0.6rem 1.2rem;
+    color: white;
+    padding: 10px 16px;
     border-radius: 6px;
-    font-weight: 500;
     cursor: pointer;
+    font-weight: bold;
 }
 
 .add-btn:hover {
-    background-color: #164dc9;
+    background-color: #d4751b;
 }
 
 .racers-table {
     width: 100%;
     border-collapse: collapse;
-    background-color: #fff;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .racers-table th,
 .racers-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
     text-align: left;
-    padding: 0.9rem 1rem;
-    border-bottom: 1px solid #f0f0f0;
 }
 
 .racers-table th {
-    background-color: #f9fafb;
-    font-weight: 600;
+    background: #f5f5f5;
 }
 
 .edit-btn,
 .delete-btn {
+    padding: 6px 10px;
     border: none;
-    padding: 0.4rem 0.8rem;
-    margin-right: 0.4rem;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.9rem;
+    margin-right: 5px;
 }
 
 .edit-btn {
-    background-color: #ff9f1c;
+    background: #4c8bf5;
     color: white;
 }
 
 .delete-btn {
-    background-color: #e74c3c;
+    background: #e74c3c;
     color: white;
 }
 
-.edit-btn:hover {
-    background-color: #e88a0f;
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
 }
 
-.delete-btn:hover {
-    background-color: #c0392b;
+.modal {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 400px;
+    max-width: 90%;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.modal h2 {
+    margin-bottom: 1rem;
+}
+
+.modal input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.save-btn {
+    background: #28a745;
+    color: white;
+}
+
+.cancel-btn {
+    background: #bbb;
+    color: white;
 }

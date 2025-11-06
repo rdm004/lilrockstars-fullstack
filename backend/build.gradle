@@ -21,15 +21,18 @@ dependencies {
 	// PostgreSQL database driver
 	implementation 'org.postgresql:postgresql'
 
+	// ✅ H2 in-memory database for local dev
+	runtimeOnly 'com.h2database:h2'
+
 	// ✅ Automatically load .env files into Spring environment
 	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
-	// For JWT handling (if you’re using tokens)
+	// JWT handling
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
-	// Lombok (optional, if you’re using annotations like @Getter/@Setter)
+	// Lombok (optional)
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 

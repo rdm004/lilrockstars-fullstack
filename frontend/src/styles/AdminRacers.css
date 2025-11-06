@@ -1,0 +1,91 @@
+.racers-page {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.racers-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.2rem;
+}
+
+.btn-primary {
+    background: #ff9f1c;
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.btn-primary:hover {
+    background: #e68900;
+}
+
+.racer-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+}
+
+.racer-form input {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    flex: 1 1 150px;
+    font-size: 0.95rem;
+}
+
+.btn-save {
+    background: #007bff;
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1.2rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.btn-save:hover {
+    background: #0056b3;
+}
+
+.racers-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.racers-table th, .racers-table td {
+    border-bottom: 1px solid #ddd;
+    padding: 0.8rem;
+    text-align: left;
+}
+
+.racers-table th {
+    background: #ffead1;
+    color: #333;
+}
+
+.racers-table tr:hover {
+    background: #fff5e6;
+}
+
+.btn-edit, .btn-delete {
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: white;
+}
+.btn-edit {
+    background: #3498db;
+    margin-right: 5px;
+}
+.btn-delete {
+    background: #e74c3c;
+}

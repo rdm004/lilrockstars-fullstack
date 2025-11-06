@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import "../styles/LoginPage.css";
-import { useEffect } from "react";
 
 function LoginPage() {
     const navigate = useNavigate();
+
     // ✅ If already logged in, go straight to dashboard
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -13,6 +13,7 @@ function LoginPage() {
             navigate("/dashboard");
         }
     }, [navigate]);
+
     const [form, setForm] = useState({ email: "", password: "" });
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
@@ -27,6 +28,7 @@ function LoginPage() {
         setLoading(true);
 
         try {
+            // 👇 hits http://localhost:8080/api/auth/login via apiClient baseURL
             const response = await apiClient.post("/auth/login", form);
             const { token, firstName } = response.data;
 
@@ -74,7 +76,9 @@ function LoginPage() {
 
                 <div className="register-redirect">
                     Don’t have an account?{" "}
-                    <a href="/register">Register here</a>
+                    <Link to="/register">
+                        Register here
+                    </Link>
                 </div>
             </div>
         </div>

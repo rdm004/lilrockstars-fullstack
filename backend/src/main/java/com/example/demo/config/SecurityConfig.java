@@ -3,6 +3,7 @@ package com.example.demo.config;
 import com.example.demo.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -26,46 +27,49 @@ public class SecurityConfig {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
-    // ✅ Password encoder for authentication
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // ✅ Authentication manager
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
-    // ✅ Main Spring Security configuration
+    // ✅ MAIN SECURITY CONFIG
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ Enable global CORS
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ Allow login + registration for both `/auth/**` and `/api/auth/**`
-                        .requestMatchers("/api/auth/**", "/auth/**").permitAll()
-                        // ✅ Restrict protected routes
-                        .requestMatchers("/api/protected/**").authenticated()
-                        // ✅ Everything else open
+                        // ✅ Permit auth endpoints + H2 console
+                        .requestMatchers("/api/auth/**", "/h2-console/**").permitAll()
                         .anyRequest().permitAll()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                // ✅ Allow H2 console frames
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()));
+
+        // ✅ Only add JWT filter outside of dev mode
+        if (!isDevProfileActive()) {
+            http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        }
 
         return http.build();
     }
 
-    // ✅ Global CORS Configuration
+    private boolean isDevProfileActive() {
+        String profile = System.getProperty("spring.profiles.active");
+        return "dev".equalsIgnoreCase(profile);
+    }
+
+    // ✅ This bean only loads in the dev profile
     @Bean
+    @Profile("dev")
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-                "http://localhost:3000",                          // Local React
-                "https://lilrockstars-fullstack.onrender.com"     // Deployed frontend
-        ));
+        config.setAllowedOriginPatterns(List.of("http://localhost:3000"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

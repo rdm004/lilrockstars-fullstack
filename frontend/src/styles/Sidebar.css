@@ -1,0 +1,123 @@
+.sidebar {
+    width: 240px;
+    background: #1e1e1e;
+    color: #fff;
+    height: 100vh;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    top: 0;
+    box-shadow: 3px 0 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease-in-out;
+    z-index: 1000;
+}
+
+.sidebar.collapsed {
+    width: 70px;
+    padding: 20px 10px;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.sidebar-logo {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #ff9f1c;
+    white-space: nowrap;
+    overflow: hidden;
+    transition: opacity 0.2s ease;
+}
+
+.sidebar.collapsed .sidebar-logo {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.toggle-btn {
+    background: none;
+    border: none;
+    color: #ff9f1c;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin-top: 10px;
+}
+
+.sidebar-item {
+    margin-bottom: 12px;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #cfcfcf;
+    text-decoration: none;
+    padding: 10px 15px;
+    border-radius: 6px;
+    transition: all 0.2s ease-in-out;
+}
+
+.sidebar-link:hover {
+    background: #2d2d2d;
+    color: #fff;
+}
+
+.sidebar-item.active .sidebar-link {
+    background: #ff9f1c;
+    color: #1e1e1e;
+    font-weight: 600;
+}
+
+.sidebar-item.active .icon {
+    color: #1e1e1e;
+}
+
+.icon {
+    font-size: 1.2rem;
+    color: #ff9f1c;
+    flex-shrink: 0;
+}
+
+.sidebar.collapsed .label {
+    display: none;
+}
+
+/* 📱 Mobile adjustments */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        height: 100vh;
+        transform: translateX(-100%);
+        width: 220px;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .sidebar.collapsed {
+        transform: translateX(-100%);
+    }
+
+    .toggle-btn {
+        position: absolute;
+        top: 15px;
+        right: -45px;
+        background: #1e1e1e;
+        border-radius: 50%;
+        padding: 8px;
+        z-index: 1100;
+    }
+}
