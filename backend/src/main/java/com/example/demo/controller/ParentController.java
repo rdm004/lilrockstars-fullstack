@@ -9,7 +9,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/parents")
-@CrossOrigin(origins = "*")
 public class ParentController {
 
     private final ParentService parentService;

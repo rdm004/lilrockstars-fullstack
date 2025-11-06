@@ -13,7 +13,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/racers")
-@CrossOrigin(origins = "*")
 public class RacerController {
 
     private final RacerRepository racerRepository;

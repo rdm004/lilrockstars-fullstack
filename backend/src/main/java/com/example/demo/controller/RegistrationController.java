@@ -8,7 +8,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/registrations")
-@CrossOrigin(origins = "*")
 public class RegistrationController {
 
     private final RegistrationRepository registrationRepository;
