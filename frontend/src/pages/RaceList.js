@@ -10,6 +10,8 @@ const RaceList = () => {
     useEffect(() => {
         setLoading(true);
 
+        console.log("RaceList apiClient baseURL:", apiClient.defaults.baseURL);
+
         // 🧪 Temporary mock data for local testing (kept here, but commented out)
         // const mockRaces = [
         //     { id: 1, name: "Pumpkin Town ThrowDown!", date: "2026-10-11", location: "RockFish Speedway", description: "Fall festival race for all divisions!" },
