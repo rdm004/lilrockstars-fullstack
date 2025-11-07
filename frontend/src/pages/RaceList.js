@@ -35,6 +35,7 @@ const RaceList = () => {
         apiClient
             .get("/races") // hits http://localhost:8080/api/races because of your baseURL
             .then((response) => {
+                console.log("Fetched races from backend:", response.data);
                 // Map backend fields (raceName, raceDate) into the shape this component expects (name, date)
                 const apiRaces = response.data.map((race) => ({
                     id: race.id,
