@@ -11,10 +11,12 @@ import java.util.Optional;
 
 public interface RegistrationRepository extends JpaRepository<Registration, Long> {
 
-    // All registrations for racers belonging to a given parent
+    // 🔹 All registrations for racers belonging to a given parent
     List<Registration> findByRacerParent(Parent parent);
 
-    // To avoid duplicates (one racer/race pair once)
+    // 🔹 All registrations for a list of racer IDs (used when multiple parents share racers)
+    List<Registration> findByRacerIdIn(List<Long> racerIds);
+
+    // 🔹 To avoid duplicates (one racer/race pair once)
     Optional<Registration> findByRacerAndRace(Racer racer, Race race);
 }
-
