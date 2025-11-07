@@ -41,7 +41,7 @@ public class RacerController {
         Parent parent = parentOpt.get();
         System.out.println("✅ Found parent ID: " + parent.getId() + " for " + parent.getEmail());
 
-        List<Racer> racers = racerRepository.findByParent(parent);
+        List<Racer> racers = racerRepository.findAllVisibleToParent(parent);
         System.out.println("🏎️ Racers found for parent: " + racers.size());
         racers.forEach(r -> System.out.println(" - " + r.getFirstName() + " " + r.getLastName()));
 
