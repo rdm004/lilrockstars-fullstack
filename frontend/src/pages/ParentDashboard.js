@@ -1,15 +1,13 @@
+// frontend/src/pages/ParentDashboard.js
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import "../styles/ParentDashboard.css";
 
 function ParentDashboard() {
     const [parent, setParent] = useState(null);
     const [racers, setRacers] = useState([]);
-    const [races, setRaces] = useState([
-        { id: 1, name: "Spring Speedway Showdown", date: "2026-04-11" },
-        { id: 2, name: "Summer Nationals", date: "2026-07-18" },
-        { id: 3, name: "Lil Rockstars Grand Prix", date: "2026-09-05" },
-    ]);
+    const [races, setRaces] = useState([]);
     const [newRacer, setNewRacer] = useState({
         firstName: "",
         lastName: "",
@@ -18,8 +16,13 @@ function ParentDashboard() {
     });
     const [editingRacer, setEditingRacer] = useState(null);
     const [statusMessage, setStatusMessage] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [registrations, setRegistrations] = useState({});
+    // key: `${racerId}|${raceId}` -> { id, racerId, raceId }
 
-    // ✅ Format date like “April 11th, 2026”
+    const navigate = useNavigate();
+
+    // Format date like “April 11th, 2026”
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         const day = date.getDate();
@@ -38,79 +41,101 @@ function ParentDashboard() {
         return `${month} ${day}${suffix}, ${year}`;
     };
 
-    // ✅ Load parent info
+    // 🔄 Load parent, racers, races, and registrations
     useEffect(() => {
         const token = localStorage.getItem("token");
-        if (!token) return;
 
-        apiClient
-            .get("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
-            .then((res) => {
-                setParent(res.data);
-                fetchRacers(res.data.email);
-            })
-            .catch((err) => console.error("Error fetching parent:", err));
-    }, []);
+        // If not logged in, go back to login
+        if (!token) {
+            navigate("/login");
+            return;
+        }
 
-    // ✅ Load parent info
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (!token) return;
+        const loadDashboard = async () => {
+            try {
+                setLoading(true);
+                setStatusMessage("");
 
-        apiClient
-            .get("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
-            .then((res) => {
-                setParent(res.data);
-                // Fetch racers after parent is set
-                fetchRacers();
-            })
-            .catch((err) => console.error("Error fetching parent:", err));
-    }, []);
+                // 1) Who is the logged-in parent?
+                const parentRes = await apiClient.get("/auth/me");
+                setParent(parentRes.data);
 
-// ✅ Fetch racers (no need to pass email, backend handles it)
-    const fetchRacers = (email) => {
-        const token = localStorage.getItem("token");
-        apiClient
-            .get("/api/racers", {
-                headers: { Authorization: `Bearer ${token}` },
-            })
-            .then((res) => {
-                const parentRacers = res.data.filter((r) => r.parentEmail === email);
-                setRacers(parentRacers);
-            })
-            .catch((err) => console.error("Error fetching racers:", err));
-    };
+                // 2) Racers for this parent (backend already filters by token)
+                const racersRes = await apiClient.get("/racers");
+                setRacers(racersRes.data || []);
 
-    // ✅ Add Racer
+                // 3) Races from backend
+                const racesRes = await apiClient.get("/races");
+                const mappedRaces = (racesRes.data || []).map((race) => ({
+                    id: race.id,
+                    name: race.raceName,
+                    date: race.raceDate,
+                    location: race.location,
+                    description: race.description,
+                }));
+                setRaces(mappedRaces);
+
+                // 4) Existing registrations for this parent's racers
+                // 👇 This expects a backend endpoint:
+                // GET /api/registrations/mine  ->  [{ id, racerId, raceId }, ...]
+                try {
+                    const regsRes = await apiClient.get("/registrations/mine");
+                    const regMap = {};
+                    (regsRes.data || []).forEach((reg) => {
+                        const key = `${reg.racerId}|${reg.raceId}`;
+                        regMap[key] = reg; // store whole registration
+                    });
+                    setRegistrations(regMap);
+                } catch (regErr) {
+                    console.warn("No /registrations/mine endpoint yet or it failed.", regErr);
+                    // It's okay if this 404s for now; just means no registrations loaded.
+                }
+            } catch (err) {
+                console.error("Error loading dashboard:", err);
+                // If unauthorized or token expired, log out and redirect
+                const status = err.response?.status;
+                if (status === 401 || status === 403) {
+                    localStorage.removeItem("token");
+                    localStorage.removeItem("firstName");
+                    navigate("/login");
+                } else {
+                    setStatusMessage("❌ Could not load dashboard. Please try again.");
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadDashboard();
+    }, [navigate]);
+
+    // === Racer CRUD ===
+
     const handleAddRacer = (e) => {
         e.preventDefault();
-        const token = localStorage.getItem("token");
-        const racerData = { ...newRacer, parentEmail: parent.email };
 
         apiClient
-            .post("/api/racers", racerData, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+            .post("/racers", newRacer)
             .then((res) => {
                 setRacers([...racers, res.data]);
                 setNewRacer({ firstName: "", lastName: "", age: "", carNumber: "" });
                 setStatusMessage("✅ Racer added successfully!");
                 setTimeout(() => setStatusMessage(""), 2500);
             })
-            .catch((err) => console.error("Error adding racer:", err));
+            .catch((err) => {
+                console.error("Error adding racer:", err);
+                setStatusMessage("❌ Error adding racer.");
+                setTimeout(() => setStatusMessage(""), 2500);
+            });
     };
 
-    // ✅ Edit Racer
     const startEdit = (racer) => {
         setEditingRacer(racer);
     };
 
     const handleSaveEdit = () => {
-        const token = localStorage.getItem("token");
         apiClient
-            .put(`/api/racers/${editingRacer.id}`, editingRacer, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+            .put(`/racers/${editingRacer.id}`, editingRacer)
             .then((res) => {
                 const updated = racers.map((r) =>
                     r.id === res.data.id ? res.data : r
@@ -120,41 +145,81 @@ function ParentDashboard() {
                 setStatusMessage("✅ Racer updated!");
                 setTimeout(() => setStatusMessage(""), 2000);
             })
-            .catch((err) => console.error("Error saving racer:", err));
+            .catch((err) => {
+                console.error("Error saving racer:", err);
+                setStatusMessage("❌ Error updating racer.");
+                setTimeout(() => setStatusMessage(""), 2000);
+            });
     };
 
-    // ✅ Delete Racer
     const handleDeleteRacer = (id) => {
-        const token = localStorage.getItem("token");
         apiClient
-            .delete(`/api/racers/${id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+            .delete(`/racers/${id}`)
             .then(() => {
                 setRacers(racers.filter((r) => r.id !== id));
+                // Also remove any registrations associated with this racer
+                setRegistrations((prev) => {
+                    const copy = { ...prev };
+                    Object.keys(copy).forEach((key) => {
+                        if (key.startsWith(`${id}|`)) {
+                            delete copy[key];
+                        }
+                    });
+                    return copy;
+                });
                 setStatusMessage("❌ Racer removed.");
                 setTimeout(() => setStatusMessage(""), 2000);
             })
-            .catch((err) => console.error("Error deleting racer:", err));
+            .catch((err) => {
+                console.error("Error deleting racer:", err);
+                setStatusMessage("❌ Error removing racer.");
+                setTimeout(() => setStatusMessage(""), 2000);
+            });
     };
 
-    // ✅ Handle race registration
-    const handleRaceRegistration = (racerId, raceId, checked) => {
-        const updatedRacers = racers.map((r) => {
-            if (r.id === racerId) {
-                const updatedRegistrations = checked
-                    ? [...(r.registrations || []), raceId]
-                    : r.registrations.filter((id) => id !== raceId);
-                return { ...r, registrations: updatedRegistrations };
+    // === Race Registration ===
+
+    const handleRaceRegistration = async (racerId, raceId, checked) => {
+        const key = `${racerId}|${raceId}`;
+
+        try {
+            if (checked) {
+                // 👉 Register racer for race
+                // Expects: POST /api/registrations  body: { racerId, raceId }
+                const res = await apiClient.post("/registrations", { racerId, raceId });
+                setRegistrations((prev) => ({
+                    ...prev,
+                    [key]: res.data,
+                }));
+                setStatusMessage("🏁 Racer registered for race!");
+            } else {
+                // 👉 Unregister racer from race
+                const existing = registrations[key];
+                if (!existing) return;
+
+                // Expects: DELETE /api/registrations/{id}
+                await apiClient.delete(`/registrations/${existing.id}`);
+
+                setRegistrations((prev) => {
+                    const copy = { ...prev };
+                    delete copy[key];
+                    return copy;
+                });
+                setStatusMessage("❌ Racer unregistered from race.");
             }
-            return r;
-        });
-        setRacers(updatedRacers);
-        setStatusMessage("🏁 Race registration updated!");
-        setTimeout(() => setStatusMessage(""), 2000);
+        } catch (err) {
+            console.error("Error updating race registration:", err);
+            setStatusMessage("❌ Error updating registration.");
+        } finally {
+            setTimeout(() => setStatusMessage(""), 2000);
+        }
     };
 
-    if (!parent) return <p>Loading dashboard...</p>;
+    // === Rendering ===
+
+    if (loading || !parent) {
+        return <p>Loading dashboard...</p>;
+    }
 
     return (
         <div className="dashboard-container">
@@ -279,7 +344,9 @@ function ParentDashboard() {
                         type="number"
                         placeholder="Age"
                         value={newRacer.age}
-                        onChange={(e) => setNewRacer({ ...newRacer, age: e.target.value })}
+                        onChange={(e) =>
+                            setNewRacer({ ...newRacer, age: e.target.value })
+                        }
                         required
                     />
                     <input
@@ -298,41 +365,54 @@ function ParentDashboard() {
             {/* === Race Registration Section === */}
             <section className="race-registration">
                 <h2>Race Registrations</h2>
-                {racers.map((racer) => (
-                    <div key={racer.id} className="racer-card">
-                        <h3>
-                            {racer.firstName} {racer.lastName} — #{racer.carNumber}
-                        </h3>
-                        <div className="race-list">
-                            {races.map((race) => (
-                                <div
-                                    key={race.id}
-                                    className={`race-item ${
-                                        racer.registrations?.includes(race.id) ? "registered" : ""
-                                    }`}
-                                >
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            checked={racer.registrations?.includes(race.id) || false}
-                                            onChange={(e) =>
-                                                handleRaceRegistration(
-                                                    racer.id,
-                                                    race.id,
-                                                    e.target.checked
-                                                )
-                                            }
-                                        />
-                                        {`${race.name} — ${formatDate(race.date)}`}
-                                    </label>
-                                </div>
-                            ))}
+                {racers.length === 0 ? (
+                    <p>Add a racer above to start registering for events.</p>
+                ) : races.length === 0 ? (
+                    <p>No races available yet. Check back soon!</p>
+                ) : (
+                    racers.map((racer) => (
+                        <div key={racer.id} className="racer-card">
+                            <h3>
+                                {racer.firstName} {racer.lastName} — #{racer.carNumber}
+                            </h3>
+                            <div className="race-list">
+                                {races.map((race) => {
+                                    const key = `${racer.id}|${race.id}`;
+                                    const isRegistered = !!registrations[key];
+
+                                    return (
+                                        <div
+                                            key={race.id}
+                                            className={`race-item ${
+                                                isRegistered ? "registered" : ""
+                                            }`}
+                                        >
+                                            <label>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isRegistered}
+                                                    onChange={(e) =>
+                                                        handleRaceRegistration(
+                                                            racer.id,
+                                                            race.id,
+                                                            e.target.checked
+                                                        )
+                                                    }
+                                                />
+                                                {`${race.name} — ${formatDate(race.date)}`}
+                                            </label>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    ))
+                )}
             </section>
 
-            {statusMessage && <div className="status-message">{statusMessage}</div>}
+            {statusMessage && (
+                <div className="status-message">{statusMessage}</div>
+            )}
         </div>
     );
 }
