@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";   // 👈 add this
 import "../styles/RaceList.css";
 import apiClient from "../utils/apiClient";
 
@@ -6,43 +7,21 @@ const RaceList = () => {
     const [races, setRaces] = useState([]);
     const [nextRace, setNextRace] = useState(null);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();               // 👈 create navigate helper
 
     useEffect(() => {
         setLoading(true);
 
         console.log("RaceList apiClient baseURL:", apiClient.defaults.baseURL);
 
-        // 🧪 Temporary mock data for local testing (kept here, but commented out)
-        // const mockRaces = [
-        //     { id: 1, name: "Pumpkin Town ThrowDown!", date: "2026-10-11", location: "RockFish Speedway", description: "Fall festival race for all divisions!" },
-        //     { id: 2, name: "The Gobbler Gitty Up!", date: "2026-11-01", location: "RockFish Speedway", description: "Thanksgiving-themed showdown for racers." },
-        //     { id: 3, name: "Winter Classic!", date: "2026-01-10", location: "Bloomington Speedway", description: "Start the new year with the winter classic!" },
-        // ];
-        //
-        // const todayMock = new Date();
-        // const upcomingMock = mockRaces.filter(r => new Date(r.date) >= todayMock);
-        // upcomingMock.sort((a, b) => new Date(a.date) - new Date(b.date));
-        //
-        // if (upcomingMock.length > 0) {
-        //     upcomingMock[0].isNextEvent = true;
-        //     setNextRace(upcomingMock[0]);
-        // }
-        //
-        // setTimeout(() => {
-        //     setRaces(upcomingMock);
-        //     setLoading(false);
-        // }, 400);
-
-        // 🚀 Live data from backend
         apiClient
-            .get("/races") // hits http://localhost:8080/api/races because of your baseURL
+            .get("/races")
             .then((response) => {
                 console.log("Fetched races from backend:", response.data);
-                // Map backend fields (raceName, raceDate) into the shape this component expects (name, date)
                 const apiRaces = response.data.map((race) => ({
                     id: race.id,
                     name: race.raceName,
-                    date: race.raceDate,      // should be ISO string like "2025-06-10"
+                    date: race.raceDate,
                     location: race.location,
                     description: race.description,
                 }));
@@ -60,33 +39,30 @@ const RaceList = () => {
             })
             .catch((error) => {
                 console.error("Error loading races:", error);
-                // 🧯 Optional: fallback to mock data if backend fails
-                // setRaces(mockRaces);
             })
             .finally(() => {
                 setLoading(false);
             });
     }, []);
 
+    // 👇 Register button handler
+    const handleRegisterClick = (raceId) => {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            // Optional: remember which race they were trying to register for
+            // localStorage.setItem("intendedRaceId", raceId);
+            navigate("/login");
+        } else {
+            // Already logged in → send to parent dashboard
+            navigate("/dashboard");
+        }
+    };
+
     return (
         <div className="races-container">
             <h1>🏎️  Upcoming Races  🏎️</h1>
             <p>Check out our upcoming events and race dates!</p>
-
-            {/* ✅ Next Event Highlight Box */}
-            {/* If you want this back, just uncomment this block */}
-            {/*{nextRace && (*/}
-            {/*    <div className="next-event-banner">*/}
-            {/*        <h2>*/}
-            {/*            Next Event:{" "}*/}
-            {/*            <span className="highlight">{nextRace.name}</span>*/}
-            {/*        </h2>*/}
-            {/*        <p>*/}
-            {/*            📅 {new Date(nextRace.date).toLocaleDateString()} — 📍{" "}*/}
-            {/*            {nextRace.location}*/}
-            {/*        </p>*/}
-            {/*    </div>*/}
-            {/*)}*/}
 
             {loading ? (
                 <p className="loading">Loading races...</p>
@@ -110,7 +86,12 @@ const RaceList = () => {
 
                             <div className="card-divider"></div>
                             <div className="race-footer">
-                                <button className="register-btn">Register</button>
+                                <button
+                                    className="register-btn"
+                                    onClick={() => handleRegisterClick(race.id)} // 👈 use handler
+                                >
+                                    Register
+                                </button>
                             </div>
                         </div>
                     ))}
