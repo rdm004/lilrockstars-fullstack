@@ -3,7 +3,6 @@ package com.example.demo.config;
 import com.example.demo.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -37,21 +36,27 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    // ✅ MAIN SECURITY CONFIG
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+
+                // ✅ Use this global CORS config
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ Permit auth endpoints + H2 console
+                        // Public endpoints
                         .requestMatchers("/api/auth/**", "/h2-console/**").permitAll()
+                        // Everything else (you can tighten later)
                         .anyRequest().permitAll()
                 )
-                // ✅ Allow H2 console frames
+
+                // ✅ Allow frames for H2 console
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()));
 
-        // ✅ Only add JWT filter outside of dev mode
+        // ✅ Add JWT filter (disabled in dev if needed)
         if (!isDevProfileActive()) {
             http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         }
@@ -64,18 +69,36 @@ public class SecurityConfig {
         return "dev".equalsIgnoreCase(profile);
     }
 
-    // ✅ This bean only loads in the dev profile
+    // ✅ Global CORS for both dev and prod
     @Bean
-    @Profile("dev")
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("http://localhost:3000"));
+
+        // Allowed origins — frontend URLs
+        config.setAllowedOriginPatterns(List.of(
+                "http://localhost:3000",
+                "https://lilrockstars-fullstack.onrender.com"
+        ));
+
+        // Allowed methods
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+
+        // Allowed headers (important for Authorization)
+        config.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type",
+                "X-Requested-With",
+                "Accept",
+                "Origin"
+        ));
+
+        // Allow credentials (e.g. Authorization header)
         config.setAllowCredentials(true);
 
+        // Register CORS config for all routes
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
+
         return source;
     }
 }
