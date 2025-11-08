@@ -1,18 +1,6 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.Parent;
-import com.example.demo.service.ParentService;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Optional;
-
-@RestController
-@RequestMapping("/api/parents")
-public class ParentController // src/main/java/com/example/demo/controller/ParentController.java
-package com.example.demo.controller;
-
-import com.example.demo.model.Parent;
 import com.example.demo.model.ParentRacerLink;
 import com.example.demo.model.Racer;
 import com.example.demo.repository.ParentRacerLinkRepository;
@@ -22,7 +10,7 @@ import com.example.demo.security.JwtUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-        import java.util.List;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -45,7 +33,7 @@ public class ParentController {
         this.jwtUtil = jwtUtil;
     }
 
-    // Simple request DTO
+    // Simple request/response DTOs
     public record CoParentInviteRequest(String email) {}
     public record InviteResponse(String message) {}
 
@@ -82,7 +70,7 @@ public class ParentController {
 
         Parent coParent = coParentOpt.get();
 
-        // Get all racers visible to the inviter (primary + existing co-parent links)
+        // Get all racers visible to the inviter (primary + any existing co-parent links)
         List<Racer> visibleRacers = racerRepository.findAllVisibleToParent(inviter);
 
         if (visibleRacers.isEmpty()) {
