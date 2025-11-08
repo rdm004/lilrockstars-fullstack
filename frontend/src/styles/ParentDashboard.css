@@ -284,4 +284,56 @@
         padding: 6px 12px;
         border-radius: 4px;
     }
+
+    .coparent-section {
+        margin-top: 2.5rem;
+        padding: 1.5rem;
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.04);
+    }
+
+    .coparent-section h2 {
+        margin-bottom: 0.5rem;
+    }
+
+    .coparent-text {
+        font-size: 0.95rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .coparent-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .coparent-input {
+        flex: 1;
+        min-width: 220px;
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+    }
+
+    .coparent-form button {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        border: none;
+        background: #ff7f11;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .coparent-form button:disabled {
+        opacity: 0.7;
+        cursor: default;
+    }
+
+    .coparent-status {
+        margin-top: 0.75rem;
+        font-size: 0.9rem;
+    }
 }
+

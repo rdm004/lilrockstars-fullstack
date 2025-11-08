@@ -20,6 +20,11 @@ function ParentDashboard() {
     const [registrations, setRegistrations] = useState({});
     // key: `${racerId}|${raceId}` -> { id, racerId, raceId }
 
+    // 👥 Co-parent invite state
+    const [coParentEmail, setCoParentEmail] = useState("");
+    const [inviteStatus, setInviteStatus] = useState("");
+    const [inviteLoading, setInviteLoading] = useState(false);
+
     const navigate = useNavigate();
 
     // Format date like “April 11th, 2026”
@@ -60,7 +65,7 @@ function ParentDashboard() {
                 const parentRes = await apiClient.get("/auth/me");
                 setParent(parentRes.data);
 
-                // 2) Racers for this parent (backend already filters by token)
+                // 2) Racers for this parent (backend already filters by token/household)
                 const racersRes = await apiClient.get("/racers");
                 setRacers(racersRes.data || []);
 
@@ -76,8 +81,6 @@ function ParentDashboard() {
                 setRaces(mappedRaces);
 
                 // 4) Existing registrations for this parent's racers
-                // 👇 This expects a backend endpoint:
-                // GET /api/registrations/mine  ->  [{ id, racerId, raceId }, ...]
                 try {
                     const regsRes = await apiClient.get("/registrations/mine");
                     const regMap = {};
@@ -88,11 +91,9 @@ function ParentDashboard() {
                     setRegistrations(regMap);
                 } catch (regErr) {
                     console.warn("No /registrations/mine endpoint yet or it failed.", regErr);
-                    // It's okay if this 404s for now; just means no registrations loaded.
                 }
             } catch (err) {
                 console.error("Error loading dashboard:", err);
-                // If unauthorized or token expired, log out and redirect
                 const status = err.response?.status;
                 if (status === 401 || status === 403) {
                     localStorage.removeItem("token");
@@ -184,8 +185,7 @@ function ParentDashboard() {
 
         try {
             if (checked) {
-                // 👉 Register racer for race
-                // Expects: POST /api/registrations  body: { racerId, raceId }
+                // Register racer for race
                 const res = await apiClient.post("/registrations", { racerId, raceId });
                 setRegistrations((prev) => ({
                     ...prev,
@@ -193,11 +193,10 @@ function ParentDashboard() {
                 }));
                 setStatusMessage("🏁 Racer registered for race!");
             } else {
-                // 👉 Unregister racer from race
+                // Unregister racer from race
                 const existing = registrations[key];
                 if (!existing) return;
 
-                // Expects: DELETE /api/registrations/{id}
                 await apiClient.delete(`/registrations/${existing.id}`);
 
                 setRegistrations((prev) => {
@@ -212,6 +211,33 @@ function ParentDashboard() {
             setStatusMessage("❌ Error updating registration.");
         } finally {
             setTimeout(() => setStatusMessage(""), 2000);
+        }
+    };
+
+    // === Co-parent invite ===
+
+    const handleInviteSubmit = async (e) => {
+        e.preventDefault();
+        setInviteStatus("");
+        setInviteLoading(true);
+
+        try {
+            // Backend endpoint to implement:
+            // POST /api/parents/invite  { email: "coparent@example.com" }
+            await apiClient.post("/parents/invite", { email: coParentEmail });
+
+            setInviteStatus(
+                "✅ Invite sent! If they already have an account, they'll see your racers. If not, they can sign up with this email."
+            );
+            setCoParentEmail("");
+        } catch (err) {
+            console.error("Error sending co-parent invite:", err);
+            const msg =
+                err.response?.data?.message ||
+                "Sorry, we couldn't send that invite. Please try again.";
+            setInviteStatus("❌ " + msg);
+        } finally {
+            setInviteLoading(false);
         }
     };
 
@@ -407,6 +433,30 @@ function ParentDashboard() {
                             </div>
                         </div>
                     ))
+                )}
+            </section>
+
+            {/* === Co-Parent Invite Section === */}
+            <section className="coparent-section">
+                <h2>👥 Invite a Co-Parent</h2>
+                <p className="coparent-text">
+                    Share racer management and race registrations with another parent or guardian.
+                </p>
+                <form className="coparent-form" onSubmit={handleInviteSubmit}>
+                    <input
+                        type="email"
+                        className="coparent-input"
+                        placeholder="Co-parent's email address"
+                        value={coParentEmail}
+                        onChange={(e) => setCoParentEmail(e.target.value)}
+                        required
+                    />
+                    <button type="submit" disabled={inviteLoading}>
+                        {inviteLoading ? "Sending invite..." : "Send Invite"}
+                    </button>
+                </form>
+                {inviteStatus && (
+                    <p className="coparent-status">{inviteStatus}</p>
                 )}
             </section>
 
