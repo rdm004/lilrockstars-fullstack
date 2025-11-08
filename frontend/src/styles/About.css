@@ -148,3 +148,17 @@ a:hover {
         grid-template-columns: 1fr;
     }
 }
+
+/* Remove bullet points from all About page lists */
+.about-section ul,
+.about-grid-section ul {
+    list-style-type: none;
+    padding-left: 0;
+    margin-left: 0;
+}
+
+/* Optional: Add a little vertical spacing for readability */
+.about-section ul li,
+.about-grid-section ul li {
+    margin: 6px 0;
+}
