@@ -337,3 +337,71 @@
     }
 }
 
+/* === Header with invite side-by-side === */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    background: #fffaf5;
+    padding: 1.5rem 2rem;
+    border-radius: 16px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+    border-left: 4px solid #ff7f11;
+}
+
+.welcome-section h1 {
+    font-size: 1.8rem;
+    margin-bottom: 0.3rem;
+}
+
+.welcome-section span {
+    color: #ff7f11;
+}
+
+.coparent-inline {
+    text-align: right;
+    min-width: 260px;
+}
+
+.coparent-inline h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.coparent-form-inline {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.coparent-form-inline input {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.coparent-form-inline button {
+    background-color: #ff7f11;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.coparent-form-inline button:hover {
+    background-color: #e86d00;
+}
+
+.coparent-status {
+    font-size: 0.85rem;
+    color: #333;
+    margin-top: 0.4rem;
+}
+

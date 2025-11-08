@@ -222,7 +222,6 @@ function ParentDashboard() {
         setInviteLoading(true);
 
         try {
-            // Backend endpoint to implement:
             // POST /api/parents/invite  { email: "coparent@example.com" }
             await apiClient.post("/parents/invite", { email: coParentEmail });
 
@@ -249,10 +248,36 @@ function ParentDashboard() {
 
     return (
         <div className="dashboard-container">
-            <h1>
-                Welcome back, <span>{parent.firstName}</span>! 🏁
-            </h1>
-            <p className="tagline">Ready to build champions, one lap at a time.</p>
+            {/* Header with welcome + co-parent invite */}
+            <div className="dashboard-header">
+                <div className="welcome-section">
+                    <h1>
+                        Welcome back, <span>{parent.firstName}</span>! 🏁
+                    </h1>
+                    <p className="tagline">
+                        Ready to build champions, one lap at a time.
+                    </p>
+                </div>
+
+                <div className="coparent-inline">
+                    <h3>👥 Invite a Co-Parent</h3>
+                    <form className="coparent-form-inline" onSubmit={handleInviteSubmit}>
+                        <input
+                            type="email"
+                            placeholder="Co-parent's email"
+                            value={coParentEmail}
+                            onChange={(e) => setCoParentEmail(e.target.value)}
+                            required
+                        />
+                        <button type="submit" disabled={inviteLoading}>
+                            {inviteLoading ? "Sending..." : "Send Invite"}
+                        </button>
+                    </form>
+                    {inviteStatus && (
+                        <p className="coparent-status">{inviteStatus}</p>
+                    )}
+                </div>
+            </div>
 
             {/* === Racer Section === */}
             <section className="racer-section">
@@ -433,30 +458,6 @@ function ParentDashboard() {
                             </div>
                         </div>
                     ))
-                )}
-            </section>
-
-            {/* === Co-Parent Invite Section === */}
-            <section className="coparent-section">
-                <h2>👥 Invite a Co-Parent</h2>
-                <p className="coparent-text">
-                    Share racer management and race registrations with another parent or guardian.
-                </p>
-                <form className="coparent-form" onSubmit={handleInviteSubmit}>
-                    <input
-                        type="email"
-                        className="coparent-input"
-                        placeholder="Co-parent's email address"
-                        value={coParentEmail}
-                        onChange={(e) => setCoParentEmail(e.target.value)}
-                        required
-                    />
-                    <button type="submit" disabled={inviteLoading}>
-                        {inviteLoading ? "Sending invite..." : "Send Invite"}
-                    </button>
-                </form>
-                {inviteStatus && (
-                    <p className="coparent-status">{inviteStatus}</p>
                 )}
             </section>
 
