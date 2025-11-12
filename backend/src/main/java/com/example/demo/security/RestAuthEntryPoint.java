@@ -1,7 +1,5 @@
 package com.example.demo.security;
 
-package com.example.demo.security;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
@@ -15,12 +13,15 @@ import java.util.Map;
 
 @Component
 public class RestAuthEntryPoint implements AuthenticationEntryPoint {
+
     @Override
     public void commence(HttpServletRequest request,
                          HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
+
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
         new ObjectMapper().writeValue(response.getOutputStream(),
                 Map.of("message", "Unauthorized", "path", request.getRequestURI()));
     }
