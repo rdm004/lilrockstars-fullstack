@@ -10,6 +10,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;     // ⬅️ add
+import org.springframework.security.crypto.password.PasswordEncoder;      // ⬅️ add
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -30,6 +32,12 @@ public class SecurityConfig {
         this.restAuthEntryPoint = restAuthEntryPoint;
     }
 
+    // 🔐 Provide a PasswordEncoder bean for AuthController
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -38,44 +46,26 @@ public class SecurityConfig {
                 .exceptionHandling(e -> e.authenticationEntryPoint(restAuthEntryPoint))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // ---- OPEN AUTH ENDPOINTS (login/register/me) ----
                         .requestMatchers("/api/auth/**").permitAll()
-
-                        // ---- PUBLIC API (read-only) ----
                         .requestMatchers(HttpMethod.GET,
                                 "/api/races/**",
                                 "/api/sponsors/**",
                                 "/api/gallery/**",
                                 "/api/results/**"
                         ).permitAll()
-
-                        // ---- (optional) open POSTs for contact/registration webforms ----
                         .requestMatchers(HttpMethod.POST, "/api/contact/**", "/api/public/**").permitAll()
-
-                        // ---- PROTECTED ZONES ----
                         .requestMatchers("/api/parent/**").authenticated()
                         .requestMatchers("/api/admin/**").authenticated()
-
-                        // Everything else is open (tighten later if needed)
                         .anyRequest().permitAll()
                 );
 
-        // Add JWT filter
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 
-    /**
-     * CORS: configure allowed origins via property.
-     * In Render env vars, set for prod for safety, e.g.:
-     * app.cors.allowed-origins=https://lilrockstars-fullstack.onrender.com
-     * (Comma-separate multiple origins.)
-     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource(
             @Value("${app.cors.allowed-origins:*}") String allowedOriginsProp) {
-
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(List.of(allowedOriginsProp.split(",")));
         config.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
