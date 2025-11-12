@@ -1,14 +1,15 @@
 package com.example.demo.config;
 
 import com.example.demo.security.JwtAuthenticationFilter;
+import com.example.demo.security.RestAuthEntryPoint;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -21,84 +22,73 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RestAuthEntryPoint restAuthEntryPoint;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          RestAuthEntryPoint restAuthEntryPoint) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+        this.restAuthEntryPoint = restAuthEntryPoint;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(c -> c.configurationSource(corsConfigurationSource(null)))
                 .csrf(csrf -> csrf.disable())
-
-                // ✅ Use this global CORS config
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
+                .exceptionHandling(e -> e.authenticationEntryPoint(restAuthEntryPoint))
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
-                        .requestMatchers("/api/auth/**", "/h2-console/**").permitAll()
-                        // Everything else (you can tighten later)
+                        // ---- OPEN AUTH ENDPOINTS (login/register/me) ----
+                        .requestMatchers("/api/auth/**").permitAll()
+
+                        // ---- PUBLIC API (read-only) ----
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/races/**",
+                                "/api/sponsors/**",
+                                "/api/gallery/**",
+                                "/api/results/**"
+                        ).permitAll()
+
+                        // ---- (optional) open POSTs for contact/registration webforms ----
+                        .requestMatchers(HttpMethod.POST, "/api/contact/**", "/api/public/**").permitAll()
+
+                        // ---- PROTECTED ZONES ----
+                        .requestMatchers("/api/parent/**").authenticated()
+                        .requestMatchers("/api/admin/**").authenticated()
+
+                        // Everything else is open (tighten later if needed)
                         .anyRequest().permitAll()
-                )
+                );
 
-                // ✅ Allow frames for H2 console
-                .headers(headers -> headers.frameOptions(frame -> frame.disable()));
-
-        // ✅ Add JWT filter (disabled in dev if needed)
-        if (!isDevProfileActive()) {
-            http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-        }
+        // Add JWT filter
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    private boolean isDevProfileActive() {
-        String profile = System.getProperty("spring.profiles.active");
-        return "dev".equalsIgnoreCase(profile);
-    }
-
-    // ✅ Global CORS for both dev and prod
+    /**
+     * CORS: configure allowed origins via property.
+     * In Render env vars, set for prod for safety, e.g.:
+     * app.cors.allowed-origins=https://lilrockstars-fullstack.onrender.com
+     * (Comma-separate multiple origins.)
+     */
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource(
+            @Value("${app.cors.allowed-origins:*}") String allowedOriginsProp) {
+
         CorsConfiguration config = new CorsConfiguration();
-
-        // Allowed origins — frontend URLs
-        config.setAllowedOriginPatterns(List.of(
-                "http://localhost:3000",
-                "https://lilrockstars-fullstack.onrender.com"
-        ));
-
-        // Allowed methods
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-
-        // Allowed headers (important for Authorization)
-        config.setAllowedHeaders(List.of(
-                "Authorization",
-                "Content-Type",
-                "X-Requested-With",
-                "Accept",
-                "Origin"
-        ));
-
-        // Allow credentials (e.g. Authorization header)
+        config.setAllowedOriginPatterns(List.of(allowedOriginsProp.split(",")));
+        config.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
+        config.setAllowedHeaders(List.of("Authorization","Content-Type","X-Requested-With"));
         config.setAllowCredentials(true);
 
-        // Register CORS config for all routes
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
-
         return source;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration cfg) throws Exception {
+        return cfg.getAuthenticationManager();
     }
 }

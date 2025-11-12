@@ -18,75 +18,102 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
-    public AuthController(ParentRepository parentRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    public AuthController(ParentRepository parentRepository,
+                          PasswordEncoder passwordEncoder,
+                          JwtUtil jwtUtil) {
         this.parentRepository = parentRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
     }
 
-    // 🧾 Register new parent
+    // 🧾 REGISTER new parent account
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Parent parent) {
-        if (parentRepository.findByEmail(parent.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body("Email already registered.");
+        try {
+            if (parent.getEmail() == null || parent.getPassword() == null) {
+                return ResponseEntity.badRequest().body("Email and password are required.");
+            }
+
+            if (parentRepository.findByEmail(parent.getEmail()).isPresent()) {
+                return ResponseEntity.badRequest().body("Email already registered.");
+            }
+
+            // ✅ Encode password before saving
+            parent.setPassword(passwordEncoder.encode(parent.getPassword()));
+            parentRepository.save(parent);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Parent registered successfully!",
+                    "email", parent.getEmail()
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Registration failed", "details", e.getMessage()));
         }
-
-        // ✅ Ensure password is encoded
-        parent.setPassword(passwordEncoder.encode(parent.getPassword()));
-
-        parentRepository.save(parent);
-        return ResponseEntity.ok("Parent registered successfully!");
     }
 
-    // 🔑 Login and get JWT token
+    // 🔑 LOGIN and return JWT token
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Parent loginRequest) {
-        System.out.println("🔑 Login attempt for: " + loginRequest.getEmail());
+        try {
+            if (loginRequest.getEmail() == null || loginRequest.getPassword() == null) {
+                return ResponseEntity.badRequest().body("Email and password are required.");
+            }
 
-        Optional<Parent> parentOpt = parentRepository.findByEmail(loginRequest.getEmail());
+            Optional<Parent> parentOpt = parentRepository.findByEmail(loginRequest.getEmail());
 
-        if (parentOpt.isPresent()) {
+            if (parentOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials.");
+            }
+
             Parent parent = parentOpt.get();
 
-            System.out.println("🧩 Stored (hashed) password: " + parent.getPassword());
-            System.out.println("🧩 Raw password entered: " + loginRequest.getPassword());
-            System.out.println("🧩 Password match? " + passwordEncoder.matches(loginRequest.getPassword(), parent.getPassword()));
-
-            if (passwordEncoder.matches(loginRequest.getPassword(), parent.getPassword())) {
-                String token = jwtUtil.generateToken(parent.getEmail());
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("message", "Login successful!");
-                response.put("token", token);
-                response.put("email", parent.getEmail());
-                response.put("firstName", parent.getFirstName());
-                response.put("lastName", parent.getLastName());
-
-                System.out.println("✅ Login success for " + parent.getEmail());
-                return ResponseEntity.ok(response);
+            if (!passwordEncoder.matches(loginRequest.getPassword(), parent.getPassword())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials.");
             }
-        } else {
-            System.out.println("❌ No parent found with email: " + loginRequest.getEmail());
-        }
 
-        System.out.println("❌ Login failed — invalid credentials.");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials.");
+            // ✅ Generate JWT token
+            String token = jwtUtil.generateToken(parent.getEmail());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Login successful!");
+            response.put("token", token);
+            response.put("email", parent.getEmail());
+            response.put("firstName", parent.getFirstName());
+            response.put("lastName", parent.getLastName());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Login failed", "details", e.getMessage()));
+        }
     }
 
-    // 🧍 Get logged-in user info
+    // 🧍 CURRENT USER (from JWT token)
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+    public ResponseEntity<?> getCurrentUser(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Missing or invalid token");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Missing or invalid token"));
             }
 
             String token = authHeader.substring(7);
             String email = jwtUtil.extractUsername(token);
 
+            if (email == null || email.isBlank()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Invalid or expired token"));
+            }
+
             Optional<Parent> parentOpt = parentRepository.findByEmail(email);
             if (parentOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "User not found"));
             }
 
             Parent parent = parentOpt.get();
@@ -100,8 +127,8 @@ public class AuthController {
 
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error fetching user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid or expired token"));
         }
     }
 }
