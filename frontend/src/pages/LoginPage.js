@@ -9,10 +9,18 @@ function LoginPage() {
     // ✅ If already logged in, go straight to dashboard
     useEffect(() => {
         const token = localStorage.getItem("token");
-        if (token) {
-            navigate("/dashboard");
-        }
+        if (token) navigate("/dashboard");
     }, [navigate]);
+
+    // 🔔 Show a one-time notice if we were redirected due to 401
+    const [notice, setNotice] = useState("");
+    useEffect(() => {
+        const msg = sessionStorage.getItem("authMessage");
+        if (msg) {
+            setNotice(msg);
+            sessionStorage.removeItem("authMessage");
+        }
+    }, []);
 
     const [form, setForm] = useState({ email: "", password: "" });
     const [error, setError] = useState("");
@@ -28,14 +36,13 @@ function LoginPage() {
         setLoading(true);
 
         try {
-            // 👇 hits http://localhost:8080/api/auth/login via apiClient baseURL
             const response = await apiClient.post("/auth/login", form);
             const { token, firstName } = response.data;
 
             localStorage.setItem("token", token);
             localStorage.setItem("firstName", firstName);
 
-            navigate("/dashboard"); // redirect after login
+            navigate("/dashboard");
         } catch (err) {
             console.error(err);
             setError("Invalid email or password");
@@ -49,6 +56,21 @@ function LoginPage() {
             <div className="login-box">
                 <h1>Welcome Back!</h1>
                 <p>Log in to access your dashboard</p>
+
+                {notice && (
+                    <div
+                        style={{
+                            background: "#fff3cd",
+                            border: "1px solid #ffeeba",
+                            color: "#856404",
+                            padding: "10px",
+                            borderRadius: 6,
+                            marginBottom: 12,
+                        }}
+                    >
+                        {notice}
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit}>
                     <input
@@ -75,10 +97,7 @@ function LoginPage() {
                 {error && <p className="error-msg">{error}</p>}
 
                 <div className="register-redirect">
-                    Don’t have an account?{" "}
-                    <Link to="/register">
-                        Register here
-                    </Link>
+                    Don’t have an account? <Link to="/register">Register here</Link>
                 </div>
             </div>
         </div>
