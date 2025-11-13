@@ -97,7 +97,7 @@ function LoginPage() {
                 {error && <p className="error-msg">{error}</p>}
 
                 <div className="register-redirect">
-                    Don’t have an account? <Link to="/register">Register here</Link>
+                    Don’t have an account? <Link to="/accountregister">Register here</Link>
                 </div>
             </div>
         </div>
