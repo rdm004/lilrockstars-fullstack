@@ -65,11 +65,11 @@ function ParentDashboard() {
                 const parentRes = await apiClient.get("/auth/me");
                 setParent(parentRes.data);
 
-                // 2) Racers for this parent (backend already filters by token/household)
+                // 2) Racers for this parent
                 const racersRes = await apiClient.get("/racers");
                 setRacers(racersRes.data || []);
 
-                // 3) Races from backend
+                // 3) Races
                 const racesRes = await apiClient.get("/races");
                 const mappedRaces = (racesRes.data || []).map((race) => ({
                     id: race.id,
@@ -80,13 +80,13 @@ function ParentDashboard() {
                 }));
                 setRaces(mappedRaces);
 
-                // 4) Existing registrations for this parent's racers
+                // 4) Existing registrations
                 try {
                     const regsRes = await apiClient.get("/registrations/mine");
                     const regMap = {};
                     (regsRes.data || []).forEach((reg) => {
                         const key = `${reg.racerId}|${reg.raceId}`;
-                        regMap[key] = reg; // store whole registration
+                        regMap[key] = reg;
                     });
                     setRegistrations(regMap);
                 } catch (regErr) {
@@ -110,8 +110,14 @@ function ParentDashboard() {
         loadDashboard();
     }, [navigate]);
 
-    // === Racer CRUD ===
+    // === Logout ===
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("firstName");
+        navigate("/login");
+    };
 
+    // === Racer CRUD ===
     const handleAddRacer = (e) => {
         e.preventDefault();
 
@@ -138,9 +144,7 @@ function ParentDashboard() {
         apiClient
             .put(`/racers/${editingRacer.id}`, editingRacer)
             .then((res) => {
-                const updated = racers.map((r) =>
-                    r.id === res.data.id ? res.data : r
-                );
+                const updated = racers.map((r) => (r.id === res.data.id ? res.data : r));
                 setRacers(updated);
                 setEditingRacer(null);
                 setStatusMessage("✅ Racer updated!");
@@ -179,13 +183,11 @@ function ParentDashboard() {
     };
 
     // === Race Registration ===
-
     const handleRaceRegistration = async (racerId, raceId, checked) => {
         const key = `${racerId}|${raceId}`;
 
         try {
             if (checked) {
-                // Register racer for race
                 const res = await apiClient.post("/registrations", { racerId, raceId });
                 setRegistrations((prev) => ({
                     ...prev,
@@ -193,7 +195,6 @@ function ParentDashboard() {
                 }));
                 setStatusMessage("🏁 Racer registered for race!");
             } else {
-                // Unregister racer from race
                 const existing = registrations[key];
                 if (!existing) return;
 
@@ -215,16 +216,13 @@ function ParentDashboard() {
     };
 
     // === Co-parent invite ===
-
     const handleInviteSubmit = async (e) => {
         e.preventDefault();
         setInviteStatus("");
         setInviteLoading(true);
 
         try {
-            // POST /api/parents/invite  { email: "coparent@example.com" }
             await apiClient.post("/parents/invite", { email: coParentEmail });
-
             setInviteStatus(
                 "✅ Invite sent! If they already have an account, they'll see your racers. If not, they can sign up with this email."
             );
@@ -241,41 +239,42 @@ function ParentDashboard() {
     };
 
     // === Rendering ===
-
     if (loading || !parent) {
         return <p>Loading dashboard...</p>;
     }
 
     return (
         <div className="dashboard-container">
-            {/* Header with welcome + co-parent invite */}
+            {/* Header with welcome + co-parent invite + logout */}
             <div className="dashboard-header">
                 <div className="welcome-section">
                     <h1>
                         Welcome back, <span>{parent.firstName}</span>! 🏁
                     </h1>
-                    <p className="tagline">
-                        Ready to build champions, one lap at a time.
-                    </p>
+                    <p className="tagline">Ready to build champions, one lap at a time.</p>
                 </div>
 
-                <div className="coparent-inline">
-                    <h3>👥 Invite a Co-Parent</h3>
-                    <form className="coparent-form-inline" onSubmit={handleInviteSubmit}>
-                        <input
-                            type="email"
-                            placeholder="Co-parent's email"
-                            value={coParentEmail}
-                            onChange={(e) => setCoParentEmail(e.target.value)}
-                            required
-                        />
-                        <button type="submit" disabled={inviteLoading}>
-                            {inviteLoading ? "Sending..." : "Send Invite"}
-                        </button>
-                    </form>
-                    {inviteStatus && (
-                        <p className="coparent-status">{inviteStatus}</p>
-                    )}
+                <div className="header-right">
+                    <div className="coparent-inline">
+                        <h3>👥 Invite a Co-Parent</h3>
+                        <form className="coparent-form-inline" onSubmit={handleInviteSubmit}>
+                            <input
+                                type="email"
+                                placeholder="Co-parent's email"
+                                value={coParentEmail}
+                                onChange={(e) => setCoParentEmail(e.target.value)}
+                                required
+                            />
+                            <button type="submit" disabled={inviteLoading}>
+                                {inviteLoading ? "Sending..." : "Send Invite"}
+                            </button>
+                        </form>
+                        {inviteStatus && <p className="coparent-status">{inviteStatus}</p>}
+                    </div>
+
+                    <button className="logout-button" onClick={handleLogout} title="Log out">
+                        Logout
+                    </button>
                 </div>
             </div>
 
@@ -291,40 +290,28 @@ function ParentDashboard() {
                                         type="text"
                                         value={editingRacer.firstName}
                                         onChange={(e) =>
-                                            setEditingRacer({
-                                                ...editingRacer,
-                                                firstName: e.target.value,
-                                            })
+                                            setEditingRacer({ ...editingRacer, firstName: e.target.value })
                                         }
                                     />
                                     <input
                                         type="text"
                                         value={editingRacer.lastName}
                                         onChange={(e) =>
-                                            setEditingRacer({
-                                                ...editingRacer,
-                                                lastName: e.target.value,
-                                            })
+                                            setEditingRacer({ ...editingRacer, lastName: e.target.value })
                                         }
                                     />
                                     <input
                                         type="number"
                                         value={editingRacer.age}
                                         onChange={(e) =>
-                                            setEditingRacer({
-                                                ...editingRacer,
-                                                age: e.target.value,
-                                            })
+                                            setEditingRacer({ ...editingRacer, age: e.target.value })
                                         }
                                     />
                                     <input
                                         type="text"
                                         value={editingRacer.carNumber}
                                         onChange={(e) =>
-                                            setEditingRacer({
-                                                ...editingRacer,
-                                                carNumber: e.target.value,
-                                            })
+                                            setEditingRacer({ ...editingRacer, carNumber: e.target.value })
                                         }
                                     />
                                     <div className="edit-buttons">
@@ -348,10 +335,7 @@ function ParentDashboard() {
                                         — #{racer.carNumber} ({racer.age} yrs)
                                     </div>
                                     <div className="racer-actions">
-                                        <button
-                                            className="edit-btn"
-                                            onClick={() => startEdit(racer)}
-                                        >
+                                        <button className="edit-btn" onClick={() => startEdit(racer)}>
                                             Edit
                                         </button>
                                         <button
@@ -395,9 +379,7 @@ function ParentDashboard() {
                         type="number"
                         placeholder="Age"
                         value={newRacer.age}
-                        onChange={(e) =>
-                            setNewRacer({ ...newRacer, age: e.target.value })
-                        }
+                        onChange={(e) => setNewRacer({ ...newRacer, age: e.target.value })}
                         required
                     />
                     <input
@@ -434,9 +416,7 @@ function ParentDashboard() {
                                     return (
                                         <div
                                             key={race.id}
-                                            className={`race-item ${
-                                                isRegistered ? "registered" : ""
-                                            }`}
+                                            className={`race-item ${isRegistered ? "registered" : ""}`}
                                         >
                                             <label>
                                                 <input
@@ -461,9 +441,7 @@ function ParentDashboard() {
                 )}
             </section>
 
-            {statusMessage && (
-                <div className="status-message">{statusMessage}</div>
-            )}
+            {statusMessage && <div className="status-message">{statusMessage}</div>}
         </div>
     );
 }
