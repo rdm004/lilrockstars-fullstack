@@ -1,23 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";   // 👈 add this
+import { useNavigate } from "react-router-dom";
 import "../styles/RaceList.css";
 import apiClient from "../utils/apiClient";
+import { formatRaceDate } from "../utils/dateUtils";
 
 const RaceList = () => {
     const [races, setRaces] = useState([]);
     const [nextRace, setNextRace] = useState(null);
     const [loading, setLoading] = useState(true);
-    const navigate = useNavigate();               // 👈 create navigate helper
+    const navigate = useNavigate();
+
 
     useEffect(() => {
         setLoading(true);
 
-        console.log("RaceList apiClient baseURL:", apiClient.defaults.baseURL);
-
         apiClient
             .get("/races")
             .then((response) => {
-                console.log("Fetched races from backend:", response.data);
                 const apiRaces = response.data.map((race) => ({
                     id: race.id,
                     name: race.raceName,
@@ -45,23 +44,19 @@ const RaceList = () => {
             });
     }, []);
 
-    // 👇 Register button handler
     const handleRegisterClick = (raceId) => {
         const token = localStorage.getItem("token");
 
         if (!token) {
-            // Optional: remember which race they were trying to register for
-            // localStorage.setItem("intendedRaceId", raceId);
             navigate("/login");
         } else {
-            // Already logged in → send to parent dashboard
             navigate("/dashboard");
         }
     };
 
     return (
         <div className="races-container">
-            <h1>🏎️  Upcoming Races  🏎️</h1>
+            <h1>🏎️ Upcoming Races 🏎️</h1>
             <p>Check out our upcoming events and race dates!</p>
 
             {loading ? (
@@ -77,9 +72,12 @@ const RaceList = () => {
                         >
                             <div className="race-content">
                                 <h2>{race.name}</h2>
+
+                                {/* 👉 Updated to clean date format */}
                                 <p className="race-date">
-                                    📅 {new Date(race.date).toLocaleDateString()}
+                                    📅 {formatRaceDate(race.date)}
                                 </p>
+
                                 <p className="race-location">📍 {race.location}</p>
                                 <p className="race-desc">{race.description}</p>
                             </div>
@@ -88,7 +86,7 @@ const RaceList = () => {
                             <div className="race-footer">
                                 <button
                                     className="register-btn"
-                                    onClick={() => handleRegisterClick(race.id)} // 👈 use handler
+                                    onClick={() => handleRegisterClick(race.id)}
                                 >
                                     Register
                                 </button>

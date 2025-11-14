@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import "../styles/ParentDashboard.css";
+import { formatRaceDate } from "../utils/dateUtils";
 
 function ParentDashboard() {
     const [parent, setParent] = useState(null);
@@ -26,25 +27,6 @@ function ParentDashboard() {
     const [inviteLoading, setInviteLoading] = useState(false);
 
     const navigate = useNavigate();
-
-    // Format date like “April 11th, 2026”
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        const day = date.getDate();
-        const suffix =
-            day % 10 === 1 && day !== 11
-                ? "st"
-                : day % 10 === 2 && day !== 12
-                    ? "nd"
-                    : day % 10 === 3 && day !== 13
-                        ? "rd"
-                        : "th";
-
-        const month = date.toLocaleString("en-US", { month: "long" });
-        const year = date.getFullYear();
-
-        return `${month} ${day}${suffix}, ${year}`;
-    };
 
     // 🔄 Load parent, racers, races, and registrations
     useEffect(() => {
@@ -430,7 +412,7 @@ function ParentDashboard() {
                                                         )
                                                     }
                                                 />
-                                                {`${race.name} — ${formatDate(race.date)}`}
+                                                {`${race.name} — ${formatRaceDate(race.date)}`}
                                             </label>
                                         </div>
                                     );
