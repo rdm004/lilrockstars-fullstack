@@ -14,14 +14,36 @@ const SponsorsManagement = () => {
         contact: "",
         email: "",
         city: "",
+        logoUrl: "",
     });
 
     useEffect(() => {
         // TODO: Replace with backend call later
         const mockSponsors = [
-            { id: 1, name: "Speedy Tires", contact: "John Smith", email: "john@speedy.com", city: "Peoria" },
-            { id: 2, name: "GoFast Motors", contact: "Emily Johnson", email: "emily@gofast.com", city: "Rockford" },
-            { id: 3, name: "Junior Gear", contact: "Mike Davis", email: "mike@juniorgear.com", city: "Springfield" },
+            {
+                id: 1,
+                name: "GoKart Supply Co.",
+                contact: "John Smith",
+                email: "john@gokartco.com",
+                city: "Peoria",
+                logoUrl: "/images/sponsors/gokart-supply.png",
+            },
+            {
+                id: 2,
+                name: "Speedy Snacks",
+                contact: "Emily Johnson",
+                email: "emily@speedysnacks.com",
+                city: "Rockford",
+                logoUrl: "/images/sponsors/speedy-snacks.png",
+            },
+            {
+                id: 3,
+                name: "Tiny Tires Racing",
+                contact: "Mike Davis",
+                email: "mike@tinytires.com",
+                city: "Springfield",
+                logoUrl: "/images/sponsors/tiny-tires.png",
+            },
         ];
 
         setTimeout(() => {
@@ -38,7 +60,14 @@ const SponsorsManagement = () => {
 
     const handleOpenAdd = () => {
         setEditMode(false);
-        setFormData({ id: null, name: "", contact: "", email: "", city: "" });
+        setFormData({
+            id: null,
+            name: "",
+            contact: "",
+            email: "",
+            city: "",
+            logoUrl: "",
+        });
         setIsModalOpen(true);
     };
 
@@ -50,7 +79,7 @@ const SponsorsManagement = () => {
 
     const handleSave = () => {
         if (!formData.name || !formData.contact || !formData.email || !formData.city) {
-            alert("Please fill out all fields.");
+            alert("Please fill out all required fields.");
             return;
         }
 
@@ -83,6 +112,7 @@ const SponsorsManagement = () => {
                         <thead>
                         <tr>
                             <th>#</th>
+                            <th>Logo</th>
                             <th>Company</th>
                             <th>Contact</th>
                             <th>Email</th>
@@ -94,12 +124,28 @@ const SponsorsManagement = () => {
                         {sponsors.map((sponsor, index) => (
                             <tr key={sponsor.id}>
                                 <td>{index + 1}</td>
+                                <td className="logo-cell">
+                                    {sponsor.logoUrl ? (
+                                        <img
+                                            src={sponsor.logoUrl}
+                                            alt={sponsor.name}
+                                            className="sponsor-logo-thumb"
+                                        />
+                                    ) : (
+                                        <div className="sponsor-logo-placeholder">
+                                            No Logo
+                                        </div>
+                                    )}
+                                </td>
                                 <td>{sponsor.name}</td>
                                 <td>{sponsor.contact}</td>
                                 <td>{sponsor.email}</td>
                                 <td>{sponsor.city}</td>
                                 <td>
-                                    <button className="edit-btn" onClick={() => handleOpenEdit(sponsor)}>
+                                    <button
+                                        className="edit-btn"
+                                        onClick={() => handleOpenEdit(sponsor)}
+                                    >
                                         Edit
                                     </button>
                                     <button
@@ -136,7 +182,9 @@ const SponsorsManagement = () => {
                 <input
                     type="text"
                     value={formData.contact}
-                    onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+                    onChange={(e) =>
+                        setFormData({ ...formData, contact: e.target.value })
+                    }
                     required
                 />
 
@@ -144,7 +192,9 @@ const SponsorsManagement = () => {
                 <input
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                    }
                     required
                 />
 
@@ -155,6 +205,20 @@ const SponsorsManagement = () => {
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                     required
                 />
+
+                <label>Logo Image URL</label>
+                <input
+                    type="text"
+                    placeholder="/images/sponsors/your-logo.png"
+                    value={formData.logoUrl}
+                    onChange={(e) =>
+                        setFormData({ ...formData, logoUrl: e.target.value })
+                    }
+                />
+                <small className="logo-help">
+                    Tip: use images sized to the same aspect ratio (for example
+                    240×140) so they look consistent in the public sponsors grid.
+                </small>
             </Modal>
         </Layout>
     );
