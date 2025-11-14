@@ -1,53 +1,70 @@
-import React from "react";
+// frontend/src/pages/Gallery.js
+import React, { useEffect, useState } from "react";
 import "../styles/Gallery.css";
-// import "react-image-lightbox/style.css";
-// import Lightbox from "react-image-lightbox";
+import apiClient from "../utils/apiClient";
 
 const Gallery = () => {
-    // Mock event galleries
-    const galleryData = [
-        {
-            event: "Pumpkin Town ThrowDown",
-            date: "October 11, 2025",
-            images: [
-                "/images/pumpkin1.jpg",
-                "/images/pumpkin2.jpg",
-                "/images/pumpkin3.jpg",
-                "/images/pumpkin4.jpg",
-            ],
-        },
-        {
-            event: "The Gobbler Gitty Up!",
-            date: "November 1, 2025",
-            images: [
-                "/images/gobbler1.jpg",
-                "/images/gobbler2.jpg",
-                "/images/gobbler3.jpg",
-            ],
-        },
-    ];
+    const [photos, setPhotos] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        setLoading(true);
+        setError("");
+
+        apiClient
+            .get("/photos")
+            .then((res) => {
+                const list = res.data || [];
+
+                // newest first based on uploadedAt if available
+                const sorted = [...list].sort((a, b) => {
+                    if (!a.uploadedAt || !b.uploadedAt) return 0;
+                    return new Date(b.uploadedAt) - new Date(a.uploadedAt);
+                });
+
+                setPhotos(sorted);
+            })
+            .catch((err) => {
+                console.error("Error loading photos:", err);
+                setError("Could not load photos. Please try again later.");
+            })
+            .finally(() => setLoading(false));
+    }, []);
 
     return (
         <div className="gallery-container">
             <h1>📸  Race Gallery  📸</h1>
             <p>Browse photos from our past events and relive the fun!</p>
 
-            {galleryData.map((event, idx) => (
-                <div key={idx} className="event-gallery">
-                    <h2>{event.event}</h2>
-                    <p className="event-date">{event.date}</p>
+            {loading && <p className="loading">Loading photos...</p>}
+            {error && <p className="error-text">{error}</p>}
+
+            {!loading && !error && photos.length === 0 && (
+                <p>No photos have been uploaded yet. Check back soon!</p>
+            )}
+
+            {!loading && !error && photos.length > 0 && (
+                <div className="event-gallery">
+                    <h2>All Photos</h2>
                     <div className="photo-grid">
-                        {event.images.map((img, index) => (
-                            <img
-                                key={index}
-                                src={img}
-                                alt={`${event.event} ${index + 1}`}
-                                className="gallery-photo"
-                            />
+                        {photos.map((photo) => (
+                            <div key={photo.id} className="photo-wrapper">
+                                <img
+                                    src={photo.imageUrl}
+                                    alt={photo.title || photo.caption || "Race photo"}
+                                    className="gallery-photo"
+                                />
+                                {(photo.title || photo.caption) && (
+                                    <p className="photo-caption">
+                                        {photo.title || photo.caption}
+                                    </p>
+                                )}
+                            </div>
                         ))}
                     </div>
                 </div>
-            ))}
+            )}
         </div>
     );
 };

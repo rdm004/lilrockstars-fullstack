@@ -17,12 +17,15 @@ const Home = () => {
     const [loadingStandings, setLoadingStandings] = useState(true);
     const [standingsError, setStandingsError] = useState("");
 
-    const sponsors = [
-        { name: "Speedy Tires", logo: "/images/sponsors/speedy-tires.png" },
-        { name: "GoFast Motors", logo: "/images/sponsors/gofast-motors.png" },
-        { name: "Junior Gear", logo: "/images/sponsors/junior-gear.png" },
-        { name: "PitStop Energy", logo: "/images/sponsors/pitstop-energy.png" },
-    ];
+    // 📸 Recent photos (for home carousel)
+    const [recentPhotos, setRecentPhotos] = useState([]);
+    const [loadingPhotos, setLoadingPhotos] = useState(true);
+    const [photosError, setPhotosError] = useState("");
+
+    // 🤝 Sponsors (for home strip)
+    const [homeSponsors, setHomeSponsors] = useState([]);
+    const [loadingSponsors, setLoadingSponsors] = useState(true);
+    const [sponsorsError, setSponsorsError] = useState("");
 
     // 🔄 Load races (from /api/races)
     useEffect(() => {
@@ -125,6 +128,56 @@ const Home = () => {
         loadStandings();
     }, []);
 
+    // 🔄 Load recent photos (for home carousel)
+    useEffect(() => {
+        const loadPhotos = async () => {
+            try {
+                setLoadingPhotos(true);
+                setPhotosError("");
+
+                const res = await apiClient.get("/photos");
+                const list = res.data || [];
+
+                const sorted = [...list].sort((a, b) => {
+                    if (!a.uploadedAt || !b.uploadedAt) return 0;
+                    return new Date(b.uploadedAt) - new Date(a.uploadedAt);
+                });
+
+                setRecentPhotos(sorted.slice(0, 5)); // latest 5
+            } catch (err) {
+                console.error("Error loading photos for home:", err);
+                setPhotosError("Could not load gallery images.");
+            } finally {
+                setLoadingPhotos(false);
+            }
+        };
+
+        loadPhotos();
+    }, []);
+
+    // 🔄 Load sponsors (for home strip)
+    useEffect(() => {
+        const loadSponsors = async () => {
+            try {
+                setLoadingSponsors(true);
+                setSponsorsError("");
+
+                const res = await apiClient.get("/sponsors");
+                const list = res.data || [];
+
+                // you can sort if you want; for now just take first 8
+                setHomeSponsors(list.slice(0, 8));
+            } catch (err) {
+                console.error("Error loading sponsors for home:", err);
+                setSponsorsError("Could not load sponsors.");
+            } finally {
+                setLoadingSponsors(false);
+            }
+        };
+
+        loadSponsors();
+    }, []);
+
     return (
         <div className="home-container">
             {/* Optional small intro under the navbar, not a full hero */}
@@ -220,15 +273,26 @@ const Home = () => {
             {/* === PHOTO GALLERY PREVIEW === */}
             <section className="home-section gallery-preview">
                 <h2>📸 Race Day Highlights  📸</h2>
+
+                {loadingPhotos && <p>Loading photos...</p>}
+                {photosError && <p>{photosError}</p>}
+
                 <div className="photo-carousel">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                        <img
-                            key={i}
-                            src={`/images/gallery/sample${i}.jpg`}
-                            alt={`Race ${i}`}
-                        />
-                    ))}
+                    {!loadingPhotos &&
+                        !photosError &&
+                        (recentPhotos.length > 0 ? (
+                            recentPhotos.map((photo) => (
+                                <img
+                                    key={photo.id}
+                                    src={photo.imageUrl}
+                                    alt={photo.title || photo.caption || "Race photo"}
+                                />
+                            ))
+                        ) : (
+                            <p>No photos yet — check back after the next race!</p>
+                        ))}
                 </div>
+
                 <Link to="/gallery" className="view-all-link">
                     See Full Gallery →
                 </Link>
@@ -237,16 +301,27 @@ const Home = () => {
             {/* === SPONSORS PREVIEW === */}
             <section className="home-section sponsors-preview">
                 <h2>🤝 Thank You to Our Sponsors  🤝</h2>
+
+                {loadingSponsors && <p>Loading sponsors...</p>}
+                {sponsorsError && <p>{sponsorsError}</p>}
+
                 <div className="sponsor-strip">
-                    {sponsors.map((s, idx) => (
-                        <img
-                            key={idx}
-                            src={s.logo}
-                            alt={s.name}
-                            className="sponsor-logo"
-                        />
-                    ))}
+                    {!loadingSponsors &&
+                        !sponsorsError &&
+                        (homeSponsors.length > 0 ? (
+                            homeSponsors.map((s) => (
+                                <img
+                                    key={s.id}
+                                    src={s.logoUrl}
+                                    alt={s.name}
+                                    className="sponsor-logo"
+                                />
+                            ))
+                        ) : (
+                            <p>Become a sponsor and see your logo here!</p>
+                        ))}
                 </div>
+
                 <Link to="/sponsors" className="view-all-link">
                     Meet All Sponsors →
                 </Link>
