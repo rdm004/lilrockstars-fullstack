@@ -110,3 +110,21 @@
     font-size: 0.8rem;
     color: #777;
 }
+
+.admin-sponsor-logo {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #eee;
+}
+
+.no-logo {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.logo-preview {
+    margin-top: 0.5rem;
+}

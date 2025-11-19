@@ -16,13 +16,16 @@ public class PhotoController {
         this.photoRepository = photoRepository;
     }
 
+    // 📸 Full gallery – newest first
     @GetMapping
     public List<Photo> getAllPhotos() {
-        return photoRepository.findAll();
+        return photoRepository.findAllByOrderByUploadedAtDesc();
     }
 
-    @PostMapping
-    public Photo addPhoto(@RequestBody Photo photo) {
-        return photoRepository.save(photo);
+    // 📸 Latest uploads – for home page preview
+    @GetMapping("/latest")
+    public List<Photo> getLatestPhotos() {
+        // tweak to 4, 6, etc. if you want fewer/more
+        return photoRepository.findTop8ByOrderByUploadedAtDesc();
     }
 }

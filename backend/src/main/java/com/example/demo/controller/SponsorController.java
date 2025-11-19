@@ -1,28 +1,69 @@
+// com.example.demo.controller.SponsorController
 package com.example.demo.controller;
 
 import com.example.demo.model.Sponsor;
 import com.example.demo.repository.SponsorRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/sponsors")
 public class SponsorController {
 
-    @Autowired
-    private SponsorRepository sponsorRepository;
+    private final SponsorRepository sponsorRepository;
 
-    // GET all sponsors
+    public SponsorController(SponsorRepository sponsorRepository) {
+        this.sponsorRepository = sponsorRepository;
+    }
+
     @GetMapping
     public List<Sponsor> getAllSponsors() {
         return sponsorRepository.findAll();
     }
 
-    // POST new sponsor
+    // ⭐ NEW — sorted sponsors for Sponsors page
+    @GetMapping("/sorted")
+    public List<Sponsor> getSortedSponsors() {
+        return sponsorRepository.findAllByOrderByNameAsc();
+    }
+
+    // ⭐ NEW — top 4 sponsors for Home page
+    @GetMapping("/featured")
+    public List<Sponsor> getFeaturedSponsors() {
+        return sponsorRepository.findTop4ByOrderByNameAsc();
+    }
+
     @PostMapping
-    public Sponsor addSponsor(@RequestBody Sponsor sponsor) {
+    public Sponsor createSponsor(@RequestBody Sponsor sponsor) {
         return sponsorRepository.save(sponsor);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Sponsor> updateSponsor(@PathVariable Long id,
+                                                 @RequestBody Sponsor updated) {
+        Optional<Sponsor> existingOpt = sponsorRepository.findById(id);
+        if (existingOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Sponsor sponsor = existingOpt.get();
+        sponsor.setName(updated.getName());
+        sponsor.setLogoUrl(updated.getLogoUrl());
+        sponsor.setWebsite(updated.getWebsite());
+        sponsor.setDescription(updated.getDescription());
+
+        return ResponseEntity.ok(sponsorRepository.save(sponsor));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteSponsor(@PathVariable Long id) {
+        if (!sponsorRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        sponsorRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }

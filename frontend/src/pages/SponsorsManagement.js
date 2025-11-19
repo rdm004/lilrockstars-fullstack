@@ -2,95 +2,93 @@ import React, { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import Modal from "../components/Modal";
 import "../styles/SponsorsManagement.css";
+import apiClient from "../utils/apiClient";
 
 const SponsorsManagement = () => {
     const [sponsors, setSponsors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editMode, setEditMode] = useState(false);
+
     const [formData, setFormData] = useState({
         id: null,
         name: "",
-        contact: "",
-        email: "",
-        city: "",
-        logoUrl: "",
+        website: "",
+        description: "",
+        logoUrl: "",   // <-- URL string
     });
 
     useEffect(() => {
-        // TODO: Replace with backend call later
-        const mockSponsors = [
-            {
-                id: 1,
-                name: "GoKart Supply Co.",
-                contact: "John Smith",
-                email: "john@gokartco.com",
-                city: "Peoria",
-                logoUrl: "/images/sponsors/gokart-supply.png",
-            },
-            {
-                id: 2,
-                name: "Speedy Snacks",
-                contact: "Emily Johnson",
-                email: "emily@speedysnacks.com",
-                city: "Rockford",
-                logoUrl: "/images/sponsors/speedy-snacks.png",
-            },
-            {
-                id: 3,
-                name: "Tiny Tires Racing",
-                contact: "Mike Davis",
-                email: "mike@tinytires.com",
-                city: "Springfield",
-                logoUrl: "/images/sponsors/tiny-tires.png",
-            },
-        ];
-
-        setTimeout(() => {
-            setSponsors(mockSponsors);
-            setLoading(false);
-        }, 600);
+        const loadSponsors = async () => {
+            try {
+                setLoading(true);
+                const res = await apiClient.get("/sponsors");
+                setSponsors(res.data || []);
+            } catch (err) {
+                console.error("Error loading sponsors:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadSponsors();
     }, []);
 
-    const handleDelete = (id) => {
-        if (window.confirm("Are you sure you want to delete this sponsor?")) {
-            setSponsors(sponsors.filter((s) => s.id !== id));
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this sponsor?")) return;
+        try {
+            await apiClient.delete(`/sponsors/${id}`);
+            setSponsors((prev) => prev.filter((s) => s.id !== id));
+        } catch (err) {
+            console.error("Error deleting sponsor:", err);
         }
     };
 
     const handleOpenAdd = () => {
         setEditMode(false);
-        setFormData({
-            id: null,
-            name: "",
-            contact: "",
-            email: "",
-            city: "",
-            logoUrl: "",
-        });
+        setFormData({ id: null, name: "", website: "", description: "", logoUrl: "" });
         setIsModalOpen(true);
     };
 
     const handleOpenEdit = (sponsor) => {
         setEditMode(true);
-        setFormData(sponsor);
+        setFormData({
+            id: sponsor.id,
+            name: sponsor.name || "",
+            website: sponsor.website || "",
+            description: sponsor.description || "",
+            logoUrl: sponsor.logoUrl || "",
+        });
         setIsModalOpen(true);
     };
 
-    const handleSave = () => {
-        if (!formData.name || !formData.contact || !formData.email || !formData.city) {
-            alert("Please fill out all required fields.");
+    const handleSave = async () => {
+        if (!formData.name) {
+            alert("Please provide a sponsor name.");
             return;
         }
 
-        if (editMode) {
-            setSponsors(sponsors.map((s) => (s.id === formData.id ? formData : s)));
-        } else {
-            const newSponsor = { ...formData, id: Date.now() };
-            setSponsors([...sponsors, newSponsor]);
-        }
+        try {
+            let saved;
+            if (editMode && formData.id) {
+                const res = await apiClient.put(`/sponsors/${formData.id}`, formData);
+                saved = res.data;
+            } else {
+                const res = await apiClient.post("/sponsors", formData);
+                saved = res.data;
+            }
 
-        setIsModalOpen(false);
+            setSponsors((prev) => {
+                const exists = prev.some((s) => s.id === saved.id);
+                return exists
+                    ? prev.map((s) => (s.id === saved.id ? saved : s))
+                    : [...prev, saved];
+            });
+
+            setIsModalOpen(false);
+        } catch (err) {
+            console.error("Error saving sponsor:", err);
+            alert("Error saving sponsor.");
+        }
     };
 
     return (
@@ -114,9 +112,8 @@ const SponsorsManagement = () => {
                             <th>#</th>
                             <th>Logo</th>
                             <th>Company</th>
-                            <th>Contact</th>
-                            <th>Email</th>
-                            <th>City</th>
+                            <th>Website</th>
+                            <th>Description</th>
                             <th>Actions</th>
                         </tr>
                         </thead>
@@ -124,28 +121,34 @@ const SponsorsManagement = () => {
                         {sponsors.map((sponsor, index) => (
                             <tr key={sponsor.id}>
                                 <td>{index + 1}</td>
-                                <td className="logo-cell">
+                                <td>
                                     {sponsor.logoUrl ? (
                                         <img
                                             src={sponsor.logoUrl}
                                             alt={sponsor.name}
-                                            className="sponsor-logo-thumb"
+                                            className="admin-sponsor-logo"
                                         />
                                     ) : (
-                                        <div className="sponsor-logo-placeholder">
-                                            No Logo
-                                        </div>
+                                        <span className="no-logo">No logo</span>
                                     )}
                                 </td>
                                 <td>{sponsor.name}</td>
-                                <td>{sponsor.contact}</td>
-                                <td>{sponsor.email}</td>
-                                <td>{sponsor.city}</td>
                                 <td>
-                                    <button
-                                        className="edit-btn"
-                                        onClick={() => handleOpenEdit(sponsor)}
-                                    >
+                                    {sponsor.website ? (
+                                        <a
+                                            href={sponsor.website}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            {sponsor.website}
+                                        </a>
+                                    ) : (
+                                        "-"
+                                    )}
+                                </td>
+                                <td>{sponsor.description}</td>
+                                <td>
+                                    <button className="edit-btn" onClick={() => handleOpenEdit(sponsor)}>
                                         Edit
                                     </button>
                                     <button
@@ -162,7 +165,6 @@ const SponsorsManagement = () => {
                 )}
             </div>
 
-            {/* 🧱 Reusable Modal */}
             <Modal
                 title={editMode ? "Edit Sponsor" : "Add Sponsor"}
                 isOpen={isModalOpen}
@@ -174,51 +176,49 @@ const SponsorsManagement = () => {
                 <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                />
-
-                <label>Contact Person</label>
-                <input
-                    type="text"
-                    value={formData.contact}
                     onChange={(e) =>
-                        setFormData({ ...formData, contact: e.target.value })
+                        setFormData({ ...formData, name: e.target.value })
                     }
                     required
                 />
 
-                <label>Email</label>
+                <label>Website</label>
                 <input
-                    type="email"
-                    value={formData.email}
+                    type="text"
+                    value={formData.website}
                     onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
+                        setFormData({ ...formData, website: e.target.value })
                     }
-                    required
                 />
 
-                <label>City</label>
-                <input
-                    type="text"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    required
+                <label>Description</label>
+                <textarea
+                    rows={3}
+                    value={formData.description}
+                    onChange={(e) =>
+                        setFormData({ ...formData, description: e.target.value })
+                    }
                 />
 
-                <label>Logo Image URL</label>
+                <label>Logo URL</label>
                 <input
                     type="text"
-                    placeholder="/images/sponsors/your-logo.png"
+                    placeholder="https://..."
                     value={formData.logoUrl}
                     onChange={(e) =>
                         setFormData({ ...formData, logoUrl: e.target.value })
                     }
                 />
-                <small className="logo-help">
-                    Tip: use images sized to the same aspect ratio (for example
-                    240×140) so they look consistent in the public sponsors grid.
-                </small>
+                {formData.logoUrl && (
+                    <div className="logo-preview">
+                        <p>Preview:</p>
+                        <img
+                            src={formData.logoUrl}
+                            alt={formData.name}
+                            className="admin-sponsor-logo"
+                        />
+                    </div>
+                )}
             </Modal>
         </Layout>
     );

@@ -9,19 +9,22 @@ const Sponsors = () => {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        setLoading(true);
-        setError("");
+        const loadSponsors = async () => {
+            try {
+                setLoading(true);
+                setError("");
 
-        apiClient
-            .get("/sponsors")
-            .then((res) => {
+                const res = await apiClient.get("/sponsors"); // GET /api/sponsors
                 setSponsors(res.data || []);
-            })
-            .catch((err) => {
+            } catch (err) {
                 console.error("Error loading sponsors:", err);
                 setError("Could not load sponsors. Please try again later.");
-            })
-            .finally(() => setLoading(false));
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadSponsors();
     }, []);
 
     return (
@@ -32,10 +35,9 @@ const Sponsors = () => {
             </p>
 
             {loading && <p className="loading">Loading sponsors...</p>}
-            {error && <p className="error-text">{error}</p>}
-
+            {error && <p className="error">{error}</p>}
             {!loading && !error && sponsors.length === 0 && (
-                <p>No sponsors have been added yet. Check back soon!</p>
+                <p>No sponsors found yet. Check back soon!</p>
             )}
 
             {!loading && !error && sponsors.length > 0 && (
