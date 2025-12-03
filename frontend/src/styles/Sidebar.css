@@ -1,3 +1,5 @@
+/* frontend/src/styles/Sidebar.css */
+
 .sidebar {
     width: 240px;
     background: #1e1e1e;
@@ -14,11 +16,6 @@
     z-index: 1000;
 }
 
-.sidebar.collapsed {
-    width: 70px;
-    padding: 20px 10px;
-}
-
 .sidebar-header {
     display: flex;
     justify-content: space-between;
@@ -32,12 +29,6 @@
     color: #ff9f1c;
     white-space: nowrap;
     overflow: hidden;
-    transition: opacity 0.2s ease;
-}
-
-.sidebar.collapsed .sidebar-logo {
-    opacity: 0;
-    pointer-events: none;
 }
 
 .toggle-btn {
@@ -90,10 +81,6 @@
     flex-shrink: 0;
 }
 
-.sidebar.collapsed .label {
-    display: none;
-}
-
 /* 📱 Mobile adjustments */
 @media (max-width: 768px) {
     .sidebar {
@@ -105,10 +92,6 @@
 
     .sidebar.open {
         transform: translateX(0);
-    }
-
-    .sidebar.collapsed {
-        transform: translateX(-100%);
     }
 
     .toggle-btn {

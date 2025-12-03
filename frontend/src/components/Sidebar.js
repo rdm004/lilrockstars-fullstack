@@ -1,3 +1,4 @@
+// frontend/src/components/Sidebar.js
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -8,8 +9,6 @@ import {
     FaCogs,
     FaBars,
     FaTimes,
-    FaChartBar,
-    FaImages,
 } from "react-icons/fa";
 import "../styles/Sidebar.css";
 
@@ -21,13 +20,11 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         { path: "/admin/racers/manage", label: "Racers", icon: <FaUserFriends /> },
         { path: "/admin/sponsors/manage", label: "Sponsors", icon: <FaHandshake /> },
         { path: "/admin/registrations/manage", label: "Registrations", icon: <FaClipboardList /> },
-        { path: "/admin/results/manage", label: "Results", icon: <FaChartBar /> },
-        { path: "/admin/gallery/manage", label: "Gallery", icon: <FaImages /> },
         { path: "/admin/settings", label: "Settings", icon: <FaCogs /> },
     ];
 
     return (
-        <div className={`sidebar ${isOpen ? "open" : "collapsed"}`}>
+        <div className={`sidebar ${isOpen ? "open" : ""}`}>
             <div className="sidebar-header">
                 <div className="sidebar-logo">🏁 Lil Rockstars</div>
                 <button className="toggle-btn" onClick={toggleSidebar}>
@@ -45,7 +42,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                     >
                         <Link to={item.path} className="sidebar-link">
                             <span className="icon">{item.icon}</span>
-                            {isOpen && <span className="label">{item.label}</span>}
+                            <span className="label">{item.label}</span>
                         </Link>
                     </li>
                 ))}
