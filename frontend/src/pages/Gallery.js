@@ -4,7 +4,7 @@ import "../styles/Gallery.css";
 import apiClient from "../utils/apiClient";
 
 const Gallery = () => {
-    const [photos, setPhotos] = useState([]);
+    const [events, setEvents] = useState([]); // [{ event, date, images: [url] }]
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -14,11 +14,48 @@ const Gallery = () => {
                 setLoading(true);
                 setError("");
 
-                const res = await apiClient.get("/photos"); // GET /api/photos
-                setPhotos(res.data || []);
+                // Hits /api/photos on the backend
+                const res = await apiClient.get("/photos");
+                const photos = res.data || [];
+
+                const eventMap = {};
+                photos.forEach((photo) => {
+                    const title = photo.title || "Untitled Event";
+                    const uploadedAt = photo.uploadedAt || null;
+
+                    if (!eventMap[title]) {
+                        eventMap[title] = {
+                            event: title,
+                            date: uploadedAt,
+                            images: [],
+                        };
+                    }
+
+                    // keep the newest uploadedAt as the event date
+                    if (
+                        uploadedAt &&
+                        (!eventMap[title].date ||
+                            new Date(uploadedAt) > new Date(eventMap[title].date))
+                    ) {
+                        eventMap[title].date = uploadedAt;
+                    }
+
+                    if (photo.imageUrl) {
+                        eventMap[title].images.push(photo.imageUrl);
+                    }
+                });
+
+                const groupedEvents = Object.values(eventMap).sort((a, b) => {
+                    if (!a.date && !b.date) return 0;
+                    if (!a.date) return 1;
+                    if (!b.date) return -1;
+                    return new Date(b.date) - new Date(a.date);
+                });
+
+                setEvents(groupedEvents);
             } catch (err) {
-                console.error("Error loading photos:", err);
-                setError("Could not load gallery photos. Please try again later.");
+                console.error("Error loading gallery photos:", err);
+                setError("Unable to load gallery right now. Please try again later.");
             } finally {
                 setLoading(false);
             }
@@ -27,16 +64,14 @@ const Gallery = () => {
         loadPhotos();
     }, []);
 
-    const formatUploadedDate = (uploadedAt) => {
-        if (!uploadedAt) return "";
-        // uploadedAt will look like "2025-11-14T20:31:00"
-        const [datePart] = uploadedAt.split("T");
-        const date = new Date(datePart);
-        return date.toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "short",
+    const formatEventDate = (dateStr) => {
+        if (!dateStr) return "";
+        const d = new Date(dateStr);
+        return d.toLocaleDateString(undefined, {
             year: "numeric",
-        }); // e.g. "14 Mar 2026"
+            month: "long",
+            day: "numeric",
+        });
     };
 
     return (
@@ -44,34 +79,30 @@ const Gallery = () => {
             <h1>📸  Race Gallery  📸</h1>
             <p>Browse photos from our past events and relive the fun!</p>
 
-            {loading && <p className="loading">Loading photos...</p>}
+            {loading && <p className="loading">Loading gallery...</p>}
             {error && <p className="error">{error}</p>}
-            {!loading && !error && photos.length === 0 && (
-                <p>No photos have been uploaded yet. Check back soon!</p>
+            {!loading && !error && events.length === 0 && (
+                <p>No photos have been uploaded yet.</p>
             )}
 
-            {!loading && !error && photos.length > 0 && (
-                <div className="photo-grid">
-                    {photos.map((photo) => (
-                        <div key={photo.id} className="gallery-card">
+            {events.map((event, idx) => (
+                <div key={idx} className="event-gallery">
+                    <h2>{event.event}</h2>
+                    {event.date && (
+                        <p className="event-date">{formatEventDate(event.date)}</p>
+                    )}
+                    <div className="photo-grid">
+                        {event.images.map((img, index) => (
                             <img
-                                src={photo.imageUrl}
-                                alt={photo.title || "Race photo"}
+                                key={index}
+                                src={img}
+                                alt={`${event.event} ${index + 1}`}
                                 className="gallery-photo"
                             />
-                            <div className="gallery-meta">
-                                {photo.title && <h3>{photo.title}</h3>}
-                                {photo.caption && <p>{photo.caption}</p>}
-                                {photo.uploadedAt && (
-                                    <p className="uploaded-date">
-                                        Uploaded: {formatUploadedDate(photo.uploadedAt)}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
-            )}
+            ))}
         </div>
     );
 };

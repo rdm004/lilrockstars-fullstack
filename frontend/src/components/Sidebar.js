@@ -8,6 +8,8 @@ import {
     FaCogs,
     FaBars,
     FaTimes,
+    FaChartBar,
+    FaImages,
 } from "react-icons/fa";
 import "../styles/Sidebar.css";
 
@@ -19,6 +21,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         { path: "/admin/racers/manage", label: "Racers", icon: <FaUserFriends /> },
         { path: "/admin/sponsors/manage", label: "Sponsors", icon: <FaHandshake /> },
         { path: "/admin/registrations/manage", label: "Registrations", icon: <FaClipboardList /> },
+        { path: "/admin/results/manage", label: "Results", icon: <FaChartBar /> },
+        { path: "/admin/gallery/manage", label: "Gallery", icon: <FaImages /> },
         { path: "/admin/settings", label: "Settings", icon: <FaCogs /> },
     ];
 

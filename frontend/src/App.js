@@ -1,10 +1,11 @@
+// App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HeroSection from "./components/HeroSection";
-import ProtectedRoute from "./components/ProtectedRoute"; // ⬅️ make sure this file exists
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Pages
 import Home from './pages/Home';
@@ -25,20 +26,25 @@ import About from './pages/About';
 import Contact from "./pages/Contact";
 import AccountRegister from './pages/AccountRegister';
 
+// NEW admin pages
+import ResultsManagement from "./pages/ResultsManagement";
+import GalleryManagement from "./pages/GalleryManagement";
+
 import './styles/main.css';
 
 function AppContent() {
     const location = useLocation();
 
-    // 🚫 Hide the hero on admin/parent auth pages
     const hideHeroRoutes = [
         "/login",
         "/register",
-        "/dashboard",                 // ⬅️ added: hide hero on parent dashboard
-        "/admin",                     // this will also match /admin/*
+        "/dashboard",
+        "/admin",
         "/admin/racers/manage",
         "/admin/sponsors/manage",
         "/admin/registrations/manage",
+        "/admin/results/manage",
+        "/admin/gallery/manage",
         "/admin/settings",
     ];
 
@@ -65,7 +71,7 @@ function AppContent() {
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
 
-                {/* Protected (token required) */}
+                {/* Protected parent */}
                 <Route
                     path="/dashboard"
                     element={
@@ -75,6 +81,7 @@ function AppContent() {
                     }
                 />
 
+                {/* Protected admin */}
                 <Route
                     path="/admin"
                     element={
@@ -104,6 +111,22 @@ function AppContent() {
                     element={
                         <ProtectedRoute>
                             <RegistrationsManagement />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/admin/results/manage"
+                    element={
+                        <ProtectedRoute>
+                            <ResultsManagement />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/admin/gallery/manage"
+                    element={
+                        <ProtectedRoute>
+                            <GalleryManagement />
                         </ProtectedRoute>
                     }
                 />
