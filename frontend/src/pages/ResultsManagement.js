@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Layout from "../components/Layout";
-import "../styles/ResultsManagement.css";
+// import "../styles/ResultsManagement.css";
 // import apiClient from "../utils/apiClient"; // 🔒 use later when wiring to backend
 
 const ResultsManagement = () => {
