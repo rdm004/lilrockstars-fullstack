@@ -2,22 +2,18 @@
 
 .layout-container {
     display: flex;
-    transition: all 0.3s ease;
+    min-height: 100vh;
+    background: #fcfaf8;
 }
 
-/* main content section */
+/* Sidebar column is fixed width via .sidebar */
 .main-content {
-    flex-grow: 1;
-    margin-left: 240px; /* fixed width sidebar */
-    transition: all 0.3s ease;
-    background: #fcfaf8;
-    min-height: 100vh;
+    flex: 1;
+    padding: 0;
     overflow-x: hidden;
 }
 
-/* on small screens, sidebar overlays the content instead of pushing it */
-@media (max-width: 768px) {
-    .main-content {
-        margin-left: 0; /* content full width, sidebar slides over it */
-    }
+/* Optional: inner padding for page content */
+.page-content {
+    padding: 1.5rem 2rem;
 }

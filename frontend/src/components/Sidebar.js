@@ -7,12 +7,10 @@ import {
     FaHandshake,
     FaClipboardList,
     FaCogs,
-    FaBars,
-    FaTimes,
 } from "react-icons/fa";
 import "../styles/Sidebar.css";
 
-const Sidebar = ({ isOpen, toggleSidebar }) => {
+const Sidebar = () => {
     const location = useLocation();
 
     const menuItems = [
@@ -24,12 +22,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     ];
 
     return (
-        <div className={`sidebar ${isOpen ? "open" : ""}`}>
+        <div className="sidebar">
             <div className="sidebar-header">
                 <div className="sidebar-logo">🏁 Lil Rockstars</div>
-                <button className="toggle-btn" onClick={toggleSidebar}>
-                    {isOpen ? <FaTimes /> : <FaBars />}
-                </button>
             </div>
 
             <ul className="sidebar-menu">
