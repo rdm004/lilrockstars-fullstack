@@ -7,24 +7,31 @@ import {
     FaHandshake,
     FaClipboardList,
     FaCogs,
+    FaBars,
+    FaTimes,
+    FaImages,          // 👈 NEW
 } from "react-icons/fa";
 import "../styles/Sidebar.css";
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, toggleSidebar }) => {
     const location = useLocation();
 
     const menuItems = [
         { path: "/admin", label: "Dashboard", icon: <FaTachometerAlt /> },
         { path: "/admin/racers/manage", label: "Racers", icon: <FaUserFriends /> },
         { path: "/admin/sponsors/manage", label: "Sponsors", icon: <FaHandshake /> },
+        { path: "/admin/photos/manage", label: "Photos", icon: <FaImages /> },       // 👈 NEW
         { path: "/admin/registrations/manage", label: "Registrations", icon: <FaClipboardList /> },
         { path: "/admin/settings", label: "Settings", icon: <FaCogs /> },
     ];
 
     return (
-        <div className="sidebar">
+        <div className={`sidebar ${isOpen ? "open" : "collapsed"}`}>
             <div className="sidebar-header">
                 <div className="sidebar-logo">🏁 Lil Rockstars</div>
+                <button className="toggle-btn" onClick={toggleSidebar}>
+                    {isOpen ? <FaTimes /> : <FaBars />}
+                </button>
             </div>
 
             <ul className="sidebar-menu">
@@ -37,7 +44,7 @@ const Sidebar = () => {
                     >
                         <Link to={item.path} className="sidebar-link">
                             <span className="icon">{item.icon}</span>
-                            <span className="label">{item.label}</span>
+                            {isOpen && <span className="label">{item.label}</span>}
                         </Link>
                     </li>
                 ))}

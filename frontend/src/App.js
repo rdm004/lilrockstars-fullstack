@@ -1,54 +1,63 @@
 // App.js
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import React from "react";
+import {
+    BrowserRouter as Router,
+    Routes,
+    Route,
+    useLocation,
+} from "react-router-dom";
 
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 import HeroSection from "./components/HeroSection";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-// Pages
-import Home from './pages/Home';
-import LoginPage from './pages/LoginPage';
-import RegisterRacers from './pages/RegisterRacers';
-import RaceList from './pages/RaceList';
-import AdminDashboard from './pages/AdminDashboard';
-import Results from './pages/Results';
-import Gallery from './pages/Gallery';
-import Sponsors from './pages/Sponsors';
-import Racers from './pages/Racers';
-import ParentDashboard from './pages/ParentDashboard';
-import RacersManagement from './pages/RacersManagement';
-import SponsorsManagement from './pages/SponsorsManagement';
-import RegistrationsManagement from './pages/RegistrationsManagement';
-import AdminSettings from './pages/AdminSettings';
-import About from './pages/About';
+// Public pages
+import Home from "./pages/Home";
+import LoginPage from "./pages/LoginPage";
+import RegisterRacers from "./pages/RegisterRacers";
+import RaceList from "./pages/RaceList";
+import Results from "./pages/Results";
+import Gallery from "./pages/Gallery";
+import Sponsors from "./pages/Sponsors";
+import Racers from "./pages/Racers";
+import About from "./pages/About";
 import Contact from "./pages/Contact";
-import AccountRegister from './pages/AccountRegister';
+import AccountRegister from "./pages/AccountRegister";
 
-// NEW admin pages
+// Parent dashboard
+import ParentDashboard from "./pages/ParentDashboard";
+
+// Admin pages
+import AdminDashboard from "./pages/AdminDashboard";
+import RacersManagement from "./pages/RacersManagement";
+import SponsorsManagement from "./pages/SponsorsManagement";
+import RegistrationsManagement from "./pages/RegistrationsManagement";
 import ResultsManagement from "./pages/ResultsManagement";
 import GalleryManagement from "./pages/GalleryManagement";
+import AdminSettings from "./pages/AdminSettings";
 
-import './styles/main.css';
+import "./styles/main.css";
 
 function AppContent() {
     const location = useLocation();
 
+    // 🚫 Hide the hero on auth/admin/parent routes
     const hideHeroRoutes = [
         "/login",
         "/register",
+        "/accountregister",
         "/dashboard",
         "/admin",
         "/admin/racers/manage",
         "/admin/sponsors/manage",
         "/admin/registrations/manage",
         "/admin/results/manage",
-        "/admin/gallery/manage",
+        "/admin/photos/manage",
         "/admin/settings",
     ];
 
-    const shouldShowHero = !hideHeroRoutes.some(route =>
+    const shouldShowHero = !hideHeroRoutes.some((route) =>
         location.pathname.startsWith(route)
     );
 
@@ -71,7 +80,7 @@ function AppContent() {
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
 
-                {/* Protected parent */}
+                {/* Protected parent route */}
                 <Route
                     path="/dashboard"
                     element={
@@ -81,7 +90,7 @@ function AppContent() {
                     }
                 />
 
-                {/* Protected admin */}
+                {/* Protected admin routes */}
                 <Route
                     path="/admin"
                     element={
@@ -90,6 +99,7 @@ function AppContent() {
                         </ProtectedRoute>
                     }
                 />
+
                 <Route
                     path="/admin/racers/manage"
                     element={
@@ -98,6 +108,7 @@ function AppContent() {
                         </ProtectedRoute>
                     }
                 />
+
                 <Route
                     path="/admin/sponsors/manage"
                     element={
@@ -106,6 +117,7 @@ function AppContent() {
                         </ProtectedRoute>
                     }
                 />
+
                 <Route
                     path="/admin/registrations/manage"
                     element={
@@ -114,6 +126,7 @@ function AppContent() {
                         </ProtectedRoute>
                     }
                 />
+
                 <Route
                     path="/admin/results/manage"
                     element={
@@ -122,14 +135,16 @@ function AppContent() {
                         </ProtectedRoute>
                     }
                 />
+
                 <Route
-                    path="/admin/gallery/manage"
+                    path="/admin/photos/manage"
                     element={
                         <ProtectedRoute>
                             <GalleryManagement />
                         </ProtectedRoute>
                     }
                 />
+
                 <Route
                     path="/admin/settings"
                     element={
@@ -139,7 +154,7 @@ function AppContent() {
                     }
                 />
 
-                {/* Fallback */}
+                {/* Fallback: anything unknown goes to login */}
                 <Route path="*" element={<LoginPage />} />
             </Routes>
 
