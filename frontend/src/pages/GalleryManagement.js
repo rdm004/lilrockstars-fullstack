@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import Modal from "../components/Modal";
 import apiClient from "../utils/apiClient";
-import "../styles/GalleryManagement.css";
+// import "../styles/GalleryManagement.css";
 
 const emptyForm = {
     id: null,
