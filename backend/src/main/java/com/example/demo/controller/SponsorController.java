@@ -19,21 +19,18 @@ public class SponsorController {
         this.sponsorRepository = sponsorRepository;
     }
 
+    // 🔹 Full sponsors list (Sponsors page)
     @GetMapping
     public List<Sponsor> getAllSponsors() {
-        return sponsorRepository.findAll();
-    }
-
-    // ⭐ NEW — sorted sponsors for Sponsors page
-    @GetMapping("/sorted")
-    public List<Sponsor> getSortedSponsors() {
+        // nice, predictable order for the main Sponsors page
         return sponsorRepository.findAllByOrderByNameAsc();
     }
 
-    // ⭐ NEW — top 4 sponsors for Home page
+    // 🔹 Home page preview – return ALL sponsors (frontend can style/scroll)
     @GetMapping("/featured")
     public List<Sponsor> getFeaturedSponsors() {
-        return sponsorRepository.findTop4ByOrderByNameAsc();
+        // no limit here – show them all; we can change later if needed
+        return sponsorRepository.findAllByOrderByNameAsc();
     }
 
     @PostMapping
