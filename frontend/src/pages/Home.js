@@ -69,8 +69,10 @@ const Home = () => {
                 const res = await apiClient.get("/results");
                 const results = res.data || [];
 
-                const pointsByPlacement = { 1: 5, 2: 3, 3: 1 };
+                const pointsByPlacement = { 1: 13, 2: 10, 3: 8 };
                 const divisionMap = {};
+                const pts = pointsByPlacement[r.placement] ?? 1;
+                divisionMap[r.division][r.racerName].points += pts;
 
                 results.forEach((r) => {
                     if (!r.division || !r.racerName) return;

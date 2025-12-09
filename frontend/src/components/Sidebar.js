@@ -1,4 +1,3 @@
-// frontend/src/components/Sidebar.js
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -7,16 +6,18 @@ import {
     FaHandshake,
     FaClipboardList,
     FaCogs,
-    FaImages,          // 👈 Photos icon
+    FaImages,
+    FaChartBar,      // 👈 NEW icon for Results
 } from "react-icons/fa";
 import "../styles/Sidebar.css";
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen = true }) => {
     const location = useLocation();
 
     const menuItems = [
         { path: "/admin", label: "Dashboard", icon: <FaTachometerAlt /> },
         { path: "/admin/racers/manage", label: "Racers", icon: <FaUserFriends /> },
+        { path: "/admin/results/manage", label: "Results", icon: <FaChartBar /> },      // 👈 NEW
         { path: "/admin/sponsors/manage", label: "Sponsors", icon: <FaHandshake /> },
         { path: "/admin/photos/manage", label: "Photos", icon: <FaImages /> },
         { path: "/admin/registrations/manage", label: "Registrations", icon: <FaClipboardList /> },
@@ -39,7 +40,7 @@ const Sidebar = () => {
                     >
                         <Link to={item.path} className="sidebar-link">
                             <span className="icon">{item.icon}</span>
-                            <span className="label">{item.label}</span>
+                            {isOpen && <span className="label">{item.label}</span>}
                         </Link>
                     </li>
                 ))}
