@@ -21,12 +21,12 @@ const Home = () => {
     const [loadingPhotos, setLoadingPhotos] = useState(true);
     const [photosError, setPhotosError] = useState("");
 
-    // 🤝 Featured sponsors (home preview)
+    // 🤝 Featured sponsors
     const [featuredSponsors, setFeaturedSponsors] = useState([]);
     const [loadingSponsors, setLoadingSponsors] = useState(true);
     const [sponsorsError, setSponsorsError] = useState("");
 
-    // 🔄 Load races
+    // 🔄 Load upcoming races
     useEffect(() => {
         const loadRaces = async () => {
             try {
@@ -34,7 +34,6 @@ const Home = () => {
                 setRaceError("");
 
                 const res = await apiClient.get("/races");
-
                 const mapped = (res.data || []).map((race) => ({
                     id: race.id,
                     name: race.raceName,
@@ -50,17 +49,17 @@ const Home = () => {
 
                 setUpcomingRaces(sorted);
             } catch (err) {
-                console.error("Error loading upcoming races:", err);
+                console.error("Error loading races:", err);
                 setRaceError("Could not load upcoming races. Please try again later.");
             } finally {
                 setLoadingRaces(false);
             }
         };
 
-        loadRaces();
+        void loadRaces();   // 👈 Fix IntelliJ warning
     }, []);
 
-    // 🔄 Load standings (from /api/results)
+    // 🔄 Load standings
     useEffect(() => {
         const loadStandings = async () => {
             try {
@@ -76,29 +75,24 @@ const Home = () => {
                 results.forEach((r) => {
                     if (!r.division || !r.racerName) return;
 
-                    if (!divisionMap[r.division]) {
-                        divisionMap[r.division] = {};
-                    }
+                    if (!divisionMap[r.division]) divisionMap[r.division] = {};
 
                     if (!divisionMap[r.division][r.racerName]) {
-                        divisionMap[r.division][r.racerName] = {
-                            name: r.racerName,
-                            points: 0,
-                        };
+                        divisionMap[r.division][r.racerName] = { name: r.racerName, points: 0 };
                     }
 
-                    const pts = pointsByPlacement[r.placement] || 0;
-                    divisionMap[r.division][r.racerName].points += pts;
+                    divisionMap[r.division][r.racerName].points +=
+                        pointsByPlacement[r.placement] || 0;
                 });
 
                 const standingsArr = Object.keys(divisionMap).map((division) => {
                     const racersArr = Object.values(divisionMap[division])
                         .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name))
                         .slice(0, 3)
-                        .map((racer, idx) => ({
+                        .map((r, idx) => ({
                             position: idx + 1,
-                            name: racer.name,
-                            points: racer.points,
+                            name: r.name,
+                            points: r.points,
                         }));
 
                     return { division, leaders: racersArr };
@@ -114,18 +108,29 @@ const Home = () => {
             }
         };
 
-        loadStandings();
+        void loadStandings(); // 👈 Fix IntelliJ warning
     }, []);
 
-    // 🔄 Load latest photos for home preview
+    // 🔄 Load latest photos for home page
     useEffect(() => {
         const loadHomePhotos = async () => {
             try {
                 setLoadingPhotos(true);
                 setPhotosError("");
 
-                const res = await apiClient.get("/photos/latest"); // GET /api/photos/latest
-                setHomePhotos(res.data || []);
+                const res = await apiClient.get("/photos");
+                const photos = res.data || [];
+
+                const latest = photos
+                    .filter((p) => p.imageUrl)
+                    .sort((a, b) => {
+                        const da = a.uploadedAt ? new Date(a.uploadedAt) : 0;
+                        const db = b.uploadedAt ? new Date(b.uploadedAt) : 0;
+                        return db - da;
+                    })
+                    .slice(0, 8);
+
+                setHomePhotos(latest);
             } catch (err) {
                 console.error("Error loading home photos:", err);
                 setPhotosError("Could not load photo highlights.");
@@ -134,45 +139,41 @@ const Home = () => {
             }
         };
 
-        loadHomePhotos();
+        void loadHomePhotos(); // 👈 Fix IntelliJ warning
     }, []);
 
-    // 🔄 Load featured sponsors for home preview
+    // 🔄 Load featured sponsors
     useEffect(() => {
         const loadFeaturedSponsors = async () => {
             try {
                 setLoadingSponsors(true);
                 setSponsorsError("");
 
-                const res = await apiClient.get("/sponsors/featured"); // GET /api/sponsors/featured
+                const res = await apiClient.get("/sponsors/featured");
                 setFeaturedSponsors(res.data || []);
             } catch (err) {
-                console.error("Error loading featured sponsors:", err);
+                console.error("Error loading sponsors:", err);
                 setSponsorsError("Could not load sponsors.");
             } finally {
                 setLoadingSponsors(false);
             }
         };
 
-        loadFeaturedSponsors();
+        void loadFeaturedSponsors(); // 👈 Fix IntelliJ warning
     }, []);
 
     return (
         <div className="home-container">
-            {/* Optional small intro under the navbar, not a full hero */}
             <section className="home-intro">
                 <h1>Welcome to Lil Rockstars Racing</h1>
             </section>
 
-            {/* === UPCOMING RACES PREVIEW === */}
+            {/* === UPCOMING RACES === */}
             <section className="home-section">
-                <h2>🏁 Upcoming Races  🏁</h2>
+                <h2>🏁 Upcoming Races 🏁</h2>
 
-                {loadingRaces && <p>Loading upcoming races...</p>}
-                {raceError && <p>{raceError}</p>}
-                {!loadingRaces && !raceError && upcomingRaces.length === 0 && (
-                    <p>No upcoming races found. Check back soon!</p>
-                )}
+                {loadingRaces && <p>Loading...</p>}
+                {!loadingRaces && upcomingRaces.length === 0 && <p>No races found.</p>}
 
                 <div className="race-preview-grid">
                     {upcomingRaces.map((race) => (
@@ -184,79 +185,35 @@ const Home = () => {
                         </div>
                     ))}
                 </div>
-                <Link to="/races" className="view-all-link">
-                    View All Races →
-                </Link>
+
+                <Link to="/races" className="view-all-link">View All Races →</Link>
             </section>
 
-            {/* === CHAMPIONSHIP STANDINGS === */}
+            {/* === STANDINGS === */}
             <section className="home-section standings-preview">
-                <h2>🏆 Championship Leaders  🏆</h2>
-
-                {loadingStandings && <p>Loading championship leaders...</p>}
-                {standingsError && <p>{standingsError}</p>}
-                {!loadingStandings && !standingsError && standings.length === 0 && (
-                    <p>No standings available yet. Check back later!</p>
-                )}
+                <h2>🏆 Championship Leaders 🏆</h2>
 
                 <div className="standings-grid">
                     {standings.map((s, idx) => (
                         <div key={idx} className="standing-card">
-                            <h4 className="division-title">
-                                {s.division === "3 Year Old Division" && (
-                                    <span className="icon">⭐️</span>
-                                )}
-                                {s.division === "4 Year Old Division" && (
-                                    <span className="icon">🏁</span>
-                                )}
-                                {s.division === "5 Year Old Division" && (
-                                    <span className="icon">🏎️</span>
-                                )}
-                                {s.division === "Snack Pack Division" && (
-                                    <span className="icon">🧢</span>
-                                )}
-
-                                {s.division}
-
-                                {s.division === "3 Year Old Division" && (
-                                    <span className="icon">⭐️</span>
-                                )}
-                                {s.division === "4 Year Old Division" && (
-                                    <span className="icon">🏁</span>
-                                )}
-                                {s.division === "5 Year Old Division" && (
-                                    <span className="icon">🏎️</span>
-                                )}
-                                {s.division === "Snack Pack Division" && (
-                                    <span className="icon">🧢</span>
-                                )}
-                            </h4>
-
+                            <h4 className="division-title">{s.division}</h4>
                             <ol className="leader-list">
                                 {s.leaders.map((leader) => (
                                     <li key={leader.position}>
-                                        #{leader.position} {leader.name}
-                                        {leader.points > 0 && ` — ${leader.points} pts`}
+                                        #{leader.position} {leader.name} — {leader.points} pts
                                     </li>
                                 ))}
                             </ol>
                         </div>
                     ))}
                 </div>
-                <Link to="/results" className="view-all-link">
-                    View Full Standings →
-                </Link>
+
+                <Link to="/results" className="view-all-link">View Full Standings →</Link>
             </section>
 
-            {/* === PHOTO GALLERY PREVIEW === */}
+            {/* === PHOTO PREVIEW === */}
             <section className="home-section gallery-preview">
-                <h2>📸 Race Day Highlights  📸</h2>
-
-                {loadingPhotos && <p>Loading highlights...</p>}
-                {photosError && <p>{photosError}</p>}
-                {!loadingPhotos && !photosError && homePhotos.length === 0 && (
-                    <p>No photos yet. Check back soon!</p>
-                )}
+                <h2>📸 Race Day Highlights 📸</h2>
 
                 <div className="photo-carousel">
                     {homePhotos.map((photo) => (
@@ -268,20 +225,12 @@ const Home = () => {
                     ))}
                 </div>
 
-                <Link to="/gallery" className="view-all-link">
-                    See Full Gallery →
-                </Link>
+                <Link to="/gallery" className="view-all-link">See Full Gallery →</Link>
             </section>
 
-            {/* === SPONSORS PREVIEW === */}
+            {/* === SPONSORS === */}
             <section className="home-section sponsors-preview">
-                <h2>🤝 Thank You to Our Sponsors  🤝</h2>
-
-                {loadingSponsors && <p>Loading sponsors...</p>}
-                {sponsorsError && <p>{sponsorsError}</p>}
-                {!loadingSponsors && !sponsorsError && featuredSponsors.length === 0 && (
-                    <p>No sponsors yet. Interested in sponsoring? Contact us!</p>
-                )}
+                <h2>🤝 Thank You to Our Sponsors 🤝</h2>
 
                 <div className="sponsor-strip">
                     {featuredSponsors.map((s) => (
@@ -293,9 +242,8 @@ const Home = () => {
                         />
                     ))}
                 </div>
-                <Link to="/sponsors" className="view-all-link">
-                    Meet All Sponsors →
-                </Link>
+
+                <Link to="/sponsors" className="view-all-link">Meet All Sponsors →</Link>
             </section>
         </div>
     );
