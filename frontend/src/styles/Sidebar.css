@@ -69,7 +69,13 @@
     flex-shrink: 0;
 }
 
-/* Simple mobile tweak: stack sidebar on top if you want */
+/* text label next to icon */
+.label {
+    color: #ffffff;
+    font-size: 0.95rem;
+}
+
+/* Simple mobile tweak */
 @media (max-width: 768px) {
     .sidebar {
         width: 100%;
