@@ -113,7 +113,7 @@ const Home = () => {
         void loadStandings(); // 👈 Fix IntelliJ warning
     }, []);
 
-    // 🔄 Load latest photos for home page
+    // 🔄 Load latest photos for home preview
     useEffect(() => {
         const loadHomePhotos = async () => {
             try {
@@ -123,12 +123,13 @@ const Home = () => {
                 const res = await apiClient.get("/photos");
                 const photos = res.data || [];
 
+                // Take the newest 8 photos by uploadedAt
                 const latest = photos
                     .filter((p) => p.imageUrl)
                     .sort((a, b) => {
                         const da = a.uploadedAt ? new Date(a.uploadedAt) : 0;
                         const db = b.uploadedAt ? new Date(b.uploadedAt) : 0;
-                        return db - da;
+                        return db - da; // newest first
                     })
                     .slice(0, 8);
 
@@ -141,7 +142,7 @@ const Home = () => {
             }
         };
 
-        void loadHomePhotos(); // 👈 Fix IntelliJ warning
+        loadHomePhotos();
     }, []);
 
     // 🔄 Load featured sponsors
