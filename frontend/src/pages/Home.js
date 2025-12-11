@@ -69,32 +69,39 @@ const Home = () => {
                 const res = await apiClient.get("/results");
                 const results = res.data || [];
 
+                // ✅ Your scoring: 13 / 10 / 8, everyone else = 1
                 const pointsByPlacement = { 1: 13, 2: 10, 3: 8 };
                 const divisionMap = {};
-                const pts = pointsByPlacement[r.placement] ?? 1;
-                divisionMap[r.division][r.racerName].points += pts;
 
                 results.forEach((r) => {
                     if (!r.division || !r.racerName) return;
 
-                    if (!divisionMap[r.division]) divisionMap[r.division] = {};
-
-                    if (!divisionMap[r.division][r.racerName]) {
-                        divisionMap[r.division][r.racerName] = { name: r.racerName, points: 0 };
+                    // make sure division bucket exists
+                    if (!divisionMap[r.division]) {
+                        divisionMap[r.division] = {};
                     }
 
-                    divisionMap[r.division][r.racerName].points +=
-                        pointsByPlacement[r.placement] || 0;
+                    // make sure racer entry exists
+                    if (!divisionMap[r.division][r.racerName]) {
+                        divisionMap[r.division][r.racerName] = {
+                            name: r.racerName,
+                            points: 0,
+                        };
+                    }
+
+                    // ✅ compute points *inside* the loop using r
+                    const pts = pointsByPlacement[r.placement] ?? 1;
+                    divisionMap[r.division][r.racerName].points += pts;
                 });
 
                 const standingsArr = Object.keys(divisionMap).map((division) => {
                     const racersArr = Object.values(divisionMap[division])
                         .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name))
                         .slice(0, 3)
-                        .map((r, idx) => ({
+                        .map((racer, idx) => ({
                             position: idx + 1,
-                            name: r.name,
-                            points: r.points,
+                            name: racer.name,
+                            points: racer.points,
                         }));
 
                     return { division, leaders: racersArr };
@@ -110,9 +117,8 @@ const Home = () => {
             }
         };
 
-        void loadStandings(); // 👈 Fix IntelliJ warning
+        void loadStandings();
     }, []);
-
     // 🔄 Load latest photos for home preview
     useEffect(() => {
         const loadHomePhotos = async () => {
