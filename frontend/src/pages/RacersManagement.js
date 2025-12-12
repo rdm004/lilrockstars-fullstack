@@ -1,79 +1,113 @@
 import React, { useEffect, useState } from "react";
 import Layout from "../components/Layout";
-import Modal from "../components/Modal"; // ✅ reusable modal
+import Modal from "../components/Modal";
+import apiClient from "../utils/apiClient";
 import "../styles/RacersManagement.css";
+
+const getDivisionFromAge = (ageRaw) => {
+    const age = Number(ageRaw);
+
+    if (age === 2 || age === 3) return "3 Year Old Division";
+    if (age === 4) return "4 Year Old Division";
+    if (age === 5) return "5 Year Old Division";
+    if (age === 6 || age === 7) return "Snack Pack Division";
+    return "N/A";
+};
 
 const RacersManagement = () => {
     const [racers, setRacers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editMode, setEditMode] = useState(false);
-    const [formData, setFormData] = useState({
+
+    const emptyForm = {
         id: null,
-        name: "",
+        firstName: "",
+        lastName: "",
         age: "",
-        division: "",
-        city: "",
-    });
+        carNumber: "",
+    };
+
+    const [formData, setFormData] = useState(emptyForm);
+
+    const fetchRacers = async () => {
+        try {
+            setLoading(true);
+            setError("");
+            const res = await apiClient.get("/racers"); // GET /api/racers
+            setRacers(res.data || []);
+        } catch (err) {
+            console.error("Error loading racers:", err);
+            setError("Could not load racers. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        // TODO: Replace with backend API call later
-        const mockRacers = [
-            { id: 1, name: "Liam Johnson", age: 3, division: "3 Year Old Division", city: "Rockford" },
-            { id: 2, name: "Ava Martinez", age: 4, division: "4 Year Old Division", city: "Peoria" },
-            { id: 3, name: "Noah Williams", age: 5, division: "5 Year Old Division", city: "Springfield" },
-            { id: 4, name: "Olivia Brown", age: 6, division: "Snack Pack Division", city: "Champaign" },
-            { id: 5, name: "Ethan Davis", age: 7, division: "Snack Pack Division", city: "Bloomington" },
-        ];
-
-        setTimeout(() => {
-            setRacers(mockRacers);
-            setLoading(false);
-        }, 600);
+        void fetchRacers();
     }, []);
 
-    const handleDelete = (id) => {
-        if (window.confirm("Are you sure you want to delete this racer?")) {
-            setRacers(racers.filter((r) => r.id !== id));
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this racer?")) return;
+
+        try {
+            await apiClient.delete(`/racers/${id}`);
+            // refresh list
+            void fetchRacers();
+        } catch (err) {
+            console.error("Error deleting racer:", err);
+            alert("❌ Failed to delete racer.");
         }
     };
 
     const handleOpenAdd = () => {
         setEditMode(false);
-        setFormData({ id: null, name: "", age: "", division: "", city: "" });
+        setFormData(emptyForm);
         setIsModalOpen(true);
     };
 
     const handleOpenEdit = (racer) => {
         setEditMode(true);
-        setFormData(racer);
+        setFormData({
+            id: racer.id,
+            firstName: racer.firstName || "",
+            lastName: racer.lastName || "",
+            age: racer.age ?? "",
+            carNumber: racer.carNumber || "",
+        });
         setIsModalOpen(true);
     };
 
-    const handleSave = () => {
-        const age = parseInt(formData.age);
-        let division = "";
+    const handleSave = async () => {
+        const payload = {
+            firstName: formData.firstName?.trim(),
+            lastName: formData.lastName?.trim(),
+            age: Number(formData.age),
+            carNumber: String(formData.carNumber).trim(),
+        };
 
-        if (age === 3) division = "3 Year Old Division";
-        else if (age === 4) division = "4 Year Old Division";
-        else if (age === 5) division = "5 Year Old Division";
-        else if (age >= 6 && age <= 7) division = "Snack Pack Division";
-        else division = "N/A";
-
-        const updatedRacer = { ...formData, age, division };
-
-        if (editMode) {
-            setRacers(
-                racers.map((r) => (r.id === formData.id ? updatedRacer : r))
-            );
-        } else {
-            setRacers([
-                ...racers,
-                { ...updatedRacer, id: Date.now() },
-            ]);
+        if (!payload.firstName || !payload.lastName || !payload.carNumber || !payload.age) {
+            alert("Please fill out First Name, Last Name, Age, and Car Number.");
+            return;
         }
 
-        setIsModalOpen(false);
+        try {
+            if (editMode && formData.id) {
+                await apiClient.put(`/racers/${formData.id}`, payload);
+            } else {
+                await apiClient.post("/racers", payload);
+            }
+
+            setIsModalOpen(false);
+            setFormData(emptyForm);
+            void fetchRacers();
+        } catch (err) {
+            console.error("Error saving racer:", err);
+            alert("❌ Failed to save racer.");
+        }
     };
 
     return (
@@ -88,6 +122,8 @@ const RacersManagement = () => {
 
                 {loading ? (
                     <p className="loading">Loading racers...</p>
+                ) : error ? (
+                    <p className="error">{error}</p>
                 ) : racers.length === 0 ? (
                     <p>No racers found.</p>
                 ) : (
@@ -98,7 +134,7 @@ const RacersManagement = () => {
                             <th>Name</th>
                             <th>Age</th>
                             <th>Division</th>
-                            <th>City</th>
+                            <th>Car #</th>
                             <th>Actions</th>
                         </tr>
                         </thead>
@@ -106,10 +142,12 @@ const RacersManagement = () => {
                         {racers.map((racer, index) => (
                             <tr key={racer.id}>
                                 <td>{index + 1}</td>
-                                <td>{racer.name}</td>
+                                <td>
+                                    {racer.firstName} {racer.lastName}
+                                </td>
                                 <td>{racer.age}</td>
-                                <td>{racer.division}</td>
-                                <td>{racer.city}</td>
+                                <td>{getDivisionFromAge(racer.age)}</td>
+                                <td>{racer.carNumber}</td>
                                 <td>
                                     <button
                                         className="edit-btn"
@@ -131,7 +169,6 @@ const RacersManagement = () => {
                 )}
             </div>
 
-            {/* ✅ Reusable Modal */}
             <Modal
                 title={editMode ? "Edit Racer" : "Add Racer"}
                 isOpen={isModalOpen}
@@ -139,31 +176,52 @@ const RacersManagement = () => {
                 onSubmit={handleSave}
                 submitLabel={editMode ? "Update Racer" : "Add Racer"}
             >
-                <label>Name</label>
+                <label>First Name</label>
                 <input
                     type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    value={formData.firstName}
+                    onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, firstName: e.target.value }))
+                    }
+                    required
+                />
+
+                <label>Last Name</label>
+                <input
+                    type="text"
+                    value={formData.lastName}
+                    onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, lastName: e.target.value }))
+                    }
                     required
                 />
 
                 <label>Age</label>
                 <input
                     type="number"
-                    min="3"
+                    min="2"
                     max="7"
                     value={formData.age}
-                    onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                    onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, age: e.target.value }))
+                    }
                     required
                 />
 
-                <label>City</label>
+                <label>Car Number</label>
                 <input
                     type="text"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    value={formData.carNumber}
+                    onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, carNumber: e.target.value }))
+                    }
                     required
                 />
+
+                <p style={{ marginTop: "10px", fontSize: "0.9rem", color: "#666" }}>
+                    Division will be calculated automatically:{" "}
+                    <strong>{getDivisionFromAge(formData.age || 0)}</strong>
+                </p>
             </Modal>
         </Layout>
     );

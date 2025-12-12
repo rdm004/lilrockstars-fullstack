@@ -13,6 +13,7 @@ public class Racer {
     private String firstName;
     private String lastName;
     private int age;
+    private String division;
     private String carNumber;
 
     @ManyToOne
@@ -31,6 +32,9 @@ public class Racer {
 
     public int getAge() { return age; }
     public void setAge(int age) { this.age = age; }
+
+    public String getDivision() {return division; }
+    public void setDivision(String division) {this.division = division; }
 
     public String getCarNumber() { return carNumber; }
     public void setCarNumber(String carNumber) { this.carNumber = carNumber; }
