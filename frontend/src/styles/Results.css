@@ -1,23 +1,22 @@
+/* frontend/src/styles/Results.css */
+
 .results-container {
     position: relative;
     text-align: center;
-    background-image: url("../staticimages/rockstarslogowhite.png"); /* replace with your image */
+    background-image: url("../staticimages/rockstarslogowhite.png");
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
     overflow: hidden;
     min-height: 100vh;
-    padding: 2rem;
+    padding: 2rem 1.25rem;
 }
 
 .results-container::before {
     content: "";
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(255, 255, 255, 0.95); /* light transparent overlay */
+    inset: 0;
+    background-color: rgba(255, 255, 255, 0.95);
     z-index: 0;
 }
 
@@ -27,214 +26,201 @@
 }
 
 .results-container h1 {
+    margin: 0 0 0.5rem;
     color: #222;
-    margin-bottom: 0.5rem;
+    line-height: 1.2;
 }
 
 .results-container p {
     color: #555;
-    margin-bottom: 1.5rem;
+    margin: 0 0 1.5rem;
 }
 
+/* Keep content from stretching too wide */
+.results-container .standings-section,
+.results-container .race-results-section,
+.results-container .filter-section {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* ===== Loading + error ===== */
+.loading {
+    color: #555;
+    margin-top: 1rem;
+}
+
+.error {
+    color: #e74c3c;
+    margin-top: 1rem;
+}
+
+/* ===== Filter ===== */
 .filter-section {
-    margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1.25rem auto 2rem;
+    flex-wrap: wrap;
+}
+
+.filter-section label {
+    font-weight: 600;
+    color: #333;
 }
 
 .filter-section select {
-    padding: 0.4rem 0.8rem;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    margin-left: 0.5rem;
-}
-
-.race-results {
-    background-color: white;
-    border: 1px solid #f47c2a;
+    padding: 0.5rem 0.9rem;
     border-radius: 8px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #ddd;
+    background: #fff;
+    min-width: 240px;
+}
+
+/* ===== Sections ===== */
+.standings-section,
+.race-results-section {
     text-align: left;
+    background: #fff;
+    border: 2px solid #f47c2a;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
 }
 
-.race-results h2 {
+.standings-section h2,
+.race-results-section h2 {
+    text-align: center;
     color: #f47c2a;
-    margin-bottom: 0.3rem;
+    margin: 0 0 1rem;
+    font-size: 1.45rem;
 }
 
-.race-date {
-    color: #666;
-    font-size: 0.9rem;
+/* ===== Standings layout (4 cards in grid) ===== */
+.standings-section {
+    display: block;
+}
+
+.division-block {
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 0.9rem;
+    background: #fffaf5;
     margin-bottom: 1rem;
 }
 
-/* 🔶 Division layout */
-.division-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1.5rem;
-}
-
-.division-column {
-    border: 1px solid #f47c2a;
-    border-radius: 6px;
-    padding: 1rem;
-    background-color: #fffaf5;
-}
-
-.division-column h3 {
+.division-block h3 {
     text-align: center;
+    margin: 0 0 0.75rem;
+    font-size: 1.05rem;
     color: #d96a21;
-    margin-bottom: 0.6rem;
-    font-size: 1rem;
 }
 
-.division-column ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+/* Make standings cards grid on wider screens */
+@media (min-width: 900px) {
+    .standings-section {
+        padding: 1.5rem;
+    }
+
+    .standings-section .division-block {
+        margin-bottom: 0;
+    }
+
+    /* Wrap the division blocks into a grid */
+    .standings-section {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(320px, 1fr));
+        gap: 1rem;
+        align-items: start;
+    }
+
+    /* Keep h2 spanning full width */
+    .standings-section > h2 {
+        grid-column: 1 / -1;
+    }
 }
 
-.division-column li {
-    padding: 0.3rem 0;
-    border-bottom: 1px solid #eee;
+/* ===== Tables (shared) ===== */
+.standings-table,
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.standings-table thead th,
+.results-table thead th {
+    text-align: left;
+    background: #f47c2a;
+    color: #fff;
+    font-weight: 700;
+    padding: 0.65rem 0.75rem;
     font-size: 0.95rem;
 }
 
-.division-column li:last-child {
+.standings-table tbody td,
+.results-table tbody td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid #eee;
+    color: #222;
+    font-size: 0.95rem;
+}
+
+.standings-table tbody tr:last-child td,
+.results-table tbody tr:last-child td {
     border-bottom: none;
 }
 
-.time {
-    color: #777;
-    font-size: 0.85rem;
-    margin-left: 4px;
+/* Tighten the # column a bit */
+.standings-table tbody td:first-child,
+.standings-table thead th:first-child {
+    width: 48px;
 }
 
-.no-results {
-    color: #999;
-    font-style: italic;
-    text-align: center;
+/* ===== Race blocks ===== */
+.race-block {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px dashed #eee;
 }
 
-/* === Division Colors === */
-.division-column[data-division="3 Year Old Division"] {
-    border-color: #FFD700;
-    background-color: #fffbea;
+.race-block:first-of-type {
+    border-top: none;
+    padding-top: 0;
 }
 
-.division-column[data-division="4 Year Old Division"] {
-    border-color: #f47c2a;
-    background-color: #fff5ef;
+.race-block h3 {
+    margin: 0 0 0.35rem;
+    color: #222;
 }
 
-.division-column[data-division="5 Year Old Division"] {
-    border-color: #e74c3c;
-    background-color: #fff1f0;
+.race-date {
+    margin: 0 0 0.75rem;
+    color: #666;
+    font-size: 0.95rem;
 }
 
-.division-column[data-division="Snack Pack Division"] {
-    border-color: #2196f3;
-    background-color: #f0f7ff;
-}
+/* ===== Division colors (optional but cleaner) ===== */
+.division-block:nth-of-type(1) { border-color: #ffd700; background: #fffbea; }
+.division-block:nth-of-type(2) { border-color: #f47c2a; background: #fff5ef; }
+.division-block:nth-of-type(3) { border-color: #e74c3c; background: #fff1f0; }
+.division-block:nth-of-type(4) { border-color: #2196f3; background: #f0f7ff; }
 
-/* Optional: Add subtle color to headers */
-.division-column[data-division="3 Year Old Division"] h3 {
-    color: #b58900; /* richer gold for contrast */
-}
+/* ===== Mobile tweaks ===== */
+@media (max-width: 520px) {
+    .results-container {
+        padding: 1.5rem 0.9rem;
+    }
 
-.division-column[data-division="4 Year Old Division"] h3 {
-    color: #f47c2a;
-}
-
-.division-column[data-division="5 Year Old Division"] h3 {
-    color: #e74c3c;
-}
-
-.division-column[data-division="Snack Pack Division"] h3 {
-    color: #2196f3;
-}
-.division-title {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    font-weight: bold;
-}
-
-.icon {
-    font-size: 1.1rem;
-}
-
-/* === Division Title Styling === */
-/* === Division Title Styling === */
-.division-title {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    font-weight: bold;
-}
-
-.icon {
-    font-size: 1.3rem;
-}
-
-/* 🎨 Match icon colors to divisions */
-[data-division="3 Year Old Division"] .icon {
-    color: #ffcc00; /* yellow */
-}
-
-[data-division="4 Year Old Division"] .icon {
-    color: #ff7b00; /* orange */
-}
-
-[data-division="5 Year Old Division"] .icon {
-    color: #e53935; /* red */
-}
-
-[data-division="Snack Pack Division"] .icon {
-    color: #1e88e5; /* blue */
-}
-
-.division-title {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    font-weight: bold;
-}
-
-.division-title .icon {
-    font-size: 1.2rem;
-    margin: 0 0.2rem;
-}
-
-/* 🎨 Optional fun animation on hover */
-.division-title:hover .icon {
-    transform: scale(1.1);
-    transition: transform 0.2s ease-in-out;
-}
-
-/* === 🏆 Championship Standings Section === */
-.championship-standings {
-    margin-bottom: 3rem;
-    border: 2px solid #1877f2;   /* 🟧 match race results border */
-    border-radius: 8px;
-    background-color: #fffaf5;   /* soft orange tint like race cards */
-    padding: 1.5rem;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-}
-
-.championship-standings h2 {
-    text-align: center;
-    color: #f47c2a;
-    font-size: 1.6rem;
-    margin-bottom: 0.3rem;
-}
-
-.championship-standings p {
-    text-align: center;
-    color: #555;
-    margin-bottom: 1.5rem;
+    .standings-table thead th,
+    .results-table thead th,
+    .standings-table tbody td,
+    .results-table tbody td {
+        font-size: 0.9rem;
+        padding: 0.55rem 0.6rem;
+    }
 }
