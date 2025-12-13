@@ -21,7 +21,7 @@ const Results = () => {
                 setLoading(true);
                 setError("");
 
-                const res = await apiClient.get("/results"); // GET /api/results
+                const res = await apiClient.get("/results");
                 const flat = res.data || [];
 
                 // Group by raceName
@@ -47,10 +47,12 @@ const Results = () => {
                 // Sort results by placement inside each race
                 const racesArr = Object.values(grouped).map((raceObj) => ({
                     ...raceObj,
-                    results: (raceObj.results || []).slice().sort((a, b) => a.placement - b.placement),
+                    results: (raceObj.results || [])
+                        .slice()
+                        .sort((a, b) => a.placement - b.placement),
                 }));
 
-                // Sort races by date desc (newest first), fallback by name
+                // Sort races by date desc (newest first)
                 racesArr.sort((a, b) => {
                     const da = a.date ? new Date(a.date) : 0;
                     const db = b.date ? new Date(b.date) : 0;
@@ -81,16 +83,19 @@ const Results = () => {
     const formatRaceDate = (dateStr) => {
         if (!dateStr) return "";
         const d = new Date(dateStr);
-        return d.toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
+        return d.toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+        });
     };
 
-    // 🏆 Championship Points Calculation (you already had this — kept, using current results state)
-    const calculatePoints = () => {
+    const standings = useMemo(() => {
         const pointsTable = { 1: 13, 2: 10, 3: 8 };
         const totals = {};
 
         results.forEach((race) => {
-            race.results.forEach((r) => {
+            (race.results || []).forEach((r) => {
                 const pts = pointsTable[r.placement] ?? 1;
                 const key = `${r.division}-${r.name}`;
 
@@ -114,10 +119,10 @@ const Results = () => {
             });
         });
 
-        const standings = {};
+        const out = {};
         DIVISIONS.forEach((div) => {
             const racers = Object.values(totals).filter((r) => r.division === div);
-            standings[div] = racers.sort((a, b) => {
+            out[div] = racers.sort((a, b) => {
                 if (b.points !== a.points) return b.points - a.points;
                 if (b.wins !== a.wins) return b.wins - a.wins;
                 if (b.seconds !== a.seconds) return b.seconds - a.seconds;
@@ -126,10 +131,8 @@ const Results = () => {
             });
         });
 
-        return standings;
-    };
-
-    const standings = useMemo(() => calculatePoints(), [results]);
+        return out;
+    }, [results]);
 
     return (
         <div className="results-container">
@@ -153,17 +156,17 @@ const Results = () => {
             {loading && <p className="loading">Loading results...</p>}
             {error && <p className="error">{error}</p>}
 
-            {/* 🏆 Championship Standings */}
+            {/* ✅ CHAMPIONSHIP STANDINGS (2 columns) */}
             {!loading && !error && (
                 <section className="championship-standings">
                     <h2>🏆 Championship Standings</h2>
 
-                    <div className="division-grid">
+                    <div className="standings-grid">
                         {DIVISIONS.map((div) => (
-                            <div key={div} className="division-column" data-division={div}>
-                                <h3 className="division-title">{div}</h3>
+                            <div key={div} className="division-block">
+                                <h3>{div}</h3>
 
-                                {(!standings[div] || standings[div].length === 0) ? (
+                                {!standings[div] || standings[div].length === 0 ? (
                                     <p className="no-results">No standings yet.</p>
                                 ) : (
                                     <table className="standings-table">
@@ -193,7 +196,7 @@ const Results = () => {
                 </section>
             )}
 
-            {/* 🏁 Race Results — NOW MATCHES STANDINGS STYLE */}
+            {/* ✅ RACE RESULTS (2 columns per race) */}
             {!loading && !error && (
                 <section className="race-results-section">
                     <h2>🏁 Race Results</h2>
@@ -202,32 +205,29 @@ const Results = () => {
                         <p className="no-results">No results yet.</p>
                     ) : (
                         filteredResults.map((race) => {
-                            // Build per-division arrays for this race
                             const byDivision = {};
                             DIVISIONS.forEach((d) => (byDivision[d] = []));
 
                             (race.results || []).forEach((r) => {
-                                const div = r.division || "Unknown";
-                                if (!byDivision[div]) byDivision[div] = [];
-                                byDivision[div].push(r);
+                                if (!byDivision[r.division]) byDivision[r.division] = [];
+                                byDivision[r.division].push(r);
                             });
 
-                            // sort each division by placement asc
                             Object.keys(byDivision).forEach((d) => {
                                 byDivision[d].sort((a, b) => a.placement - b.placement);
                             });
 
                             return (
-                                <div key={race.race} className="race-results">
+                                <div key={race.race} className="race-block">
                                     <h3>{race.race}</h3>
                                     {race.date && <p className="race-date">{formatRaceDate(race.date)}</p>}
 
-                                    <div className="division-grid">
+                                    <div className="race-division-grid">
                                         {DIVISIONS.map((div) => (
-                                            <div key={`${race.race}-${div}`} className="division-column" data-division={div}>
-                                                <h3 className="division-title">{div}</h3>
+                                            <div key={`${race.race}-${div}`} className="race-division-block">
+                                                <h4 style={{ textAlign: "center", margin: "0 0 0.75rem" }}>{div}</h4>
 
-                                                {(!byDivision[div] || byDivision[div].length === 0) ? (
+                                                {!byDivision[div] || byDivision[div].length === 0 ? (
                                                     <p className="no-results">No results in this division.</p>
                                                 ) : (
                                                     <table className="results-table-clean">
