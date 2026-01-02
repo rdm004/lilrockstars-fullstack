@@ -4,13 +4,7 @@ import "../styles/About.css";
 const About = () => {
     return (
         <div className="about-container">
-            {/* === HERO BANNER === */}
-            {/*<div className="about-hero">*/}
-            {/*    <div className="about-hero-overlay">*/}
-            {/*        <h1>About Lil Rockstars Racing</h1>*/}
-            {/*        <p>Building Champions One Lap at a Time 🏆</p>*/}
-            {/*    </div>*/}
-            {/*</div>*/}
+
 
             {/* === INTRO === */}
             <section className="about-section">

@@ -159,7 +159,7 @@ const Results = () => {
             {/* ✅ CHAMPIONSHIP STANDINGS (2 columns) */}
             {!loading && !error && (
                 <section className="championship-standings">
-                    <h2>🏆 Championship Standings</h2>
+                    <h2>🏆 Championship Standings 🏆</h2>
 
                     <div className="standings-grid">
                         {DIVISIONS.map((div) => (
@@ -199,7 +199,7 @@ const Results = () => {
             {/* ✅ RACE RESULTS (2 columns per race) */}
             {!loading && !error && (
                 <section className="race-results-section">
-                    <h2>🏁 Race Results</h2>
+                    <h2>🏁 Race Results 🏁</h2>
 
                     {filteredResults.length === 0 ? (
                         <p className="no-results">No results yet.</p>
@@ -261,3 +261,5 @@ const Results = () => {
 };
 
 export default Results;
+
+
