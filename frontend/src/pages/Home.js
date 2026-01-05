@@ -15,6 +15,12 @@ const Home = () => {
     const [standings, setStandings] = useState([]);
     const [loadingStandings, setLoadingStandings] = useState(true);
     const [standingsError, setStandingsError] = useState("");
+    const getMedal = (position) => {
+        if (position === 1) return "🥇";
+        if (position === 2) return "🥈";
+        if (position === 3) return "🥉";
+        return "";
+    };
 
     // 📸 Latest photos (home preview)
     const [homePhotos, setHomePhotos] = useState([]);
@@ -209,6 +215,7 @@ const Home = () => {
                             <ol className="leader-list">
                                 {s.leaders.map((leader) => (
                                     <li key={leader.position}>
+                                        <span style={{ marginRight: "6px" }}>{getMedal(leader.position)}</span>
                                         #{leader.position} {leader.name} — {leader.points} pts
                                     </li>
                                 ))}
