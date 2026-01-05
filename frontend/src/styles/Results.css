@@ -34,6 +34,13 @@ p {
     font-size: 1.45rem;
 }
 
+/* Allow full-width standings on large screens */
+@media (min-width: 1200px) {
+    .championship-standings {
+        max-width: 1400px; /* or 1500px if you want more air */
+    }
+}
+
 /* ===== Championship Standings Grid ===== */
 .standings-grid {
     display: grid;
