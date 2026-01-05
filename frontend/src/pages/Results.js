@@ -137,7 +137,7 @@ const Results = () => {
     return (
         <div className="results-container">
             <h1>
-                🏁 Championship Standings 🏁 <br /> & <br /> 🏎️ Race Results 🏎️
+                🏆 Championship Standings 🏆 <br /> & <br /> 🏁 Race Results 🏁
             </h1>
             <p>Track results by race and see who’s leading the championship!</p>
 

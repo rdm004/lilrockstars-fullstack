@@ -70,6 +70,7 @@
     margin: 1.25rem auto 2rem;
     flex-wrap: wrap;
     text-align: center;
+    padding: 2rem;
 }
 
 .filter-section label {
