@@ -199,12 +199,17 @@
     text-align: center;
 }
 
-.race-date {
+
+.race-results-section .race-date {
+    display: block;       /* override display:flex from RaceList.css */
+    width: 100%;
+    text-align: center;
     margin: 0 0 1rem;
     color: #000;
     font-size: 0.95rem;
     font-weight: 700;
 }
+
 .race-block {
     text-align: center;
 }
