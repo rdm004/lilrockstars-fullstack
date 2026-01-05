@@ -171,6 +171,8 @@
     font-size: 1.45rem;
 }
 
+
+
 /* Widen race results container on large screens so 4 columns fit */
 @media (min-width: 1200px) {
     .results-container .race-results-section {
@@ -202,6 +204,8 @@
     color: #000;
     font-size: 0.95rem;
     font-weight: 700;
+}
+.race-block {
     text-align: center;
 }
 
