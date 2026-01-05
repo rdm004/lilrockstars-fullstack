@@ -15,10 +15,10 @@ const Home = () => {
     const [standings, setStandings] = useState([]);
     const [loadingStandings, setLoadingStandings] = useState(true);
     const [standingsError, setStandingsError] = useState("");
-    const getMedal = (position) => {
-        if (position === 1) return "🥇";
-        if (position === 2) return "🥈";
-        if (position === 3) return "🥉";
+    const getMedal = (place) => {
+        if (place === 1) return "🥇";
+        if (place === 2) return "🥈";
+        if (place === 3) return "🥉";
         return "";
     };
 
