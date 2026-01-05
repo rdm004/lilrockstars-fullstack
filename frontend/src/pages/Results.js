@@ -9,6 +9,20 @@ const DIVISIONS = [
     "Snack Pack Division",
 ];
 
+const getMedal = (place) => {
+    if (place === 1) return "🥇";
+    if (place === 2) return "🥈";
+    if (place === 3) return "🥉";
+    return "";
+};
+
+const renderPlaceCell = (place) => (
+    <span className="place-cell">
+    <span className="medal">{getMedal(place)}</span>
+    <span className="place-number">{place}</span>
+  </span>
+);
+
 const Results = () => {
     const [results, setResults] = useState([]); // [{ race, date, results: [{name, division, placement}] }]
     const [selectedRace, setSelectedRace] = useState("All");
@@ -172,7 +186,7 @@ const Results = () => {
                                     <table className="standings-table">
                                         <thead>
                                         <tr>
-                                            <th>#</th>
+                                            <th>Place</th>
                                             <th>Racer</th>
                                             <th>Points</th>
                                             <th>Races</th>
@@ -181,7 +195,7 @@ const Results = () => {
                                         <tbody>
                                         {standings[div].slice(0, 10).map((r, idx) => (
                                             <tr key={`${div}-${r.name}`}>
-                                                <td>{idx + 1}</td>
+                                                <td>{renderPlaceCell (idx + 1)}</td>
                                                 <td>{r.name}</td>
                                                 <td>{r.points}</td>
                                                 <td>{r.races}</td>
@@ -240,7 +254,7 @@ const Results = () => {
                                                         <tbody>
                                                         {byDivision[div].map((row) => (
                                                             <tr key={`${race.race}-${div}-${row.placement}-${row.name}`}>
-                                                                <td>{row.placement}</td>
+                                                                <td>{renderPlaceCell(row.placement)}</td>
                                                                 <td>{row.name}</td>
                                                             </tr>
                                                         ))}

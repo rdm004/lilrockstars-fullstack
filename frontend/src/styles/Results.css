@@ -293,6 +293,24 @@
     margin: 0.5rem 0 0;
 }
 
+/* Medal + placement styling */
+.place-cell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+}
+
+.medal {
+    font-size: 1.05rem;
+    line-height: 1;
+}
+
+.place-number {
+    font-weight: 700;
+}
+
 /* ===== Division colors (optional) ===== */
 .division-column[data-division="3 Year Old Division"],
 .division-block[data-division="3 Year Old Division"] {
