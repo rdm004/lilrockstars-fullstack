@@ -198,13 +198,11 @@
 }
 
 .race-date {
-    display: flex !important;
-    justify-content: center;
-    width: 100%;
     margin: 0 0 1rem;
     color: #000;
     font-size: 0.95rem;
     font-weight: 700;
+    text-align: center;
 }
 
 /* ===== Race Results division grid: 1 -> 2 -> 4 ===== */
