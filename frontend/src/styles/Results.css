@@ -34,16 +34,24 @@ p {
     font-size: 1.45rem;
 }
 
-/* ✅ This is the key: force a consistent 2x2 grid */
+/* ===== Championship Standings Grid ===== */
 .standings-grid {
     display: grid;
     gap: 1rem;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* mobile */
 }
 
-@media (min-width: 900px) {
+/* Tablet: 2 columns */
+@media (min-width: 700px) {
     .standings-grid {
-        grid-template-columns: repeat(2, minmax(320px, 1fr));
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Desktop: 4 columns in one row */
+@media (min-width: 1200px) {
+    .standings-grid {
+        grid-template-columns: repeat(4, 1fr);
         align-items: start;
     }
 }
@@ -104,8 +112,10 @@ p {
 
 .race-date {
     margin: 0 0 1rem;
-    color: #666;
+    color: #000;
     font-size: 0.95rem;
+    font-weight: bold;
+    text-align: center;
 }
 
 /* ✅ Two-column layout INSIDE each race */
