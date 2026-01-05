@@ -258,7 +258,7 @@
 
 .standings-table thead th,
 .results-table-clean thead th {
-    text-align: left;
+    text-align: center;
     background: #f47c2a;
     color: #fff;
     font-weight: 700;
