@@ -4,6 +4,7 @@ import "../styles/Home.css";
 import { Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import { formatRaceDate } from "../utils/dateUtils";
+import sponsorsData from "../data/SponsorsData";
 
 const Home = () => {
     // 🏁 Upcoming races
@@ -27,10 +28,7 @@ const Home = () => {
     const [loadingPhotos, setLoadingPhotos] = useState(true);
     const [photosError, setPhotosError] = useState("");
 
-    // 🤝 Featured sponsors
-    const [featuredSponsors, setFeaturedSponsors] = useState([]);
-    const [loadingSponsors, setLoadingSponsors] = useState(true);
-    const [sponsorsError, setSponsorsError] = useState("");
+
 
     // 🔄 Load upcoming races
     useEffect(() => {
@@ -157,25 +155,6 @@ const Home = () => {
         loadHomePhotos();
     }, []);
 
-    // 🔄 Load featured sponsors
-    useEffect(() => {
-        const loadFeaturedSponsors = async () => {
-            try {
-                setLoadingSponsors(true);
-                setSponsorsError("");
-
-                const res = await apiClient.get("/sponsors/featured");
-                setFeaturedSponsors(res.data || []);
-            } catch (err) {
-                console.error("Error loading sponsors:", err);
-                setSponsorsError("Could not load sponsors.");
-            } finally {
-                setLoadingSponsors(false);
-            }
-        };
-
-        void loadFeaturedSponsors(); // 👈 Fix IntelliJ warning
-    }, []);
 
     return (
         <div className="home-container">
@@ -248,18 +227,24 @@ const Home = () => {
             <section className="home-section sponsors-preview">
                 <h2>🤝 Thank You to Our Sponsors 🤝</h2>
 
-                <div className="sponsor-strip">
-                    {featuredSponsors.map((s) => (
-                        <img
-                            key={s.id}
-                            src={s.logoUrl}
-                            alt={s.name}
-                            className="sponsor-logo"
-                        />
-                    ))}
-                </div>
+                {sponsorsData.length === 0 ? (
+                    <p>No sponsors yet. Interested in sponsoring? Contact us!</p>
+                ) : (
+                    <div className="sponsor-strip">
+                        {sponsorsData.map((s) => (
+                            <img
+                                key={s.id}
+                                src={s.logoUrl}
+                                alt={s.name}
+                                className="sponsor-logo"
+                            />
+                        ))}
+                    </div>
+                )}
 
-                <Link to="/sponsors" className="view-all-link">Meet All Sponsors →</Link>
+                <Link to="/sponsors" className="view-all-link">
+                    Meet All Sponsors →
+                </Link>
             </section>
         </div>
     );
