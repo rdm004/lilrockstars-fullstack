@@ -4,7 +4,8 @@ import "../styles/Home.css";
 import { Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import { formatRaceDate } from "../utils/dateUtils";
-import sponsorsData from "../data/sponsorsData"; //
+import sponsorsData from "../data/SponsorsData";
+import SponsorsData from "../data/SponsorsData";
 
 const Home = () => {
     // 🏁 Upcoming races
@@ -242,11 +243,11 @@ const Home = () => {
             <section className="home-section sponsors-preview">
                 <h2>🤝 Thank You to Our Sponsors 🤝</h2>
 
-                {sponsorsData.length === 0 ? (
+                {SponsorsData.length === 0 ? (
                     <p>No sponsors yet. Interested in sponsoring? Contact us!</p>
                 ) : (
                     <div className="sponsor-strip">
-                        {sponsorsData.map((s) => (
+                        {SponsorsData.map((s) => (
                             <img
                                 key={s.id}
                                 src={s.logoUrl}

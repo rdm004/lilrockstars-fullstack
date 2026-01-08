@@ -1,6 +1,6 @@
-// frontend/src/data/sponsorsData.js
+// frontend/src/data/SponsorsData.js
 
-const sponsorsData = [
+const SponsorsData = [
     {
         id: 1,
         name: "Speedy Tires",
@@ -31,4 +31,4 @@ const sponsorsData = [
     },
 ];
 
-export default sponsorsData;
+export default SponsorsData;
