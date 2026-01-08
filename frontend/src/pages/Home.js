@@ -4,7 +4,7 @@ import "../styles/Home.css";
 import { Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import { formatRaceDate } from "../utils/dateUtils";
-import sponsorsData from "../data/SponsorsData";
+import sponsorsData from "../data/sponsorsData"; //
 
 const Home = () => {
     // 🏁 Upcoming races
@@ -16,6 +16,7 @@ const Home = () => {
     const [standings, setStandings] = useState([]);
     const [loadingStandings, setLoadingStandings] = useState(true);
     const [standingsError, setStandingsError] = useState("");
+
     const getMedal = (place) => {
         if (place === 1) return "🥇";
         if (place === 2) return "🥈";
@@ -27,8 +28,6 @@ const Home = () => {
     const [homePhotos, setHomePhotos] = useState([]);
     const [loadingPhotos, setLoadingPhotos] = useState(true);
     const [photosError, setPhotosError] = useState("");
-
-
 
     // 🔄 Load upcoming races
     useEffect(() => {
@@ -60,7 +59,7 @@ const Home = () => {
             }
         };
 
-        void loadRaces();   // 👈 Fix IntelliJ warning
+        void loadRaces();
     }, []);
 
     // 🔄 Load standings
@@ -80,12 +79,10 @@ const Home = () => {
                 results.forEach((r) => {
                     if (!r.division || !r.racerName) return;
 
-                    // make sure division bucket exists
                     if (!divisionMap[r.division]) {
                         divisionMap[r.division] = {};
                     }
 
-                    // make sure racer entry exists
                     if (!divisionMap[r.division][r.racerName]) {
                         divisionMap[r.division][r.racerName] = {
                             name: r.racerName,
@@ -93,7 +90,6 @@ const Home = () => {
                         };
                     }
 
-                    // ✅ compute points *inside* the loop using r
                     const pts = pointsByPlacement[r.placement] ?? 1;
                     divisionMap[r.division][r.racerName].points += pts;
                 });
@@ -123,6 +119,7 @@ const Home = () => {
 
         void loadStandings();
     }, []);
+
     // 🔄 Load latest photos for home preview
     useEffect(() => {
         const loadHomePhotos = async () => {
@@ -133,13 +130,12 @@ const Home = () => {
                 const res = await apiClient.get("/photos");
                 const photos = res.data || [];
 
-                // Take the newest 8 photos by uploadedAt
                 const latest = photos
                     .filter((p) => p.imageUrl)
                     .sort((a, b) => {
                         const da = a.uploadedAt ? new Date(a.uploadedAt) : 0;
                         const db = b.uploadedAt ? new Date(b.uploadedAt) : 0;
-                        return db - da; // newest first
+                        return db - da;
                     })
                     .slice(0, 8);
 
@@ -152,9 +148,8 @@ const Home = () => {
             }
         };
 
-        loadHomePhotos();
+        void loadHomePhotos();
     }, []);
-
 
     return (
         <div className="home-container">
@@ -167,7 +162,10 @@ const Home = () => {
                 <h2>🏁 Upcoming Races 🏁</h2>
 
                 {loadingRaces && <p>Loading...</p>}
-                {!loadingRaces && upcomingRaces.length === 0 && <p>No races found.</p>}
+                {raceError && <p>{raceError}</p>}
+                {!loadingRaces && !raceError && upcomingRaces.length === 0 && (
+                    <p>No races found.</p>
+                )}
 
                 <div className="race-preview-grid">
                     {upcomingRaces.map((race) => (
@@ -180,12 +178,20 @@ const Home = () => {
                     ))}
                 </div>
 
-                <Link to="/races" className="view-all-link">View All Races →</Link>
+                <Link to="/races" className="view-all-link">
+                    View All Races →
+                </Link>
             </section>
 
             {/* === STANDINGS === */}
             <section className="home-section standings-preview">
                 <h2>🏆 Championship Leaders 🏆</h2>
+
+                {loadingStandings && <p>Loading...</p>}
+                {standingsError && <p>{standingsError}</p>}
+                {!loadingStandings && !standingsError && standings.length === 0 && (
+                    <p>No standings yet.</p>
+                )}
 
                 <div className="standings-grid">
                     {standings.map((s, idx) => (
@@ -194,7 +200,9 @@ const Home = () => {
                             <ol className="leader-list">
                                 {s.leaders.map((leader) => (
                                     <li key={leader.position}>
-                                        <span style={{ marginRight: "6px" }}>{getMedal(leader.position)}</span>
+                                        <span style={{ marginRight: "6px" }}>
+                                            {getMedal(leader.position)}
+                                        </span>
                                         #{leader.position} {leader.name} — {leader.points} pts
                                     </li>
                                 ))}
@@ -203,12 +211,17 @@ const Home = () => {
                     ))}
                 </div>
 
-                <Link to="/results" className="view-all-link">View Full Standings →</Link>
+                <Link to="/results" className="view-all-link">
+                    View Full Standings →
+                </Link>
             </section>
 
             {/* === PHOTO PREVIEW === */}
             <section className="home-section gallery-preview">
                 <h2>📸 Race Day Highlights 📸</h2>
+
+                {loadingPhotos && <p>Loading...</p>}
+                {photosError && <p>{photosError}</p>}
 
                 <div className="photo-carousel">
                     {homePhotos.map((photo) => (
@@ -220,7 +233,9 @@ const Home = () => {
                     ))}
                 </div>
 
-                <Link to="/gallery" className="view-all-link">See Full Gallery →</Link>
+                <Link to="/gallery" className="view-all-link">
+                    See Full Gallery →
+                </Link>
             </section>
 
             {/* === SPONSORS === */}

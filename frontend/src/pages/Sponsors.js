@@ -1,7 +1,7 @@
 // frontend/src/pages/Sponsors.js
 import React from "react";
 import "../styles/Sponsors.css";
-import sponsorsData from "../data/sponsorsData";
+import sponsorsData from "../data/SponsorsData";
 
 const Sponsors = () => {
     const sponsors = sponsorsData;
