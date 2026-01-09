@@ -16,6 +16,7 @@ const galleryPhotos = [
     { id: "lrr13", imageUrl: "/gallery/lrr13.jpg", title: "Lil Rockstars Racing" },
     { id: "lrr14", imageUrl: "/gallery/lrr14.jpg", title: "Lil Rockstars Racing" },
     { id: "lrr15", imageUrl: "/gallery/lrr15.jpg", title: "Lil Rockstars Racing" },
+    { id: "lrr16", imageUrl: "/gallery/lrr16.jpg", title: "Lil Rockstars Racing" },
 ];
 
 export default galleryPhotos;
