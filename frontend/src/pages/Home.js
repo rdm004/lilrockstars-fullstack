@@ -4,7 +4,8 @@ import "../styles/Home.css";
 import { Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import { formatRaceDate } from "../utils/dateUtils";
-import SponsorsData from "../data/SponsorsData";
+import sponsorsData from "../data/SponsorsData";      // ✅ use ONE import name
+import galleryPhotos from "../data/GalleryData";      // ✅ use GalleryData for static images
 
 const Home = () => {
     // 🏁 Upcoming races
@@ -24,16 +25,9 @@ const Home = () => {
         return "";
     };
 
-    // ✅ Static home photo preview (pulled from /public/gallery)
-    const homePhotos = useMemo(
-        () =>
-            Array.from({ length: 8 }, (_, i) => ({
-                id: i + 1,
-                src: `/gallery/lrr${i + 1}.jpg`,
-                alt: `Lil Rockstars Racing photo ${i + 1}`,
-            })),
-        []
-    );
+    // ✅ Static home photo preview: ONLY 5 photos
+    // GalleryData should look like: [{ id, imageUrl, title }, ...]
+    const homePhotos = useMemo(() => (galleryPhotos || []).slice(0, 5), []);
 
     // 🔄 Load upcoming races
     useEffect(() => {
@@ -180,13 +174,18 @@ const Home = () => {
                 </Link>
             </section>
 
-            {/* === PHOTO PREVIEW (STATIC) === */}
+            {/* === PHOTO PREVIEW (STATIC - 5 ONLY) === */}
             <section className="home-section gallery-preview">
-                <h2>📸 Race Day Highlights 📸</h2>
+                <h2>📸 LRR Highlights 📸</h2>
 
                 <div className="photo-carousel">
                     {homePhotos.map((photo) => (
-                        <img key={photo.id} src={photo.src} alt={photo.alt} />
+                        <img
+                            key={photo.id}
+                            src={photo.imageUrl}                 // ✅ comes from GalleryData.js
+                            alt={photo.title || "LRR photo"}
+                            loading="lazy"
+                        />
                     ))}
                 </div>
 
@@ -195,16 +194,16 @@ const Home = () => {
                 </Link>
             </section>
 
-            {/* === SPONSORS === */}
+            {/* === SPONSORS (STATIC) === */}
             <section className="home-section sponsors-preview">
                 <h2>🤝 Thank You to Our Sponsors 🤝</h2>
 
-                {SponsorsData.length === 0 ? (
+                {(!sponsorsData || sponsorsData.length === 0) ? (
                     <p>No sponsors yet. Interested in sponsoring? Contact us!</p>
                 ) : (
                     <div className="sponsor-strip">
-                        {SponsorsData.map((s) => (
-                            <img key={s.id} src={s.logoUrl} alt={s.name} className="sponsor-logo" />
+                        {sponsorsData.map((s) => (
+                            <img key={s.id} src={s.logoUrl} alt={s.name} className="sponsor-logo" loading="lazy" />
                         ))}
                     </div>
                 )}
