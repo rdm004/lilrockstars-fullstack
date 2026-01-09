@@ -1,10 +1,9 @@
 // frontend/src/pages/Home.js
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "../styles/Home.css";
 import { Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import { formatRaceDate } from "../utils/dateUtils";
-import sponsorsData from "../data/SponsorsData";
 import SponsorsData from "../data/SponsorsData";
 
 const Home = () => {
@@ -25,10 +24,16 @@ const Home = () => {
         return "";
     };
 
-    // 📸 Latest photos (home preview)
-    const [homePhotos, setHomePhotos] = useState([]);
-    const [loadingPhotos, setLoadingPhotos] = useState(true);
-    const [photosError, setPhotosError] = useState("");
+    // ✅ Static home photo preview (pulled from /public/gallery)
+    const homePhotos = useMemo(
+        () =>
+            Array.from({ length: 8 }, (_, i) => ({
+                id: i + 1,
+                src: `/gallery/lrr${i + 1}.jpg`,
+                alt: `Lil Rockstars Racing photo ${i + 1}`,
+            })),
+        []
+    );
 
     // 🔄 Load upcoming races
     useEffect(() => {
@@ -80,15 +85,10 @@ const Home = () => {
                 results.forEach((r) => {
                     if (!r.division || !r.racerName) return;
 
-                    if (!divisionMap[r.division]) {
-                        divisionMap[r.division] = {};
-                    }
+                    if (!divisionMap[r.division]) divisionMap[r.division] = {};
 
                     if (!divisionMap[r.division][r.racerName]) {
-                        divisionMap[r.division][r.racerName] = {
-                            name: r.racerName,
-                            points: 0,
-                        };
+                        divisionMap[r.division][r.racerName] = { name: r.racerName, points: 0 };
                     }
 
                     const pts = pointsByPlacement[r.placement] ?? 1;
@@ -121,37 +121,6 @@ const Home = () => {
         void loadStandings();
     }, []);
 
-    // 🔄 Load latest photos for home preview
-    useEffect(() => {
-        const loadHomePhotos = async () => {
-            try {
-                setLoadingPhotos(true);
-                setPhotosError("");
-
-                const res = await apiClient.get("/photos");
-                const photos = res.data || [];
-
-                const latest = photos
-                    .filter((p) => p.imageUrl)
-                    .sort((a, b) => {
-                        const da = a.uploadedAt ? new Date(a.uploadedAt) : 0;
-                        const db = b.uploadedAt ? new Date(b.uploadedAt) : 0;
-                        return db - da;
-                    })
-                    .slice(0, 8);
-
-                setHomePhotos(latest);
-            } catch (err) {
-                console.error("Error loading home photos:", err);
-                setPhotosError("Could not load photo highlights.");
-            } finally {
-                setLoadingPhotos(false);
-            }
-        };
-
-        void loadHomePhotos();
-    }, []);
-
     return (
         <div className="home-container">
             <section className="home-intro">
@@ -164,9 +133,7 @@ const Home = () => {
 
                 {loadingRaces && <p>Loading...</p>}
                 {raceError && <p>{raceError}</p>}
-                {!loadingRaces && !raceError && upcomingRaces.length === 0 && (
-                    <p>No races found.</p>
-                )}
+                {!loadingRaces && !raceError && upcomingRaces.length === 0 && <p>No races found.</p>}
 
                 <div className="race-preview-grid">
                     {upcomingRaces.map((race) => (
@@ -190,9 +157,7 @@ const Home = () => {
 
                 {loadingStandings && <p>Loading...</p>}
                 {standingsError && <p>{standingsError}</p>}
-                {!loadingStandings && !standingsError && standings.length === 0 && (
-                    <p>No standings yet.</p>
-                )}
+                {!loadingStandings && !standingsError && standings.length === 0 && <p>No standings yet.</p>}
 
                 <div className="standings-grid">
                     {standings.map((s, idx) => (
@@ -201,9 +166,7 @@ const Home = () => {
                             <ol className="leader-list">
                                 {s.leaders.map((leader) => (
                                     <li key={leader.position}>
-                                        <span style={{ marginRight: "6px" }}>
-                                            {getMedal(leader.position)}
-                                        </span>
+                                        <span style={{ marginRight: "6px" }}>{getMedal(leader.position)}</span>
                                         #{leader.position} {leader.name} — {leader.points} pts
                                     </li>
                                 ))}
@@ -217,20 +180,13 @@ const Home = () => {
                 </Link>
             </section>
 
-            {/* === PHOTO PREVIEW === */}
+            {/* === PHOTO PREVIEW (STATIC) === */}
             <section className="home-section gallery-preview">
                 <h2>📸 Race Day Highlights 📸</h2>
 
-                {loadingPhotos && <p>Loading...</p>}
-                {photosError && <p>{photosError}</p>}
-
                 <div className="photo-carousel">
                     {homePhotos.map((photo) => (
-                        <img
-                            key={photo.id}
-                            src={photo.imageUrl}
-                            alt={photo.title || "Race photo"}
-                        />
+                        <img key={photo.id} src={photo.src} alt={photo.alt} />
                     ))}
                 </div>
 
@@ -248,12 +204,7 @@ const Home = () => {
                 ) : (
                     <div className="sponsor-strip">
                         {SponsorsData.map((s) => (
-                            <img
-                                key={s.id}
-                                src={s.logoUrl}
-                                alt={s.name}
-                                className="sponsor-logo"
-                            />
+                            <img key={s.id} src={s.logoUrl} alt={s.name} className="sponsor-logo" />
                         ))}
                     </div>
                 )}
