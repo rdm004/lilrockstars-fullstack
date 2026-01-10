@@ -199,15 +199,17 @@ const Home = () => {
                 {!sponsorsData || sponsorsData.length === 0 ? (
                     <p>No sponsors yet. Interested in sponsoring? Contact us!</p>
                 ) : (
-                    <div className="sponsor-strip">
+                    <div className="sponsor-grid">
                         {sponsorsData.map((s) => (
                             <div key={s.id} className="sponsor-item">
-                                <img
-                                    src={s.logoUrl}
-                                    alt={s.name}
-                                    className="sponsor-logo"
-                                    loading="lazy"
-                                />
+                                <div className="sponsor-logo-box">
+                                    <img
+                                        src={s.logoUrl}
+                                        alt={s.name}
+                                        className="sponsor-logo"
+                                        loading="lazy"
+                                    />
+                                </div>
                                 <div className="sponsor-name">{s.name}</div>
                             </div>
                         ))}
