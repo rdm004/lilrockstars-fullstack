@@ -201,13 +201,15 @@ const Home = () => {
                 ) : (
                     <div className="sponsor-strip">
                         {sponsorsData.map((s) => (
-                            <img
-                                key={s.id}
-                                src={s.logoUrl}
-                                alt={s.name}
-                                className="sponsor-logo"
-                                loading="lazy"
-                            />
+                            <div key={s.id} className="sponsor-item">
+                                <img
+                                    src={s.logoUrl}
+                                    alt={s.name}
+                                    className="sponsor-logo"
+                                    loading="lazy"
+                                />
+                                <div className="sponsor-name">{s.name}</div>
+                            </div>
                         ))}
                     </div>
                 )}
