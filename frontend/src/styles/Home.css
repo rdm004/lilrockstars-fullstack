@@ -61,26 +61,39 @@
 .race-preview-grid {
     display: flex;
     justify-content: center;
-    gap: 1rem;
+    gap: 0.75rem;
     flex-wrap: wrap;
 }
 
 .race-card {
     background: #fff;
     border: 2px solid #f47c2a;
-    border-radius: 8px;
-    padding: 1rem;
-    width: 230px;
+    border-radius: 10px;
+
+    width: 210px;          /* ⬅ slightly narrower */
+    padding: 0.85rem;     /* ⬅ MUCH less padding */
+
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;         /* ⬅ controls vertical spacing */
 }
 
 .race-card h3 {
-    margin: 0 0 0.3rem;
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.race-card p {
+    margin: 0;
+    font-size: 0.9rem;
 }
 
 .race-card .desc {
-    color: #555;
-    font-size: 0.9rem;
+    margin-top: 0.35rem;
+    font-size: 0.85rem;
+    color: #666;
 }
 
 /* =========================================================
