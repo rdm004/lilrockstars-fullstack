@@ -32,12 +32,12 @@
 
 .gallery-container p {
     color: #555;
-    margin-bottom: 2rem;
 }
 
 .gallery-fb p{
     font-size: 0.9rem;
     font-weight: bolder;
+    margin-bottom: 0.7rem;
 }
 
 .event-gallery {

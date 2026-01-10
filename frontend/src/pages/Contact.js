@@ -47,7 +47,7 @@ const Contact = () => {
                 </div>
 
                 {/* === RIGHT CARD === */}
-                <div className="contact-card social-card">
+                <div className="contact-card-social-card">
                     <h2>Stay Connected</h2>
                     <p>
                         For the latest updates, photos, and event information, follow us on Facebook!

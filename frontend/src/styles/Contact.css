@@ -52,6 +52,12 @@
     text-align: left;
 }
 
+.contact-card-social-card {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
 .contact-card h2 {
     color: #000000;
     margin-bottom: 0.8rem;
