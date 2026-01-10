@@ -12,7 +12,7 @@ const Gallery = () => {
             <p>Photos from Lil Rockstars Racing events</p>
 
             <div className="event-gallery">
-                <h2>Lil Rockstars Racing</h2>
+                <h2>Lil Rockstars</h2>
 
                 <div className="photo-grid">
                     {GalleryData.map((photo) => (
