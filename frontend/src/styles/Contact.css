@@ -84,6 +84,9 @@
     margin: 1rem 0;
 }
 
+.contact-card a {
+    align-content: center;
+}
 
 
 @media (max-width: 768px) {

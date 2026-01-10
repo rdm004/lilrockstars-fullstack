@@ -11,7 +11,6 @@ const Gallery = () => {
     return (
         <div className="gallery-container">
             <h1>📸 Race Gallery 📸</h1>
-            <p>Photos from Lil Rockstars Racing events</p>
 
             <div className="gallery-fb">
                 <p>
