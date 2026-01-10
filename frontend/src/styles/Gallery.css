@@ -123,6 +123,93 @@
     animation: zoomIn 0.25s ease-out;
 }
 
+/* Make sure the enlarged image has a class */
+.lightbox-image {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    animation: zoomIn 0.25s ease-out;
+}
+
+/* Arrow buttons */
+.lightbox-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 2rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.9);
+    color: #222;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease, background 0.15s ease;
+    z-index: 10000;
+}
+
+.lightbox-btn:hover {
+    transform: translateY(-50%) scale(1.06);
+    background: #fff;
+}
+
+.lightbox-prev {
+    left: 18px;
+}
+
+.lightbox-next {
+    right: 18px;
+}
+
+/* Close button */
+.lightbox-close {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-size: 1.4rem;
+    background: rgba(255, 255, 255, 0.9);
+    color: #222;
+    z-index: 10000;
+}
+
+.lightbox-close:hover {
+    background: #fff;
+}
+
+/* Mobile: smaller buttons */
+@media (max-width: 600px) {
+    .lightbox-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.8rem;
+    }
+
+    .lightbox-prev {
+        left: 10px;
+    }
+
+    .lightbox-next {
+        right: 10px;
+    }
+
+    .lightbox-close {
+        top: 10px;
+        right: 10px;
+        width: 38px;
+        height: 38px;
+    }
+}
+
 /* Smooth zoom animation */
 @keyframes zoomIn {
     from {
