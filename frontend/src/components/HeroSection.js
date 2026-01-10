@@ -6,7 +6,7 @@ const HeroSection = () => {
     return (
         <div className="hero-section">
             <div className="hero-overlay">
-                Build Champions One Lap at a Time!!!
+                Building Champions One Lap at a Time!!!
             </div>
         </div>
     );

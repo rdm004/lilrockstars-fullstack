@@ -22,13 +22,12 @@ const Gallery = () => {
                             alt={photo.title}
                             className="gallery-photo"
                             onClick={() => setActiveImage(photo.imageUrl)}
-                            loading="lazy"
                         />
                     ))}
                 </div>
             </div>
 
-            {/* ✅ Lightbox overlay (outside grid so it covers the whole page) */}
+            {/* ✅ LIGHTBOX */}
             {activeImage && (
                 <div className="lightbox" onClick={() => setActiveImage(null)}>
                     <img src={activeImage} alt="Enlarged race" />
