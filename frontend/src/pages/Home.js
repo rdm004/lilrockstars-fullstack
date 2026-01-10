@@ -1,11 +1,11 @@
 // frontend/src/pages/Home.js
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import "../styles/Home.css";
 import { Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import { formatRaceDate } from "../utils/dateUtils";
-import sponsorsData from "../data/SponsorsData";      // ✅ use ONE import name
-import galleryPhotos from "../data/GalleryData";      // ✅ use GalleryData for static images
+import sponsorsData from "../data/SponsorsData";
+import galleryPhotos from "../data/GalleryData";
 
 const Home = () => {
     // 🏁 Upcoming races
@@ -26,8 +26,7 @@ const Home = () => {
     };
 
     // ✅ Static home photo preview: ONLY 5 photos
-    // GalleryData should look like: [{ id, imageUrl, title }, ...]
-    const homePhotos = useMemo(() => (galleryPhotos || []).slice(0, 5), []);
+    const homePhotos = (galleryPhotos || []).slice(0, 5);
 
     // 🔄 Load upcoming races
     useEffect(() => {
@@ -72,7 +71,6 @@ const Home = () => {
                 const res = await apiClient.get("/results");
                 const results = res.data || [];
 
-                // ✅ Your scoring: 13 / 10 / 8, everyone else = 1
                 const pointsByPlacement = { 1: 13, 2: 10, 3: 8 };
                 const divisionMap = {};
 
@@ -182,7 +180,7 @@ const Home = () => {
                     {homePhotos.map((photo) => (
                         <img
                             key={photo.id}
-                            src={photo.imageUrl}                 // ✅ comes from GalleryData.js
+                            src={photo.imageUrl}
                             alt={photo.title || "LRR photo"}
                             loading="lazy"
                         />
@@ -198,12 +196,18 @@ const Home = () => {
             <section className="home-section sponsors-preview">
                 <h2>🤝 Thank You to Our Sponsors 🤝</h2>
 
-                {(!sponsorsData || sponsorsData.length === 0) ? (
+                {!sponsorsData || sponsorsData.length === 0 ? (
                     <p>No sponsors yet. Interested in sponsoring? Contact us!</p>
                 ) : (
                     <div className="sponsor-strip">
                         {sponsorsData.map((s) => (
-                            <img key={s.id} src={s.logoUrl} alt={s.name} className="sponsor-logo" loading="lazy" />
+                            <img
+                                key={s.id}
+                                src={s.logoUrl}
+                                alt={s.name}
+                                className="sponsor-logo"
+                                loading="lazy"
+                            />
                         ))}
                     </div>
                 )}

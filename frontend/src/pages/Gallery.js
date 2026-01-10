@@ -1,9 +1,11 @@
 // frontend/src/pages/Gallery.js
-import React from "react";
+import React, { useState } from "react";
 import "../styles/Gallery.css";
 import GalleryData from "../data/GalleryData";
 
 const Gallery = () => {
+    const [activeImage, setActiveImage] = useState(null);
+
     return (
         <div className="gallery-container">
             <h1>📸 Race Gallery 📸</h1>
@@ -19,11 +21,19 @@ const Gallery = () => {
                             src={photo.imageUrl}
                             alt={photo.title}
                             className="gallery-photo"
+                            onClick={() => setActiveImage(photo.imageUrl)}
                             loading="lazy"
                         />
                     ))}
                 </div>
             </div>
+
+            {/* ✅ Lightbox overlay (outside grid so it covers the whole page) */}
+            {activeImage && (
+                <div className="lightbox" onClick={() => setActiveImage(null)}>
+                    <img src={activeImage} alt="Enlarged race" />
+                </div>
+            )}
         </div>
     );
 };
