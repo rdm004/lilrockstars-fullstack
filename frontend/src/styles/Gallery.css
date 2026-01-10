@@ -59,6 +59,7 @@
     text-align: center;
 }
 
+
 /* ✅ Better spacing + bigger thumbnails = better perceived quality */
 .photo-grid {
     display: grid;

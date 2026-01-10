@@ -1,5 +1,6 @@
 import React from "react";
 import "../styles/Contact.css";
+import "../styles/Shared-Buttons.css"
 
 const Contact = () => {
     return (
