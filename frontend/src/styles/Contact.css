@@ -1,23 +1,20 @@
 .contact-container {
     position: relative;
     text-align: center;
-    background-image: url("../staticimages/rockstarslogowhite.png"); /* replace with your image */
+    background-image: url("../staticimages/rockstarslogowhite.png");
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
-    overflow: hidden;
     min-height: 100vh;
     padding: 2rem;
+    overflow: hidden;
 }
 
 .contact-container::before {
     content: "";
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(255, 255, 255, 0.95); /* light transparent overlay */
+    inset: 0;
+    background-color: rgba(255, 255, 255, 0.95);
     z-index: 0;
 }
 
@@ -37,12 +34,16 @@
     color: #555;
 }
 
+/* === GRID === */
 .contact-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
     gap: 1.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
 }
 
+/* === CARD BASE === */
 .contact-card {
     background: #fff;
     border: 1px solid #f47c2a;
@@ -52,36 +53,16 @@
     text-align: left;
 }
 
-.contact-card-social-card {
-    display: flex;
-    justify-content: center;
-    margin-top: 1.5rem;
-}
-
 .contact-card h2 {
-    color: #000000;
+    color: #000;
     margin-bottom: 0.8rem;
     text-align: center;
 }
 
 .contact-card p {
-    margin: .8rem 0;
+    margin: 0.8rem 0;
     line-height: 1.5;
     font-size: 1.1rem;
-
-
-}
-
-.contact-card a {
-    color: #f47c2a;
-    text-decoration: none;
-    font-weight: 600;
-    padding: .5rem;
-
-}
-
-.contact-card a:hover {
-    text-decoration: underline;
 }
 
 .contact-card hr {
@@ -91,10 +72,29 @@
 }
 
 .contact-card a {
-    align-content: center;
+    color: #f47c2a;
+    text-decoration: none;
+    font-weight: 600;
 }
 
+.contact-card a:hover {
+    text-decoration: underline;
+}
 
+/* === SOCIAL CARD === */
+.contact-card-social {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.contact-card-social .facebook-button {
+    margin-top: 1rem;
+}
+
+/* === MOBILE === */
 @media (max-width: 768px) {
     .contact-grid {
         grid-template-columns: 1fr;

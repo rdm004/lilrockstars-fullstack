@@ -40,6 +40,22 @@
     margin-bottom: 0.7rem;
 }
 
+.gallery-fb {
+    max-width: 1100px;
+    margin: 0 auto 2rem;      /* ✅ adds space below button before orange line */
+    text-align: center;
+    padding-bottom: 0.75rem;  /* ✅ extra breathing room */
+}
+
+.gallery-fb .facebook-button {
+    margin: 0 auto;              /* ✅ centers inline-flex link */
+    justify-content: center;
+}
+
+.gallery-fb p {
+    margin-bottom: 0.75rem;      /* you already have this, just confirming */
+}
+
 .event-gallery {
     margin: 0 auto 3rem;
     max-width: 1100px;
