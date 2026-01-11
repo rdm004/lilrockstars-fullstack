@@ -28,9 +28,9 @@ export default function Navbar() {
 
     const rightLinksContainer = {
         display: 'flex',
-        alignItems: 'center',
+        justifyContent: 'flex-end',
+        flex: 1,                 // 🔑 MATCH left side
         gap: '0.6rem',
-        flexShrink: 0,
     };
 
     const buttonStyle = {
