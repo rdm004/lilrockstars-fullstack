@@ -8,7 +8,7 @@ export default function Navbar() {
         display: "flex",
         alignItems: "center",
         gap: "1rem",
-        fontSize: "1.8rem",
+
     };
 
     const leftContainer = {
@@ -23,6 +23,7 @@ export default function Navbar() {
         alignItems: "center",
         gap: "1.5rem",
         whiteSpace: "nowrap",
+        fontSize: "1.2rem",
     };
 
     const rightLinksContainer = {
