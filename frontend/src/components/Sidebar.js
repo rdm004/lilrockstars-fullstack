@@ -3,11 +3,9 @@ import { Link, useLocation } from "react-router-dom";
 import {
     FaTachometerAlt,
     FaUserFriends,
-    FaHandshake,
     FaClipboardList,
     FaCogs,
-    FaImages,
-    FaChartBar,      // 👈 NEW icon for Results
+    FaChartBar,
 } from "react-icons/fa";
 import "../styles/Sidebar.css";
 
@@ -17,10 +15,12 @@ const Sidebar = ({ isOpen = true }) => {
     const menuItems = [
         { path: "/admin", label: "Dashboard", icon: <FaTachometerAlt /> },
         { path: "/admin/racers/manage", label: "Racers", icon: <FaUserFriends /> },
-        { path: "/admin/results/manage", label: "Results", icon: <FaChartBar /> },      // 👈 NEW
-        { path: "/admin/sponsors/manage", label: "Sponsors", icon: <FaHandshake /> },
-        { path: "/admin/photos/manage", label: "Photos", icon: <FaImages /> },
-        { path: "/admin/registrations/manage", label: "Registrations", icon: <FaClipboardList /> },
+        { path: "/admin/results/manage", label: "Results", icon: <FaChartBar /> },
+        {
+            path: "/admin/registrations/manage",
+            label: "Registrations",
+            icon: <FaClipboardList />,
+        },
         { path: "/admin/settings", label: "Settings", icon: <FaCogs /> },
     ];
 
