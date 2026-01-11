@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
 import apiClient from "../utils/apiClient";
 import { Bar } from "react-chartjs-2";
@@ -16,84 +16,108 @@ import "../styles/AdminDashboard.css";
 // Register Chart.js modules
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
+// Division mapping (matches your app rules)
+const getDivisionFromAge = (ageRaw) => {
+    const age = Number(ageRaw);
+    if (age === 2 || age === 3) return "3 Year Old";
+    if (age === 4) return "4 Year Old";
+    if (age === 5) return "5 Year Old";
+    if (age === 6 || age === 7) return "Snack Pack";
+    return "Unknown";
+};
+
 const AdminDashboard = () => {
     const [stats, setStats] = useState({
         totalRacers: 0,
-        totalSponsors: 0,
         totalRegistrations: 0,
         upcomingRaces: 0,
     });
-    const [chartData, setChartData] = useState(null);
+
+    const [divisionCounts, setDivisionCounts] = useState({
+        "3 Year Old": 0,
+        "4 Year Old": 0,
+        "5 Year Old": 0,
+        "Snack Pack": 0,
+    });
+
     const [loading, setLoading] = useState(true);
+
+    // chartData derived from divisionCounts
+    const chartData = useMemo(() => {
+        return {
+            labels: Object.keys(divisionCounts),
+            datasets: [
+                {
+                    label: "Racers by Division",
+                    data: Object.values(divisionCounts),
+                    backgroundColor: ["#1E63FF", "#FF9F1C", "#2ECC71", "#E74C3C"],
+                    borderRadius: 6,
+                },
+            ],
+        };
+    }, [divisionCounts]);
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                // --- MOCK DATA (replace later with backend API) ---
-                const mockRacers = [
-                    { age: 3 },
-                    { age: 3 },
-                    { age: 4 },
-                    { age: 5 },
-                    { age: 6 },
-                    { age: 7 },
-                    { age: 7 },
-                    { age: 4 },
-                    { age: 5 },
-                    { age: 6 },
-                ];
+                setLoading(true);
 
-                // 🧮 Group racers into your divisions
-                const divisionCounts = {
+                // --- Load racers ---
+                const racersRes = await apiClient.get("/racers"); // GET /api/racers
+                const racers = racersRes.data || [];
+
+                // Count divisions
+                const counts = {
                     "3 Year Old": 0,
                     "4 Year Old": 0,
                     "5 Year Old": 0,
                     "Snack Pack": 0,
                 };
 
-                mockRacers.forEach((r) => {
-                    if (r.age === 3) divisionCounts["3 Year Old"]++;
-                    else if (r.age === 4) divisionCounts["4 Year Old"]++;
-                    else if (r.age === 5) divisionCounts["5 Year Old"]++;
-                    else if (r.age === 6 || r.age === 7)
-                        divisionCounts["Snack Pack"]++;
+                racers.forEach((r) => {
+                    const div = getDivisionFromAge(r.age);
+                    if (counts[div] !== undefined) counts[div] += 1;
                 });
 
-                // 🧠 Set up chart data
-                setChartData({
-                    labels: Object.keys(divisionCounts),
-                    datasets: [
-                        {
-                            label: "Racers by Division",
-                            data: Object.values(divisionCounts),
-                            backgroundColor: [
-                                "#1E63FF",
-                                "#FF9F1C",
-                                "#2ECC71",
-                                "#E74C3C",
-                            ],
-                            borderRadius: 6,
-                        },
-                    ],
-                });
+                // --- Load races (for upcoming count) ---
+                const racesRes = await apiClient.get("/races"); // GET /api/races
+                const races = racesRes.data || [];
 
-                // --- Mock dashboard stats ---
-                setTimeout(() => {
-                    setStats({
-                        totalRacers: mockRacers.length,
-                        totalSponsors: 12,
-                        totalRegistrations: 102,
-                        upcomingRaces: 3,
-                    });
-                    setLoading(false);
-                }, 500);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                const upcomingCount = races.filter((race) => {
+                    if (!race.raceDate) return false;
+                    const d = new Date(race.raceDate);
+                    d.setHours(0, 0, 0, 0);
+                    return d >= today;
+                }).length;
+
+                // --- Load registrations (if endpoint exists) ---
+                let registrationsCount = 0;
+                try {
+                    const regRes = await apiClient.get("/registrations"); // GET /api/registrations
+                    registrationsCount = (regRes.data || []).length;
+                } catch (err) {
+                    // If you don't have this endpoint yet, don't break dashboard
+                    registrationsCount = 0;
+                }
+
+                // Set state
+                setDivisionCounts(counts);
+                setStats({
+                    totalRacers: racers.length,
+                    totalRegistrations: registrationsCount,
+                    upcomingRaces: upcomingCount,
+                });
             } catch (error) {
                 console.error("Failed to fetch admin stats:", error);
+            } finally {
                 setLoading(false);
             }
         };
 
-        fetchStats();
+        void fetchStats();
     }, []);
 
     return (
@@ -111,45 +135,37 @@ const AdminDashboard = () => {
                                 <h3>Total Racers</h3>
                                 <p>{stats.totalRacers}</p>
                             </div>
-                            <div className="stat-card">
-                                <h3>Total Sponsors</h3>
-                                <p>{stats.totalSponsors}</p>
-                            </div>
+
                             <div className="stat-card">
                                 <h3>Total Registrations</h3>
                                 <p>{stats.totalRegistrations}</p>
                             </div>
+
                             <div className="stat-card">
                                 <h3>Upcoming Races</h3>
                                 <p>{stats.upcomingRaces}</p>
                             </div>
                         </div>
 
-                        {/* --- Chart Section --- */}
                         <div className="chart-section">
                             <h3>Racers by Division</h3>
-                            {chartData ? (
-                                <Bar
-                                    data={chartData}
-                                    options={{
-                                        responsive: true,
-                                        plugins: {
-                                            legend: { display: false },
-                                            title: {
-                                                display: false,
-                                            },
+
+                            <Bar
+                                data={chartData}
+                                options={{
+                                    responsive: true,
+                                    plugins: {
+                                        legend: { display: false },
+                                        title: { display: false },
+                                    },
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            ticks: { stepSize: 1 },
                                         },
-                                        scales: {
-                                            y: {
-                                                beginAtZero: true,
-                                                ticks: { stepSize: 1 },
-                                            },
-                                        },
-                                    }}
-                                />
-                            ) : (
-                                <p>Loading chart...</p>
-                            )}
+                                    },
+                                }}
+                            />
                         </div>
                     </>
                 )}
