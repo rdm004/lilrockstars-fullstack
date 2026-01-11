@@ -57,6 +57,10 @@
     text-align: left;
 }
 
+.register-form label {
+    color: #1e63ff;
+}
+
 .form-row {
     display: flex;
     gap: 1rem;
