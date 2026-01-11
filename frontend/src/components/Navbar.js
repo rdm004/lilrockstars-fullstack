@@ -8,6 +8,7 @@ export default function Navbar() {
         display: "flex",
         alignItems: "center",
         gap: "1rem",
+        fontSize: "1.8rem",
     };
 
     const leftContainer = {
