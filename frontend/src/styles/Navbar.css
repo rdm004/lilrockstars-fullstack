@@ -1,0 +1,121 @@
+/* ===== NAVBAR CONTAINER ===== */
+.navbar {
+    background-color: #f28c3a;
+    padding: 1rem 2rem;
+
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+}
+
+/* ===== LEFT / CENTER / RIGHT SECTIONS ===== */
+.navbar-left,
+.navbar-center,
+.navbar-right {
+    display: flex;
+    align-items: center;
+}
+
+.navbar-center {
+    justify-content: center;
+    gap: 2rem;
+}
+
+.navbar-right {
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+/* ===== NAV LINKS ===== */
+.nav-link {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1.05rem;
+    position: relative;
+    transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+    color: #1b1b1b;
+}
+
+/* Underline animation */
+.nav-link::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -6px;
+    width: 0;
+    height: 2px;
+    background-color: #1b1b1b;
+    transition: width 0.2s ease, left 0.2s ease;
+}
+
+.nav-link:hover::after {
+    width: 100%;
+    left: 0;
+}
+
+/* ===== BUTTONS (Login / Admin / Facebook) ===== */
+.nav-button {
+    background-color: rgba(0, 0, 0, 0.35);
+    color: #ffffff;
+    padding: 0.55rem 1.1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.25s ease, transform 0.15s ease;
+}
+
+.nav-button:hover {
+    background-color: rgba(0, 0, 0, 0.6);
+    transform: translateY(-1px);
+}
+
+/* ===== FACEBOOK BUTTON ===== */
+.facebook-btn {
+    background-color: #8b4f1d;
+}
+
+.facebook-btn:hover {
+    background-color: #6e3d15;
+}
+
+/* Facebook icon square */
+.facebook-icon {
+    background: #ffffff;
+    color: #1877f2;
+    font-weight: 900;
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+    .navbar {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .navbar-left,
+    .navbar-center,
+    .navbar-right {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .navbar-center {
+        gap: 1.2rem;
+    }
+}
