@@ -52,6 +52,10 @@
     color: #1e63ff;
 }
 
+.race-content p {
+    color: #000000;
+}
+
 /* ===== Loading + error ===== */
 .loading {
     color: #555;
