@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
 import apiClient from "../utils/apiClient";
-import "../styles/ResultsManagement.css";
+
 
 const DIVISIONS = [
     "3 Year Old Division",
