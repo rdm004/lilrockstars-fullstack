@@ -53,6 +53,21 @@ export default function Navbar() {
                 <Link to="/gallery" style={linkStyle}>Gallery</Link>
                 <Link to="/sponsors" style={linkStyle}>Sponsors</Link>
                 <Link to="/contact" style={linkStyle}>Contact</Link>
+                <a
+                    href="https://www.facebook.com/profile.php?id=100091910351052"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="nav-facebook"
+                    aria-label="Lil Rockstars Racing on Facebook"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        className="nav-facebook-icon"
+                    >
+                        <path d="M22.675 0h-21.35C.6 0 0 .6 0 1.325v21.351C0 23.4.6 24 1.325 24H12.82V14.706h-3.17v-3.622h3.17V8.413c0-3.13 1.91-4.832 4.7-4.832 1.34 0 2.493.099 2.829.144v3.28l-1.942.001c-1.524 0-1.819.724-1.819 1.787v2.344h3.637l-.474 3.622h-3.163V24h6.203C23.4 24 24 23.4 24 22.675V1.325C24 .6 23.4 0 22.675 0z"/>
+                    </svg>
+                </a>
             </div>
 
             <div style={rightLinksContainer}>
