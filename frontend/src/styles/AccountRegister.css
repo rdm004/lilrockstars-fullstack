@@ -1,7 +1,8 @@
+/* ===== PAGE BACKGROUND + OVERLAY ===== */
 .account-register-container {
     position: relative;
     text-align: center;
-    background-image: url("../staticimages/rockstarslogowhite.png"); /* replace or reuse another background */
+    background-image: url("../staticimages/rockstarslogowhite.png");
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
@@ -13,10 +14,7 @@
 .account-register-container::before {
     content: "";
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     background-color: rgba(255, 255, 255, 0.95);
     z-index: 0;
 }
@@ -26,16 +24,24 @@
     z-index: 1;
 }
 
+/* ===== FORM CARD ===== */
 .account-register-content {
     max-width: 600px;
     margin: 0 auto;
-    background-color: rgba(0, 0, 0, 0.8);
-    color: white;
+    background-color: rgba(0, 0, 0, 0.82);
+    color: #ffffff;
     padding: 2rem;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
 }
 
+/* ===== HEADER TEXT ===== */
+.account-register-content h1,
+.account-register-content p {
+    color: #ffffff;
+}
+
+/* ===== STATUS MESSAGES ===== */
 .register-message {
     margin-bottom: 1rem;
     padding: 0.75rem 1rem;
@@ -44,74 +50,104 @@
 }
 
 .register-message.success {
-    background-color: rgba(0, 128, 0, 0.8);
-    color: #fff;
+    background-color: rgba(0, 128, 0, 0.85);
+    color: #ffffff;
 }
 
 .register-message.error {
     background-color: rgba(178, 34, 34, 0.9);
-    color: #fff;
+    color: #ffffff;
 }
 
+/* ===== FORM LAYOUT ===== */
 .register-form {
     text-align: left;
 }
 
-.register-form label {
-    color: #1e63ff;
-}
-
+/* Row layout */
 .form-row {
     display: flex;
-    gap: 1rem;
+    gap: 4.5rem;
     flex-wrap: wrap;
+    justify-content: space-between;
 }
 
+/* Individual field */
 .form-group {
     flex: 1;
     min-width: 150px;
     margin-bottom: 1rem;
 }
 
+/* ===== LABELS (FIXED VISIBILITY) ===== */
 .form-group label {
     display: block;
     margin-bottom: 0.25rem;
-    font-size: 1.0rem;
-    color: #ffffff;
     margin-top: 0.5rem;
+
+    color: #ffffff !important;
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+
+    opacity: 1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
+/* ===== INPUTS ===== */
 .form-group input {
     width: 100%;
-    padding: 0.5rem 0.75rem;
+    padding: 0.6rem 0.75rem;
+
+    background-color: #f5f5f5;
+    color: #000;
+
     border-radius: 6px;
     border: none;
     font-size: 1rem;
+
+    outline: none;
+    transition: box-shadow 0.2s ease, transform 0.1s ease;
 }
 
+/* Input focus */
+.form-group input:focus {
+    box-shadow: 0 0 0 3px rgba(255, 127, 17, 0.5);
+    transform: translateY(-1px);
+}
+
+/* ===== REGISTER BUTTON ===== */
 .register-button {
-    margin-top: 0.5rem;
+    margin-top: 0.75rem;
     width: 100%;
     padding: 0.75rem 1rem;
+
     border: none;
     border-radius: 8px;
     background-color: #ff7f11;
-    color: white;
+
+    color: #ffffff;
     font-weight: 600;
     font-size: 1rem;
+
     cursor: pointer;
     transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.2s ease;
 }
 
 .register-button:hover {
     background-color: #e26f0f;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
     transform: translateY(-1px);
 }
 
-.form-row {
-    display: flex;
-    gap: 4.5rem;         /* space between columns */
-    flex-wrap: wrap;
-    justify-content: space-between;
+/* ===== MOBILE ===== */
+@media (max-width: 768px) {
+    .form-row {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .account-register-content {
+        padding: 1.5rem;
+    }
 }
