@@ -43,9 +43,13 @@
 }
 
 .results-container p {
-    color: #1e63ff;
+    color: #000;
     margin: 0 0 1.5rem;
     text-align: center;
+}
+
+.races-intro {
+    color: #1e63ff;
 }
 
 /* ===== Loading + error ===== */

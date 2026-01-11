@@ -57,7 +57,7 @@ const RaceList = () => {
     return (
         <div className="races-container">
             <h1>🏎️ Upcoming Races 🏎️</h1>
-            <p>Check out our upcoming events and race dates!</p>
+            <p className="races-intro">Check out our upcoming events and race dates!</p>
 
             {loading ? (
                 <p className="loading">Loading races...</p>
