@@ -25,6 +25,22 @@ const RegistrationsManagement = () => {
         });
     };
 
+    const toCarNumberInt = (carNumber) => {
+        if (carNumber === null || carNumber === undefined) return 9999;
+        const n = String(carNumber).replace(/[^0-9]/g, "");
+        return n ? Number(n) : 9999;
+    };
+
+    const divisionFromAge = (age) => {
+        const n = Number(age);
+        if (!n) return "-";
+        if (n === 3) return "3 Year Old Division";
+        if (n === 4) return "4 Year Old Division";
+        if (n === 5) return "5 Year Old Division";
+        if (n === 6 || n === 7) return "Snack Pack Division";
+        return "Snack Pack Division"; // fallback if older/other
+    };
+
     const divisionRank = (division) => {
         const d = (division || "").toLowerCase();
         if (d.includes("3")) return 1;
@@ -34,36 +50,77 @@ const RegistrationsManagement = () => {
         return 99;
     };
 
-    const toCarNumberInt = (carNumber) => {
-        if (carNumber === null || carNumber === undefined) return 9999;
-        const n = String(carNumber).replace(/[^0-9]/g, "");
-        return n ? Number(n) : 9999;
+    const getRacerId = (r) => {
+        // tolerate different field names
+        const id = r?.id ?? r?.racerId ?? r?.racerID;
+        return id !== undefined && id !== null ? Number(id) : null;
     };
 
     const getRacerName = (r) => {
-        const first = r?.firstName || "";
-        const last = r?.lastName || "";
+        if (!r) return "-";
+
+        // Most common shapes
+        const first = r.firstName ?? r.first_name ?? "";
+        const last = r.lastName ?? r.last_name ?? "";
         const full = `${first} ${last}`.trim();
-        return full || r?.name || "-";
+        if (full) return full;
+
+        // Alternate shapes
+        return (
+            r.racerName ||
+            r.fullName ||
+            r.name ||
+            r.displayName ||
+            "-"
+        );
     };
 
-    const getRacerDivision = (r) => r?.division || "-";
+    const getRacerDivision = (r) => {
+        if (!r) return "-";
 
-    const getParentEmail = (r, reg) =>
-        reg?.parentEmail || r?.parentEmail || r?.parent?.email || "-";
+        // If your DB stores division directly
+        const direct =
+            r.division ||
+            r.divisionName ||
+            r.ageDivision ||
+            r.className;
+
+        if (direct) return direct;
+
+        // Otherwise compute from age
+        const age = r.age ?? r.racerAge ?? r.ageYears ?? r.age_years;
+        return divisionFromAge(age);
+    };
+
+    const getParentEmail = (r, reg) => {
+        return (
+            reg?.parentEmail ||
+            reg?.parent_email ||
+            r?.parentEmail ||
+            r?.parent_email ||
+            r?.parent?.email ||
+            "-"
+        );
+    };
 
     // ---------------------------
     // Maps for lookup
     // ---------------------------
     const racersById = useMemo(() => {
         const m = new Map();
-        (racers || []).forEach((r) => m.set(Number(r.id), r));
+        (racers || []).forEach((r) => {
+            const id = getRacerId(r);
+            if (id) m.set(id, r);
+        });
         return m;
     }, [racers]);
 
     const racesById = useMemo(() => {
         const m = new Map();
-        (races || []).forEach((r) => m.set(Number(r.id), r));
+        (races || []).forEach((r) => {
+            const id = Number(r?.id ?? r?.raceId ?? r?.raceID);
+            if (id) m.set(id, r);
+        });
         return m;
     }, [races]);
 
@@ -86,18 +143,22 @@ const RegistrationsManagement = () => {
 
             const raw = regsRes.data || [];
 
-            // Normalize registrations (works if backend returns DTO or nested entities)
+            // Normalize registrations (supports DTO or nested entities)
             const normalized = raw.map((row) => {
-                const nestedRacerId = row?.racer?.id;
-                const nestedRaceId = row?.race?.id;
+                const nestedRacerId = row?.racer?.id ?? row?.racer?.racerId ?? row?.racer?.racerID;
+                const nestedRaceId = row?.race?.id ?? row?.race?.raceId ?? row?.race?.raceID;
 
                 return {
                     id: row.id,
-                    racerId: row.racerId ?? nestedRacerId ?? row.racer_id ?? "",
-                    raceId: row.raceId ?? nestedRaceId ?? row.race_id ?? "",
-                    // optional fields if backend sends them:
-                    parentEmail: row.parentEmail ?? row.parent_email ?? null,
+                    racerId: row.racerId ?? row.racerID ?? nestedRacerId ?? row.racer_id ?? "",
+                    raceId: row.raceId ?? row.raceID ?? nestedRaceId ?? row.race_id ?? "",
                     status: row.status ?? null,
+                    parentEmail: row.parentEmail ?? row.parent_email ?? null,
+
+                    // If backend already sends these, keep them
+                    racerName: row.racerName ?? null,
+                    division: row.division ?? null,
+                    carNumber: row.carNumber ?? null,
                 };
             });
 
@@ -122,11 +183,25 @@ const RegistrationsManagement = () => {
             const racer = racersById.get(Number(reg.racerId));
             const race = racesById.get(Number(reg.raceId));
 
-            const racerName = getRacerName(racer);
-            const carNumber = racer?.carNumber ?? racer?.car_number ?? "";
-            const division = getRacerDivision(racer);
-            const parentEmail = getParentEmail(racer, reg);
+            // Racer display fields:
+            const racerName =
+                reg.racerName ||
+                getRacerName(racer);
 
+            const carNumber =
+                reg.carNumber ??
+                racer?.carNumber ??
+                racer?.car_number ??
+                "";
+
+            const division =
+                reg.division ||
+                getRacerDivision(racer);
+
+            const parentEmail =
+                getParentEmail(racer, reg);
+
+            // Race display fields:
             const raceName = race?.raceName || race?.name || `Race #${reg.raceId || "?"}`;
             const raceDate = race?.raceDate || "";
 
@@ -143,7 +218,7 @@ const RegistrationsManagement = () => {
     }, [registrations, racersById, racesById]);
 
     // ---------------------------
-    // Group by raceId for UI
+    // Group by race
     // ---------------------------
     const regsByRace = useMemo(() => {
         const m = new Map();
@@ -154,7 +229,6 @@ const RegistrationsManagement = () => {
             m.get(raceId).push(row);
         });
 
-        // Sort inside each race by division then car #
         for (const [raceId, rows] of m.entries()) {
             rows.sort((a, b) => {
                 const d = divisionRank(a.division) - divisionRank(b.division);
@@ -203,8 +277,6 @@ const RegistrationsManagement = () => {
         const raceDate = race?.raceDate ? formatRaceDate(race.raceDate) : "";
 
         const rows = (regsByRace.get(Number(raceId)) || []).slice();
-
-        // Already sorted in regsByRace, but safe:
         rows.sort((a, b) => {
             const d = divisionRank(a.division) - divisionRank(b.division);
             if (d !== 0) return d;
@@ -226,7 +298,7 @@ const RegistrationsManagement = () => {
     th, td { border: 1px solid #ddd; padding: 10px; font-size: 13px; }
     th { background:#f4f4f4; text-align:left; }
     .col-small { width: 90px; }
-    .col-medium { width: 160px; }
+    .col-medium { width: 180px; }
     .checkbox { width: 18px; height: 18px; display:inline-block; border: 2px solid #333; border-radius: 3px; }
     .note { margin-top: 6px; font-size: 12px; color:#444; }
     @media print { body { padding: 0; } }
@@ -297,7 +369,10 @@ const RegistrationsManagement = () => {
         <Layout title="Registrations Management">
             <div className="registrations-container">
                 <div className="registrations-header">
-                    <h1>Registrations Management</h1>
+                    <h1>Registrations</h1>
+                    <p style={{ margin: 0, color: "#666" }}>
+                        Admin view: print sign-in sheets and manage registrations.
+                    </p>
                 </div>
 
                 {loading ? (
