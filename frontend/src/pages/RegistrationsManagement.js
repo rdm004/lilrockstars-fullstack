@@ -1,42 +1,111 @@
-import React, { useEffect, useState } from "react";
+// frontend/src/pages/RegistrationsManagement.js
+import React, { useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
 import Modal from "../components/Modal";
 import apiClient from "../utils/apiClient";
 import "../styles/RegistrationsManagement.css";
 
-const emptyForm = {
+const EMPTY_FORM = {
     id: null,
-    racer: "",
-    parent: "",
-    race: "",
+    racerId: "",
+    raceId: "",
     status: "Pending",
 };
 
 const RegistrationsManagement = () => {
     const [registrations, setRegistrations] = useState([]);
+    const [racers, setRacers] = useState([]);
+    const [races, setRaces] = useState([]);
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editMode, setEditMode] = useState(false);
-    const [formData, setFormData] = useState(emptyForm);
+    const [formData, setFormData] = useState(EMPTY_FORM);
 
-    const fetchRegistrations = async () => {
+    // -------- helpers --------
+    const badgeClass = (status) => {
+        const s = String(status || "").toLowerCase();
+        if (s === "confirmed" || s === "approved") return "confirmed";
+        if (s === "rejected") return "rejected";
+        if (s === "canceled" || s === "cancelled") return "canceled";
+        return "pending";
+    };
+
+    const formatRaceDate = (dateStr) => {
+        if (!dateStr) return "";
+        const d = new Date(dateStr);
+        return d.toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "2-digit",
+        });
+    };
+
+    const getRacerDisplay = (r) => {
+        const first = r?.firstName || "";
+        const last = r?.lastName || "";
+        const name = `${first} ${last}`.trim();
+        return name || r?.name || `Racer #${r?.id ?? "?"}`;
+    };
+
+    const getRaceDisplay = (race) => {
+        const name = race?.raceName || race?.name || "Unknown Race";
+        const date = race?.raceDate ? ` (${formatRaceDate(race.raceDate)})` : "";
+        return `${name}${date}`;
+    };
+
+    // maps for quick lookup
+    const racersById = useMemo(() => {
+        const m = new Map();
+        (racers || []).forEach((r) => m.set(Number(r.id), r));
+        return m;
+    }, [racers]);
+
+    const racesById = useMemo(() => {
+        const m = new Map();
+        (races || []).forEach((r) => m.set(Number(r.id), r));
+        return m;
+    }, [races]);
+
+    // -------- fetch everything --------
+    const fetchAll = async () => {
         try {
             setLoading(true);
             setError("");
 
-            const res = await apiClient.get("/registrations"); // GET /api/registrations
-            const data = res.data || [];
+            // Pull all three in parallel
+            const [regsRes, racersRes, racesRes] = await Promise.all([
+                apiClient.get("/admin/registrations"), // ✅ admin list (DB)
+                apiClient.get("/racers"),              // ✅ racers list (DB)
+                apiClient.get("/races"),               // ✅ races list (DB)
+            ]);
 
-            // Normalize keys so UI works even if backend field names differ slightly
-            const normalized = data.map((row) => ({
-                id: row.id,
-                racer: row.racer ?? row.racerName ?? row.racer_full_name ?? "",
-                parent: row.parent ?? row.parentName ?? row.parent_full_name ?? "",
-                race: row.race ?? row.raceName ?? "",
-                status: row.status ?? "Pending",
-            }));
+            setRacers(racersRes.data || []);
+            setRaces(racesRes.data || []);
+
+            // Normalize registrations regardless of backend shape
+            const raw = regsRes.data || [];
+            const normalized = raw.map((row) => {
+                // If backend returns nested entity:
+                const nestedRacerId = row?.racer?.id;
+                const nestedRaceId = row?.race?.id;
+
+                return {
+                    id: row.id,
+                    racerId: row.racerId ?? nestedRacerId ?? row.racer_id ?? "",
+                    raceId: row.raceId ?? nestedRaceId ?? row.race_id ?? "",
+                    status: row.status ?? "Pending",
+
+                    // Optional display fields if your backend already sends them:
+                    racerName: row.racerName ?? row.racer_name ?? null,
+                    parentName: row.parentName ?? row.parent_name ?? null,
+                    parentEmail: row.parentEmail ?? row.parent_email ?? null,
+                    raceName: row.raceName ?? row.race_name ?? null,
+                    raceDate: row.raceDate ?? row.race_date ?? null,
+                };
+            });
 
             setRegistrations(normalized);
         } catch (err) {
@@ -48,14 +117,32 @@ const RegistrationsManagement = () => {
     };
 
     useEffect(() => {
-        void fetchRegistrations();
+        void fetchAll();
     }, []);
+
+    // -------- CRUD --------
+    const handleOpenAdd = () => {
+        setEditMode(false);
+        setFormData(EMPTY_FORM);
+        setIsModalOpen(true);
+    };
+
+    const handleOpenEdit = (reg) => {
+        setEditMode(true);
+        setFormData({
+            id: reg.id,
+            racerId: String(reg.racerId ?? ""),
+            raceId: String(reg.raceId ?? ""),
+            status: reg.status || "Pending",
+        });
+        setIsModalOpen(true);
+    };
 
     const handleDelete = async (id) => {
         if (!window.confirm("Are you sure you want to delete this registration?")) return;
 
         try {
-            await apiClient.delete(`/registrations/${id}`);
+            await apiClient.delete(`/admin/registrations/${id}`);
             setRegistrations((prev) => prev.filter((r) => r.id !== id));
         } catch (err) {
             console.error("Error deleting registration:", err);
@@ -63,62 +150,74 @@ const RegistrationsManagement = () => {
         }
     };
 
-    const handleOpenAdd = () => {
-        setEditMode(false);
-        setFormData(emptyForm);
-        setIsModalOpen(true);
-    };
-
-    const handleOpenEdit = (registration) => {
-        setEditMode(true);
-        setFormData({
-            id: registration.id,
-            racer: registration.racer || "",
-            parent: registration.parent || "",
-            race: registration.race || "",
-            status: registration.status || "Pending",
-        });
-        setIsModalOpen(true);
-    };
-
     const handleSave = async () => {
-        const payload = {
-            racer: formData.racer?.trim(),
-            parent: formData.parent?.trim(),
-            race: formData.race?.trim(),
-            status: formData.status,
-        };
+        const racerIdNum = Number(formData.racerId);
+        const raceIdNum = Number(formData.raceId);
 
-        if (!payload.racer || !payload.parent || !payload.race) {
-            alert("Please fill out all fields.");
+        if (!racerIdNum || !raceIdNum) {
+            alert("Please select a Racer and a Race.");
             return;
         }
 
+        const payload = {
+            racerId: racerIdNum,
+            raceId: raceIdNum,
+            status: formData.status || "Pending",
+        };
+
         try {
             if (editMode && formData.id) {
-                await apiClient.put(`/registrations/${formData.id}`, payload);
+                // Many systems only allow status updates after creation.
+                // If your backend requires full payload, keep payload as-is.
+                await apiClient.put(`/admin/registrations/${formData.id}`, payload);
             } else {
-                // Default new registrations to Pending unless you explicitly choose Confirmed
-                await apiClient.post("/registrations", { ...payload, status: payload.status || "Pending" });
+                await apiClient.post("/admin/registrations", payload);
             }
 
             setIsModalOpen(false);
-            setFormData(emptyForm);
+            setFormData(EMPTY_FORM);
             setEditMode(false);
-            void fetchRegistrations();
+            void fetchAll();
         } catch (err) {
             console.error("Error saving registration:", err);
             alert("❌ Failed to save registration.");
         }
     };
 
-    const badgeClass = (status) => {
-        const s = String(status || "").toLowerCase();
-        if (s === "confirmed") return "confirmed";
-        if (s === "rejected") return "rejected";
-        if (s === "canceled" || s === "cancelled") return "canceled";
-        return "pending";
-    };
+    // -------- UI derived rows --------
+    const rowsForTable = useMemo(() => {
+        return (registrations || []).map((reg) => {
+            const racer = racersById.get(Number(reg.racerId));
+            const race = racesById.get(Number(reg.raceId));
+
+            const racerName =
+                reg.racerName ||
+                (racer ? getRacerDisplay(racer) : `Racer #${reg.racerId || "?"}`);
+
+            const parentEmail =
+                reg.parentEmail ||
+                racer?.parentEmail ||
+                racer?.parent?.email ||
+                "";
+
+            const raceName =
+                reg.raceName ||
+                (race ? (race.raceName || race.name) : `Race #${reg.raceId || "?"}`);
+
+            const raceDate =
+                reg.raceDate ||
+                race?.raceDate ||
+                "";
+
+            return {
+                ...reg,
+                _racerName: racerName,
+                _parentEmail: parentEmail,
+                _raceName: raceName,
+                _raceDate: raceDate,
+            };
+        });
+    }, [registrations, racersById, racesById]);
 
     return (
         <Layout title="Registrations Management">
@@ -134,7 +233,7 @@ const RegistrationsManagement = () => {
                     <p className="loading">Loading registrations...</p>
                 ) : error ? (
                     <p className="error">{error}</p>
-                ) : registrations.length === 0 ? (
+                ) : rowsForTable.length === 0 ? (
                     <p>No registrations found.</p>
                 ) : (
                     <table className="registrations-table">
@@ -150,12 +249,20 @@ const RegistrationsManagement = () => {
                         </thead>
 
                         <tbody>
-                        {registrations.map((reg, index) => (
+                        {rowsForTable.map((reg, index) => (
                             <tr key={reg.id}>
                                 <td>{index + 1}</td>
-                                <td>{reg.racer}</td>
-                                <td>{reg.parent}</td>
-                                <td>{reg.race}</td>
+                                <td>{reg._racerName}</td>
+                                <td>{reg._parentEmail || "-"}</td>
+                                <td>
+                                    {reg._raceName}
+                                    {reg._raceDate ? (
+                                        <span style={{ color: "#666" }}>
+                        {" "}
+                                            ({formatRaceDate(reg._raceDate)})
+                      </span>
+                                    ) : null}
+                                </td>
                                 <td>
                     <span className={`status-badge ${badgeClass(reg.status)}`}>
                       {reg.status}
@@ -176,6 +283,7 @@ const RegistrationsManagement = () => {
                 )}
             </div>
 
+            {/* Modal */}
             <Modal
                 title={editMode ? "Edit Registration" : "Add Registration"}
                 isOpen={isModalOpen}
@@ -183,42 +291,52 @@ const RegistrationsManagement = () => {
                 onSubmit={handleSave}
                 submitLabel={editMode ? "Update Registration" : "Add Registration"}
             >
-                <label>Racer Name</label>
-                <input
-                    type="text"
-                    value={formData.racer}
-                    onChange={(e) => setFormData({ ...formData, racer: e.target.value })}
+                <label>Racer</label>
+                <select
+                    value={formData.racerId}
+                    onChange={(e) => setFormData((p) => ({ ...p, racerId: e.target.value }))}
                     required
-                />
-
-                <label>Parent Name</label>
-                <input
-                    type="text"
-                    value={formData.parent}
-                    onChange={(e) => setFormData({ ...formData, parent: e.target.value })}
-                    required
-                />
+                >
+                    <option value="">-- Select Racer --</option>
+                    {racers.map((r) => (
+                        <option key={r.id} value={r.id}>
+                            {getRacerDisplay(r)} {r?.carNumber ? `(#${r.carNumber})` : ""}{" "}
+                            {r?.age ? `- Age ${r.age}` : ""}
+                        </option>
+                    ))}
+                </select>
 
                 <label>Race</label>
-                <input
-                    type="text"
-                    value={formData.race}
-                    onChange={(e) => setFormData({ ...formData, race: e.target.value })}
+                <select
+                    value={formData.raceId}
+                    onChange={(e) => setFormData((p) => ({ ...p, raceId: e.target.value }))}
                     required
-                />
+                >
+                    <option value="">-- Select Race --</option>
+                    {races
+                        .slice()
+                        .sort((a, b) => new Date(a.raceDate || 0) - new Date(b.raceDate || 0))
+                        .map((race) => (
+                            <option key={race.id} value={race.id}>
+                                {getRaceDisplay(race)}
+                            </option>
+                        ))}
+                </select>
 
                 <label>Status</label>
                 <select
                     value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    onChange={(e) => setFormData((p) => ({ ...p, status: e.target.value }))}
                 >
                     <option value="Pending">Pending</option>
                     <option value="Confirmed">Confirmed</option>
-
-                    {/* Optional future statuses */}
                     <option value="Rejected">Rejected</option>
                     <option value="Canceled">Canceled</option>
                 </select>
+
+                <p style={{ marginTop: "10px", fontSize: "0.85rem", color: "#666" }}>
+                    Tip: For a real-world flow, set new registrations to <b>Pending</b> and confirm after review.
+                </p>
             </Modal>
         </Layout>
     );

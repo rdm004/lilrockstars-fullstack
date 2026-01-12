@@ -10,8 +10,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;     // ⬅️ add
-import org.springframework.security.crypto.password.PasswordEncoder;      // ⬅️ add
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -32,30 +32,52 @@ public class SecurityConfig {
         this.restAuthEntryPoint = restAuthEntryPoint;
     }
 
-    // 🔐 Provide a PasswordEncoder bean for AuthController
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   CorsConfigurationSource corsConfigurationSource) throws Exception {
         http
-                .cors(c -> c.configurationSource(corsConfigurationSource(null)))
+                .cors(c -> c.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.disable())
                 .exceptionHandling(e -> e.authenticationEntryPoint(restAuthEntryPoint))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+
+                        // ✅ Auth endpoints (public)
                         .requestMatchers("/api/auth/**").permitAll()
+
+                        // ✅ Public GET endpoints for your public site
                         .requestMatchers(HttpMethod.GET,
                                 "/api/races/**",
+                                "/api/results/**",
                                 "/api/sponsors/**",
-                                "/api/gallery/**",
-                                "/api/results/**"
+                                "/api/photos/**",     // if you still have photos endpoint live
+                                "/api/gallery/**"     // keep only if you truly use this route
                         ).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/contact/**", "/api/public/**").permitAll()
+
+                        // ✅ Public POST endpoints
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/contact/**",
+                                "/api/public/**"
+                        ).permitAll()
+
+                        // ✅ Registrations must be authenticated (fixes “admin registrations” access control)
+                        .requestMatchers("/api/registrations/**").authenticated()
+
+                        // ✅ Parent endpoints
                         .requestMatchers("/api/parent/**").authenticated()
+
+                        // ✅ Admin endpoints
                         .requestMatchers("/api/admin/**").authenticated()
+
+                        // ✅ Everything else under /api requires auth by default
+                        .requestMatchers("/api/**").authenticated()
+
+                        // (Optional) non-API routes can remain open (React app)
                         .anyRequest().permitAll()
                 );
 
@@ -66,10 +88,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource(
             @Value("${app.cors.allowed-origins:*}") String allowedOriginsProp) {
+
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(List.of(allowedOriginsProp.split(",")));
-        config.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization","Content-Type","X-Requested-With"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

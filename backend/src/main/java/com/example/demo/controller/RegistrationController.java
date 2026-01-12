@@ -41,19 +41,69 @@ public class RegistrationController {
         this.jwtUtil = jwtUtil;
     }
 
-    // Simple DTOs to keep JSON small & match frontend
+    // =========================================================
+    // DTOs
+    // =========================================================
+
+    // Small DTO used for parent endpoints
     public record RegistrationDto(Long id, Long racerId, Long raceId) {}
+
+    // Request body for POST /api/registrations
     public record CreateRegistrationRequest(Long racerId, Long raceId) {}
+
+    // Admin DTO (gives names + race date so admin UI can display without extra calls)
+    public record AdminRegistrationDto(
+            Long id,
+            Long racerId,
+            String racerName,
+            Long raceId,
+            String raceName,
+            String raceDate
+    ) {}
+
+    // =========================================================
+    // Helpers
+    // =========================================================
 
     private RegistrationDto toDto(Registration reg) {
         return new RegistrationDto(
                 reg.getId(),
-                reg.getRacer().getId(),
-                reg.getRace().getId()
+                reg.getRacer() != null ? reg.getRacer().getId() : null,
+                reg.getRace() != null ? reg.getRace().getId() : null
+        );
+    }
+
+    private AdminRegistrationDto toAdminDto(Registration reg) {
+        String racerName = null;
+        if (reg.getRacer() != null) {
+            String fn = reg.getRacer().getFirstName() != null ? reg.getRacer().getFirstName() : "";
+            String ln = reg.getRacer().getLastName() != null ? reg.getRacer().getLastName() : "";
+            racerName = (fn + " " + ln).trim();
+            if (racerName.isBlank()) racerName = null;
+        }
+
+        String raceName = reg.getRace() != null ? reg.getRace().getRaceName() : null;
+
+        String raceDate = null;
+        if (reg.getRace() != null && reg.getRace().getRaceDate() != null) {
+            // stored as LocalDate likely -> "YYYY-MM-DD"
+            raceDate = reg.getRace().getRaceDate().toString();
+        }
+
+        return new AdminRegistrationDto(
+                reg.getId(),
+                reg.getRacer() != null ? reg.getRacer().getId() : null,
+                racerName,
+                reg.getRace() != null ? reg.getRace().getId() : null,
+                raceName,
+                raceDate
         );
     }
 
     private Parent getCurrentParent(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("Missing or invalid Authorization header");
+        }
         String token = authHeader.substring(7); // drop "Bearer "
         String email = jwtUtil.extractUsername(token);
         return parentRepository.findByEmail(email)
@@ -73,6 +123,29 @@ public class RegistrationController {
         return parentRacerLinkRepository.existsByParentAndRacer(parent, racer);
     }
 
+    // =========================================================
+    // ADMIN ENDPOINTS
+    // =========================================================
+
+    /**
+     * ✅ FIXES YOUR 405
+     * Admin UI was calling GET /api/registrations and you did not have it.
+     *
+     * IMPORTANT: secure this in Spring Security (admin-only) if needed.
+     */
+    @GetMapping
+    public ResponseEntity<?> getAllRegistrations() {
+        List<Registration> regs = registrationRepository.findAll();
+        List<AdminRegistrationDto> dtos = regs.stream()
+                .map(this::toAdminDto)
+                .toList();
+        return ResponseEntity.ok(dtos);
+    }
+
+    // =========================================================
+    // PARENT ENDPOINTS
+    // =========================================================
+
     // 🔹 Get all registrations for the current parent's visible racers
     @GetMapping("/mine")
     public ResponseEntity<?> getMyRegistrations(@RequestHeader("Authorization") String authHeader) {
@@ -89,6 +162,7 @@ public class RegistrationController {
                 .toList();
 
         List<Registration> regs = registrationRepository.findByRacerIdIn(racerIds);
+
         List<RegistrationDto> dtos = regs.stream()
                 .map(this::toDto)
                 .toList();
@@ -101,6 +175,10 @@ public class RegistrationController {
     public ResponseEntity<?> createRegistration(@RequestHeader("Authorization") String authHeader,
                                                 @RequestBody CreateRegistrationRequest request) {
         Parent parent = getCurrentParent(authHeader);
+
+        if (request == null || request.racerId() == null || request.raceId() == null) {
+            return ResponseEntity.badRequest().body("racerId and raceId are required.");
+        }
 
         Optional<Racer> racerOpt = racerRepository.findById(request.racerId());
         if (racerOpt.isEmpty()) {
@@ -145,7 +223,7 @@ public class RegistrationController {
         Racer racer = reg.getRacer();
 
         // Make sure this registration belongs to one of the current parent's visible racers
-        if (!canManageRacer(parent, racer)) {
+        if (racer == null || !canManageRacer(parent, racer)) {
             return ResponseEntity.status(403)
                     .body("You cannot delete registrations for racers not linked to your account.");
         }
