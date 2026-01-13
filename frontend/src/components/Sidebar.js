@@ -6,6 +6,7 @@ import {
     FaClipboardList,
     FaCogs,
     FaChartBar,
+    FaCalendarAlt
 } from "react-icons/fa";
 import "../styles/Sidebar.css";
 
@@ -16,6 +17,7 @@ const Sidebar = ({ isOpen = true }) => {
         { path: "/admin", label: "Dashboard", icon: <FaTachometerAlt /> },
         { path: "/admin/racers/manage", label: "Racers", icon: <FaUserFriends /> },
         { path: "/admin/results/manage", label: "Results", icon: <FaChartBar /> },
+        { path: "admin/races/manage", label: "Events", icon: <FaCalendarAlt /> },
         {
             path: "/admin/registrations/manage",
             label: "Registrations",

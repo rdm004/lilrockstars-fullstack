@@ -1,0 +1,129 @@
+/* frontend/src/styles/AdminRacesManagement.css */
+
+.admin-races-container {
+    padding: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.admin-races-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1.25rem;
+}
+
+.admin-races-header h1 {
+    margin: 0;
+}
+
+.admin-races-subtitle {
+    margin: 0.25rem 0 0;
+    color: #555;
+}
+
+.loading {
+    color: #666;
+    font-style: italic;
+}
+
+.error {
+    color: #d33;
+    font-weight: 600;
+}
+
+.btn-primary {
+    background: #f47c2a;
+    color: #fff;
+    border: none;
+    padding: 0.7rem 1rem;
+    border-radius: 8px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.12s ease, background 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-primary:hover {
+    background: #d96a21;
+    transform: translateY(-1px);
+}
+
+.admin-races-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.08);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.admin-races-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px; /* allows horizontal scroll on mobile */
+}
+
+.admin-races-table th,
+.admin-races-table td {
+    padding: 0.85rem;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    vertical-align: top;
+}
+
+.admin-races-table th {
+    background: #f8f9fa;
+    font-weight: 800;
+    color: #444;
+}
+
+.race-name {
+    font-weight: 800;
+}
+
+.race-desc {
+    max-width: 520px;
+    color: #444;
+}
+
+.col-actions {
+    width: 170px;
+    white-space: nowrap;
+}
+
+.btn-edit,
+.btn-delete {
+    border: none;
+    border-radius: 6px;
+    padding: 0.45rem 0.75rem;
+    cursor: pointer;
+    font-weight: 700;
+    margin-right: 0.5rem;
+}
+
+.btn-edit {
+    background: #4a90e2;
+    color: #fff;
+}
+
+.btn-delete {
+    background: #e94b3c;
+    color: #fff;
+}
+
+@media (max-width: 700px) {
+    .admin-races-container {
+        padding: 1rem;
+    }
+
+    .admin-races-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-primary {
+        width: 100%;
+    }
+}
