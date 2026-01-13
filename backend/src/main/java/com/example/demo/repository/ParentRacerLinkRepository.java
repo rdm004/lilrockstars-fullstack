@@ -4,9 +4,6 @@ import com.example.demo.model.Parent;
 import com.example.demo.model.ParentRacerLink;
 import com.example.demo.model.Racer;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -16,14 +13,9 @@ public interface ParentRacerLinkRepository extends JpaRepository<ParentRacerLink
 
     boolean existsByParentAndRacer(Parent parent, Racer racer);
 
-    // ✅ Needed so Admin can delete a racer without FK errors
-    @Modifying
-    @Transactional
-    @Query("delete from ParentRacerLink l where l.racer.id = :racerId")
-    int deleteByRacerId(Long racerId);
-}
+    // ✅ For delete-confirm modal (optional counts)
+    long countByRacerId(Long racerId);
 
-void deleteByRacerId(Long racerId);
-// ✅ for racer delete cleanup
-long countByRacerId(Long racerId);
-void deleteByRacerId(Long racerId);
+    // ✅ For safe racer deletion (remove dependencies first)
+    void deleteByRacerId(Long racerId);
+}
