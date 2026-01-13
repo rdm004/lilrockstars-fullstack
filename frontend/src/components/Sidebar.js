@@ -1,3 +1,4 @@
+// Sidebar.js
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -6,7 +7,7 @@ import {
     FaClipboardList,
     FaCogs,
     FaChartBar,
-    FaCalendarAlt
+    FaCalendarAlt, // <-- calendar icon
 } from "react-icons/fa";
 import "../styles/Sidebar.css";
 
@@ -17,12 +18,11 @@ const Sidebar = ({ isOpen = true }) => {
         { path: "/admin", label: "Dashboard", icon: <FaTachometerAlt /> },
         { path: "/admin/racers/manage", label: "Racers", icon: <FaUserFriends /> },
         { path: "/admin/results/manage", label: "Results", icon: <FaChartBar /> },
-        { path: "admin/races/manage", label: "Events", icon: <FaCalendarAlt /> },
-        {
-            path: "/admin/registrations/manage",
-            label: "Registrations",
-            icon: <FaClipboardList />,
-        },
+
+        // ✅ EVENTS should go here (admin races management)
+        { path: "/admin/races/manage", label: "Events", icon: <FaCalendarAlt /> },
+
+        { path: "/admin/registrations/manage", label: "Registrations", icon: <FaClipboardList /> },
         { path: "/admin/settings", label: "Settings", icon: <FaCogs /> },
     ];
 
@@ -36,9 +36,7 @@ const Sidebar = ({ isOpen = true }) => {
                 {menuItems.map((item) => (
                     <li
                         key={item.path}
-                        className={`sidebar-item ${
-                            location.pathname === item.path ? "active" : ""
-                        }`}
+                        className={`sidebar-item ${location.pathname === item.path ? "active" : ""}`}
                     >
                         <Link to={item.path} className="sidebar-link">
                             <span className="icon">{item.icon}</span>
