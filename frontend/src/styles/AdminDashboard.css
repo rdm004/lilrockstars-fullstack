@@ -1,54 +1,80 @@
-/* Dashboard Base */
+/* frontend/src/styles/AdminDashboard.css */
+
 .dashboard-container {
-    background: #fff;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    padding: 1.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
 }
 
+.dashboard-container h1 {
+    margin: 0 0 0.25rem;
+}
+
+.dashboard-container p {
+    margin: 0 0 1.25rem;
+    color: #555;
+}
+
+.loading {
+    color: #666;
+    font-style: italic;
+}
+
+/* Cards */
 .stats-grid {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1rem;
-    margin-top: 1.5rem;
+    margin-bottom: 1.25rem;
 }
 
 .stat-card {
-    flex: 1 1 200px;
-    background: #fff9f1;
-    border: 1px solid #ffd89b;
-    border-radius: 10px;
+    background: #fff;
+    border: 1px solid rgba(244, 124, 42, 0.35);
+    border-radius: 12px;
     padding: 1rem;
-    text-align: center;
-    transition: transform 0.2s ease;
-}
-
-.stat-card:hover {
-    transform: translateY(-4px);
-    background: #fff3e0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
 .stat-card h3 {
-    font-size: 1.1rem;
+    margin: 0 0 0.35rem;
     color: #333;
+    font-size: 1rem;
 }
 
 .stat-card p {
+    margin: 0;
     font-size: 1.8rem;
-    font-weight: 700;
-    color: #1e63ff;
+    font-weight: 800;
+    color: #111;
 }
 
-/* Chart Section */
+/* Chart area */
 .chart-section {
-    margin-top: 2.5rem;
-    background: #fafafa;
-    padding: 1.5rem;
-    border-radius: 10px;
-    border: 1px solid #eee;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
 .chart-section h3 {
-    margin-bottom: 1rem;
-    color: #333;
+    margin: 0 0 0.75rem;
+}
+
+/* ✅ Responsive */
+@media (max-width: 900px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .dashboard-container {
+        padding: 1rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
 }

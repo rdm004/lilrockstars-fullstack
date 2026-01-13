@@ -1,23 +1,31 @@
+/* frontend/src/styles/RaceList.css */
+
+/* IMPORTANT: prevents padding from causing horizontal overflow */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
 .races-container {
     position: relative;
     text-align: center;
-    background-image: url("../staticimages/rockstarslogowhite.png"); /* replace with your image */
+    background-image: url("../staticimages/rockstarslogowhite.png");
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
-    overflow: hidden;
+    overflow-x: hidden; /* ✅ stop sideways scroll */
     min-height: 100vh;
-    padding: 2rem;
+
+    /* ✅ responsive padding */
+    padding: clamp(1rem, 3vw, 2rem);
 }
 
 .races-container::before {
     content: "";
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(255, 255, 255, 0.95); /* light transparent overlay */
+    inset: 0;
+    background-color: rgba(255, 255, 255, 0.95);
     z-index: 0;
 }
 
@@ -26,13 +34,23 @@
     z-index: 1;
 }
 
+/* ✅ Keep content centered with a max width */
+.races-container h1,
+.races-intro,
+.races-grid {
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .races-container h1 {
-    font-size: 2rem;
+    font-size: clamp(1.6rem, 4vw, 2rem);
     margin-bottom: 0.5rem;
     color: #222;
 }
 
-.races-container p {
+/* ✅ ONLY style the intro line, not every <p> on the page */
+.races-intro {
     color: #1e63ff;
     margin-bottom: 1.5rem;
 }
@@ -40,8 +58,13 @@
 /* === GRID LAYOUT === */
 .races-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
+
+    /* ✅ responsive columns without forcing overflow */
+    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+    gap: 1.25rem;
+
+    /* ✅ prevents grid from getting wider than the container */
+    width: 100%;
 }
 
 /* === RACE CARD === */
@@ -49,74 +72,71 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+
     background: white;
-    border-radius: 10px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    padding: 1.1rem;
+
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
     text-align: left;
     transition: transform 0.2s, box-shadow 0.2s;
+
     border: 2px solid #f47c2a;
-    min-height: 340px; /* keeps cards consistent */
+
+    /* ✅ shrink “empty space” */
+    min-height: 260px;
 }
 
+/* Highlight next race */
 .race-card.next-event {
-    border-color: #00ff00; /* 🟢 Highlight next race */
-    box-shadow: 0 0 10px rgba(0, 255, 0, 0.4);
+    border-color: #00c853;
+    box-shadow: 0 0 10px rgba(0, 200, 83, 0.35);
 }
 
 .race-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
 /* === CARD CONTENT === */
 .race-content {
-    flex-grow: 1;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    gap: 0.35rem;
 }
 
 .race-content h2 {
-    font-size: 1.2rem;
-    font-weight: 700;
-    margin-bottom: 0.8rem;
+    font-size: 1.15rem;
+    font-weight: 800;
+    margin: 0 0 0.25rem;
     color: #111;
-    min-height: 48px; /* keeps titles balanced in height */
+
+    /* ✅ don’t force tall titles on mobile */
+    min-height: unset;
 }
 
 .race-date,
 .race-location {
-    font-weight: 500;
+    font-weight: 600;
     color: #333;
-    margin: 0.2rem 0;
+    margin: 0;
     display: flex;
     align-items: center;
-}
-
-.race-date {
+    gap: 0.4rem;
     font-size: 0.95rem;
-    margin-bottom: 0.4rem;
-    min-height: 24px; /* ensures all dates line up */
-}
-
-.race-location {
-    font-size: 0.95rem;
-    margin-bottom: 0.6rem;
 }
 
 .race-desc {
     color: #666;
-    font-size: 0.9rem;
-    margin-top: auto;
-    margin-bottom: 1.2rem;
-    min-height: 48px; /* ensures consistent height for text blocks */
+    font-size: 0.95rem;
+    margin: 0.6rem 0 0;
+    line-height: 1.35;
 }
 
 /* === DIVIDER LINE === */
 .card-divider {
-    border-top: 1px solid #eee;
-    margin: 0.8rem 0 1rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    margin: 0.9rem 0 0.9rem;
 }
 
 /* === CARD FOOTER === */
@@ -130,36 +150,32 @@
     background-color: #f47c2a;
     color: white;
     border: none;
-    padding: 0.6rem 1.2rem;
-    border-radius: 6px;
+    padding: 0.65rem 1.2rem;
+    border-radius: 8px;
     cursor: pointer;
-    font-weight: 600;
-    transition: all 0.2s ease-in-out;
+    font-weight: 700;
+    transition: transform 0.12s ease, background-color 0.2s ease;
+    width: 100%;
 }
 
 .register-btn:hover {
     background-color: #d96a21;
-    transform: scale(1.05);
+    transform: translateY(-1px);
 }
 
-/* === LOADING TEXT === */
 .loading {
     font-style: italic;
     color: #666;
 }
 
-/* === RESPONSIVE DESIGN === */
-@media (max-width: 768px) {
-    .races-grid {
-        grid-template-columns: 1fr;
-    }
-
+/* ✅ Mobile polish */
+@media (max-width: 600px) {
     .race-card {
-        width: 100%;
-        min-height: 300px;
+        padding: 1rem;
+        min-height: unset;
     }
 
-    .register-btn {
-        width: 100%;
+    .races-intro {
+        margin-bottom: 1rem;
     }
 }

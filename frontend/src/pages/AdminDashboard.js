@@ -96,7 +96,7 @@ const AdminDashboard = () => {
                 // --- Load registrations (if endpoint exists) ---
                 let registrationsCount = 0;
                 try {
-                    const regRes = await apiClient.get("/registrations"); // GET /api/registrations
+                    const regRes = await apiClient.get("/admin/registrations"); // GET /api/registrations
                     registrationsCount = (regRes.data || []).length;
                 } catch (err) {
                     // If you don't have this endpoint yet, don't break dashboard
