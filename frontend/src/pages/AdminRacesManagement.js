@@ -79,16 +79,15 @@ const AdminRacesManagement = () => {
         setIsModalOpen(true);
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("Delete this race?")) return;
+    const handleDeleteRace = async (id) => {
+        if (!window.confirm("Delete this event?")) return;
 
         try {
-            // Most projects use /races/{id}. If yours is /admin/races/{id}, change it here.
-            await apiClient.delete(`/races/${id}`);
+            await apiClient.delete(`/admin/races/${id}`);  // ✅ IMPORTANT
             setRaces((prev) => prev.filter((r) => r.id !== id));
-        } catch (e) {
-            console.error("Failed to delete race:", e);
-            alert("Failed to delete. Check console/network.");
+        } catch (err) {
+            console.error("Delete failed:", err);
+            alert("❌ Could not delete event.");
         }
     };
 
