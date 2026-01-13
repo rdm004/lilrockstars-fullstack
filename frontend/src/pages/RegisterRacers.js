@@ -8,7 +8,7 @@ function RegisterRacers() {
         racerId: "",
         raceId: "",
     });
-
+    console.log("apiClient baseURL:", apiClient.defaults.baseURL);
     // Fetch available racers and races
     useEffect(() => {
         apiClient.get("/api/racers").then((res) => setRacers(res.data));
@@ -70,6 +70,7 @@ function RegisterRacers() {
             </form>
         </div>
     );
+
 }
 
 export default RegisterRacers;

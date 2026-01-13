@@ -1,8 +1,9 @@
+// frontend/src/pages/AdminRacesManagement.js
 import React, { useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
 import Modal from "../components/Modal";
 import apiClient from "../utils/apiClient";
-import "../styles/AdminRacesManagement.css";
+import "../styles/AdminRacesManagement.css"; // optional (if you have it)
 
 const EMPTY_FORM = {
     id: null,
@@ -10,12 +11,6 @@ const EMPTY_FORM = {
     raceDate: "",
     location: "",
     description: "",
-};
-
-const toInputDate = (dateStr) => {
-    if (!dateStr) return "";
-    // handles "2026-03-14" or ISO strings
-    return String(dateStr).slice(0, 10);
 };
 
 const AdminRacesManagement = () => {
@@ -27,31 +22,31 @@ const AdminRacesManagement = () => {
     const [editMode, setEditMode] = useState(false);
     const [form, setForm] = useState(EMPTY_FORM);
 
-    const sortedRaces = useMemo(() => {
-        const copy = [...(races || [])];
-        copy.sort((a, b) => new Date(a.raceDate || 0) - new Date(b.raceDate || 0));
-        return copy;
-    }, [races]);
-
     const fetchRaces = async () => {
         try {
             setLoading(true);
             setError("");
-            const res = await apiClient.get("/races"); // backend: /api/races
+
+            // apiClient baseURL already ends with /api
+            const res = await apiClient.get("/races"); // GET /api/races
             const data = res.data || [];
 
-            const normalized = data.map((r) => ({
-                id: r.id,
-                raceName: r.raceName ?? r.name ?? "",
-                raceDate: toInputDate(r.raceDate),
-                location: r.location ?? "",
-                description: r.description ?? "",
+            // Normalize fields (supports either your mapped UI shape or raw backend)
+            const normalized = data.map((x) => ({
+                id: x.id,
+                raceName: x.raceName ?? x.name ?? "",
+                raceDate: x.raceDate ?? x.date ?? "",
+                location: x.location ?? "",
+                description: x.description ?? "",
             }));
+
+            // Sort by date ascending
+            normalized.sort((a, b) => new Date(a.raceDate || 0) - new Date(b.raceDate || 0));
 
             setRaces(normalized);
         } catch (e) {
-            console.error("Failed to load races:", e);
-            setError("Could not load races. Check console/network for details.");
+            console.error("Error loading races:", e);
+            setError("Could not load races. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -61,20 +56,20 @@ const AdminRacesManagement = () => {
         void fetchRaces();
     }, []);
 
-    const openAdd = () => {
+    const handleOpenAdd = () => {
         setEditMode(false);
         setForm(EMPTY_FORM);
         setIsModalOpen(true);
     };
 
-    const openEdit = (race) => {
+    const handleOpenEdit = (r) => {
         setEditMode(true);
         setForm({
-            id: race.id,
-            raceName: race.raceName || "",
-            raceDate: toInputDate(race.raceDate),
-            location: race.location || "",
-            description: race.description || "",
+            id: r.id,
+            raceName: r.raceName || "",
+            raceDate: r.raceDate || "",
+            location: r.location || "",
+            description: r.description || "",
         });
         setIsModalOpen(true);
     };
@@ -83,31 +78,34 @@ const AdminRacesManagement = () => {
         if (!window.confirm("Delete this event?")) return;
 
         try {
-            await apiClient.delete(`/admin/races/${id}`);  // ✅ IMPORTANT
-            setRaces((prev) => prev.filter((r) => r.id !== id));
-        } catch (err) {
-            console.error("Delete failed:", err);
-            alert("❌ Could not delete event.");
+            // DELETE /api/races/{id}
+            await apiClient.delete(`/races/${id}`);
+            setRaces((prev) => prev.filter((x) => x.id !== id));
+        } catch (e) {
+            console.error("Error deleting race:", e);
+            alert("❌ Could not delete this event. (Check backend route / permissions)");
         }
     };
 
     const handleSave = async () => {
-        if (!form.raceName?.trim() || !form.raceDate) {
+        const payload = {
+            raceName: (form.raceName || "").trim(),
+            raceDate: form.raceDate || null,
+            location: (form.location || "").trim(),
+            description: (form.description || "").trim(),
+        };
+
+        if (!payload.raceName || !payload.raceDate) {
             alert("Race Name and Race Date are required.");
             return;
         }
 
-        const payload = {
-            raceName: form.raceName.trim(),
-            raceDate: form.raceDate, // yyyy-mm-dd
-            location: form.location?.trim() || "",
-            description: form.description?.trim() || "",
-        };
-
         try {
             if (editMode && form.id) {
+                // PUT /api/races/{id}
                 await apiClient.put(`/races/${form.id}`, payload);
             } else {
+                // POST /api/races
                 await apiClient.post("/races", payload);
             }
 
@@ -116,63 +114,92 @@ const AdminRacesManagement = () => {
             setEditMode(false);
             void fetchRaces();
         } catch (e) {
-            console.error("Failed to save race:", e);
-            alert("Failed to save. Check console/network.");
+            console.error("Error saving race:", e);
+            alert("❌ Failed to save event. (Check backend route / payload fields)");
         }
     };
 
+    const formatDate = (dateStr) => {
+        if (!dateStr) return "";
+        const d = new Date(dateStr);
+        if (Number.isNaN(d.getTime())) return dateStr;
+        return d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "2-digit" });
+    };
+
+    const upcomingCount = useMemo(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return races.filter((r) => {
+            const d = new Date(r.raceDate);
+            if (Number.isNaN(d.getTime())) return false;
+            d.setHours(0, 0, 0, 0);
+            return d >= today;
+        }).length;
+    }, [races]);
+
     return (
-        <Layout title="Events (Races) Management">
-            <div className="admin-races-page">
-                <div className="admin-races-header">
+        <Layout title="Events Management">
+            <div className="admin-races-page" style={{ padding: "2rem" }}>
+                <div
+                    className="admin-races-header"
+                    style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: "1rem",
+                        marginBottom: "1.25rem",
+                    }}
+                >
                     <div>
-                        <h1>Events</h1>
-                        <p className="subtext">Add and manage upcoming races/events.</p>
+                        <h1 style={{ margin: 0 }}>Events</h1>
+                        <p style={{ margin: "0.35rem 0 0", color: "#666" }}>
+                            Upcoming events: <b>{upcomingCount}</b>
+                        </p>
                     </div>
 
-                    <button className="btn-primary" onClick={openAdd}>
+                    <button className="add-btn" onClick={handleOpenAdd}>
                         + Add Event
                     </button>
                 </div>
 
-                {loading && <p className="loading">Loading races...</p>}
-                {!loading && error && <p className="error">{error}</p>}
-
-                {!loading && !error && (
-                    <div className="admin-races-table-wrap">
-                        <table className="admin-races-table">
+                {loading ? (
+                    <p className="loading">Loading events...</p>
+                ) : error ? (
+                    <p className="error" style={{ color: "#d33" }}>
+                        {error}
+                    </p>
+                ) : races.length === 0 ? (
+                    <p>No events found.</p>
+                ) : (
+                    <div style={{ overflowX: "auto" }}>
+                        <table className="admin-races-table" style={{ width: "100%", borderCollapse: "collapse" }}>
                             <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Event</th>
-                                <th>Location</th>
-                                <th>Description</th>
-                                <th style={{ width: 180 }}>Actions</th>
+                            <tr style={{ background: "#f8f9fa" }}>
+                                <th style={{ textAlign: "left", padding: "12px", borderBottom: "1px solid #eee" }}>Event</th>
+                                <th style={{ textAlign: "left", padding: "12px", borderBottom: "1px solid #eee" }}>Date</th>
+                                <th style={{ textAlign: "left", padding: "12px", borderBottom: "1px solid #eee" }}>Location</th>
+                                <th style={{ textAlign: "left", padding: "12px", borderBottom: "1px solid #eee" }}>Description</th>
+                                <th style={{ textAlign: "left", padding: "12px", borderBottom: "1px solid #eee" }}>Actions</th>
                             </tr>
                             </thead>
+
                             <tbody>
-                            {sortedRaces.length === 0 ? (
-                                <tr>
-                                    <td colSpan="5">No races found.</td>
+                            {races.map((r) => (
+                                <tr key={r.id}>
+                                    <td style={{ padding: "12px", borderBottom: "1px solid #f0f0f0" }}>{r.raceName}</td>
+                                    <td style={{ padding: "12px", borderBottom: "1px solid #f0f0f0" }}>{formatDate(r.raceDate)}</td>
+                                    <td style={{ padding: "12px", borderBottom: "1px solid #f0f0f0" }}>{r.location || "-"}</td>
+                                    <td style={{ padding: "12px", borderBottom: "1px solid #f0f0f0" }}>{r.description || "-"}</td>
+                                    <td style={{ padding: "12px", borderBottom: "1px solid #f0f0f0", whiteSpace: "nowrap" }}>
+                                        <button className="edit-btn" onClick={() => handleOpenEdit(r)} style={{ marginRight: "8px" }}>
+                                            Edit
+                                        </button>
+                                        <button className="delete-btn" onClick={() => handleDeleteRace(r.id)}>
+                                            Delete
+                                        </button>
+                                    </td>
                                 </tr>
-                            ) : (
-                                sortedRaces.map((r) => (
-                                    <tr key={r.id}>
-                                        <td>{r.raceDate || "-"}</td>
-                                        <td style={{ fontWeight: 700 }}>{r.raceName}</td>
-                                        <td>{r.location || "-"}</td>
-                                        <td>{r.description || "-"}</td>
-                                        <td>
-                                            <button className="btn-edit" onClick={() => openEdit(r)}>
-                                                Edit
-                                            </button>
-                                            <button className="delete-btn" onClick={() => handleDeleteRace(race.id)}>
-                                                Delete
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
+                            ))}
                             </tbody>
                         </table>
                     </div>
@@ -183,7 +210,7 @@ const AdminRacesManagement = () => {
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
                     onSubmit={handleSave}
-                    submitLabel={editMode ? "Update Event" : "Create Event"}
+                    submitLabel={editMode ? "Update Event" : "Add Event"}
                 >
                     <label>Event Name</label>
                     <input
