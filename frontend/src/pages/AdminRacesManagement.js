@@ -166,7 +166,7 @@ const AdminRacesManagement = () => {
                                             <button className="btn-edit" onClick={() => openEdit(r)}>
                                                 Edit
                                             </button>
-                                            <button className="btn-delete" onClick={() => handleDelete(r.id)}>
+                                            <button className="delete-btn" onClick={() => handleDeleteRace(race.id)}>
                                                 Delete
                                             </button>
                                         </td>
