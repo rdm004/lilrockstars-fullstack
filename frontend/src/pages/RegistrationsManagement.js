@@ -38,7 +38,7 @@ const RegistrationsManagement = () => {
         if (n === 4) return "4 Year Old Division";
         if (n === 5) return "5 Year Old Division";
         if (n === 6 || n === 7) return "Snack Pack Division";
-        return "Snack Pack Division"; // fallback if older/other
+        return "Snack Pack Division";
     };
 
     const divisionRank = (division) => {
@@ -51,43 +51,27 @@ const RegistrationsManagement = () => {
     };
 
     const getRacerId = (r) => {
-        // tolerate different field names
         const id = r?.id ?? r?.racerId ?? r?.racerID;
         return id !== undefined && id !== null ? Number(id) : null;
     };
 
     const getRacerName = (r) => {
         if (!r) return "-";
-
-        // Most common shapes
         const first = r.firstName ?? r.first_name ?? "";
         const last = r.lastName ?? r.last_name ?? "";
         const full = `${first} ${last}`.trim();
         if (full) return full;
-
-        // Alternate shapes
-        return (
-            r.racerName ||
-            r.fullName ||
-            r.name ||
-            r.displayName ||
-            "-"
-        );
+        return r.racerName || r.fullName || r.name || r.displayName || "-";
     };
 
     const getRacerDivision = (r) => {
         if (!r) return "-";
 
-        // If your DB stores division directly
         const direct =
-            r.division ||
-            r.divisionName ||
-            r.ageDivision ||
-            r.className;
+            r.division || r.divisionName || r.ageDivision || r.className;
 
         if (direct) return direct;
 
-        // Otherwise compute from age
         const age = r.age ?? r.racerAge ?? r.ageYears ?? r.age_years;
         return divisionFromAge(age);
     };
@@ -104,7 +88,7 @@ const RegistrationsManagement = () => {
     };
 
     // ---------------------------
-    // Maps for lookup
+    // Lookup maps
     // ---------------------------
     const racersById = useMemo(() => {
         const m = new Map();
@@ -143,19 +127,39 @@ const RegistrationsManagement = () => {
 
             const raw = regsRes.data || [];
 
-            // Normalize registrations (supports DTO or nested entities)
+            // ✅ Helpful debug (leave for now)
+            // console.log("REG RAW SAMPLE:", raw?.[0]);
+
             const normalized = raw.map((row) => {
-                const nestedRacerId = row?.racer?.id ?? row?.racer?.racerId ?? row?.racer?.racerID;
-                const nestedRaceId = row?.race?.id ?? row?.race?.raceId ?? row?.race?.raceID;
+                const nestedRacerId =
+                    row?.racer?.id ?? row?.racer?.racerId ?? row?.racer?.racerID;
+                const nestedRaceId =
+                    row?.race?.id ?? row?.race?.raceId ?? row?.race?.raceID;
 
                 return {
-                    id: row.id,
-                    racerId: row.racerId ?? row.racerID ?? nestedRacerId ?? row.racer_id ?? "",
-                    raceId: row.raceId ?? row.raceID ?? nestedRaceId ?? row.race_id ?? "",
+                    // ✅ Defensive: support id or registrationId
+                    id: row.id ?? row.registrationId ?? row.registrationID,
+
+                    racerId:
+                        row.racerId ??
+                        row.racerID ??
+                        nestedRacerId ??
+                        row.racer_id ??
+                        "",
+
+                    raceId:
+                        row.raceId ??
+                        row.raceID ??
+                        nestedRaceId ??
+                        row.race_id ??
+                        "",
+
+                    // status might not exist on your entity (fine)
                     status: row.status ?? null,
+
                     parentEmail: row.parentEmail ?? row.parent_email ?? null,
 
-                    // If backend already sends these, keep them
+                    // Optional display fields if backend sends them
                     racerName: row.racerName ?? null,
                     division: row.division ?? null,
                     carNumber: row.carNumber ?? null,
@@ -183,10 +187,7 @@ const RegistrationsManagement = () => {
             const racer = racersById.get(Number(reg.racerId));
             const race = racesById.get(Number(reg.raceId));
 
-            // Racer display fields:
-            const racerName =
-                reg.racerName ||
-                getRacerName(racer);
+            const racerName = reg.racerName || getRacerName(racer);
 
             const carNumber =
                 reg.carNumber ??
@@ -194,15 +195,13 @@ const RegistrationsManagement = () => {
                 racer?.car_number ??
                 "";
 
-            const division =
-                reg.division ||
-                getRacerDivision(racer);
+            const division = reg.division || getRacerDivision(racer);
 
-            const parentEmail =
-                getParentEmail(racer, reg);
+            const parentEmail = getParentEmail(racer, reg);
 
-            // Race display fields:
-            const raceName = race?.raceName || race?.name || `Race #${reg.raceId || "?"}`;
+            const raceName =
+                race?.raceName || race?.name || `Race #${reg.raceId || "?"}`;
+
             const raceDate = race?.raceDate || "";
 
             return {
@@ -218,7 +217,7 @@ const RegistrationsManagement = () => {
     }, [registrations, racersById, racesById]);
 
     // ---------------------------
-    // Group by race
+    // Group by raceId + sort rows (division then car #)
     // ---------------------------
     const regsByRace = useMemo(() => {
         const m = new Map();
@@ -254,13 +253,19 @@ const RegistrationsManagement = () => {
     }, [regsByRace, racesById]);
 
     // ---------------------------
-    // Delete
+    // Delete (ADMIN)
     // ---------------------------
     const handleDelete = async (id) => {
         if (!window.confirm("Delete this registration?")) return;
 
+        if (!id) {
+            console.error("Delete blocked: missing registration id");
+            alert("❌ Cannot delete: missing registration id from API.");
+            return;
+        }
+
         try {
-            await apiClient.delete(`/admin/registrations/${id}`);
+            await apiClient.delete(`/admin/registrations/${id}`); // => /api/admin/registrations/{id}
             setRegistrations((prev) => prev.filter((r) => r.id !== id));
         } catch (err) {
             console.error("Error deleting registration:", err);
@@ -269,7 +274,7 @@ const RegistrationsManagement = () => {
     };
 
     // ---------------------------
-    // Print
+    // Print sign-in sheet
     // ---------------------------
     const printSignInSheet = (raceId) => {
         const race = racesById.get(Number(raceId));
@@ -369,10 +374,12 @@ const RegistrationsManagement = () => {
         <Layout title="Registrations Management">
             <div className="registrations-container">
                 <div className="registrations-header">
-                    <h1>Registrations</h1>
-                    <p style={{ margin: 0, color: "#666" }}>
-                        Admin view: print sign-in sheets and manage registrations.
-                    </p>
+                    <div>
+                        <h1 style={{ marginBottom: 6 }}>Registrations</h1>
+                        <p style={{ margin: 0, color: "#666" }}>
+                            Admin view: print sign-in sheets and manage registrations.
+                        </p>
+                    </div>
                 </div>
 
                 {loading ? (
@@ -437,11 +444,19 @@ const RegistrationsManagement = () => {
                                         rows.map((r) => (
                                             <tr key={r.id}>
                                                 <td>{r.racerName || "-"}</td>
-                                                <td>{r.carNumber ? `#${String(r.carNumber).replace(/^#/, "")}` : "-"}</td>
+                                                <td>
+                                                    {r.carNumber
+                                                        ? `#${String(r.carNumber).replace(/^#/, "")}`
+                                                        : "-"}
+                                                </td>
                                                 <td>{r.division || "-"}</td>
                                                 <td>{r.parentEmail || "-"}</td>
                                                 <td style={{ textAlign: "right" }}>
-                                                    <button className="delete-btn" onClick={() => handleDelete(reg.id)}>
+                                                    <button
+                                                        type="button"
+                                                        className="delete-btn"
+                                                        onClick={() => handleDelete(r.id)}
+                                                    >
                                                         Delete
                                                     </button>
                                                 </td>
