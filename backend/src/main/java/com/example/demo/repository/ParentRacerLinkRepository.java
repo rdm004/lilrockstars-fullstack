@@ -24,3 +24,6 @@ public interface ParentRacerLinkRepository extends JpaRepository<ParentRacerLink
 }
 
 void deleteByRacerId(Long racerId);
+// ✅ for racer delete cleanup
+long countByRacerId(Long racerId);
+void deleteByRacerId(Long racerId);

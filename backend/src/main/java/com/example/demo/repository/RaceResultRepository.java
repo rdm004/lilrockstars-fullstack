@@ -16,3 +16,6 @@ public interface RaceResultRepository extends JpaRepository<RaceResult, Long> {
 }
 
 void deleteByRacerId(Long racerId);
+// ✅ for racer delete cleanup
+long countByRacerId(Long racerId);
+void deleteByRacerId(Long racerId);

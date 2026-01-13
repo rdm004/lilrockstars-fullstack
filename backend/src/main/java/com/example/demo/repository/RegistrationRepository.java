@@ -31,3 +31,6 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
 }
 
 void deleteByRacerId(Long racerId);
+// ✅ for racer delete cleanup
+long countByRacerId(Long racerId);
+void deleteByRacerId(Long racerId);
