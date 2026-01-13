@@ -1,9 +1,12 @@
 package com.example.demo.controller;
 
-import com.example.demo.model.Racer;
 import com.example.demo.model.Parent;
-import com.example.demo.repository.RacerRepository;
+import com.example.demo.model.Racer;
+import com.example.demo.repository.ParentRacerLinkRepository;
 import com.example.demo.repository.ParentRepository;
+import com.example.demo.repository.RaceResultRepository;
+import com.example.demo.repository.RacerRepository;
+import com.example.demo.repository.RegistrationRepository;
 import com.example.demo.security.JwtUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,53 +20,75 @@ public class RacerController {
 
     private final RacerRepository racerRepository;
     private final ParentRepository parentRepository;
+    private final ParentRacerLinkRepository parentRacerLinkRepository;
+    private final RegistrationRepository registrationRepository;
+    private final RaceResultRepository raceResultRepository;
     private final JwtUtil jwtUtil;
 
-    public RacerController(RacerRepository racerRepository, ParentRepository parentRepository, JwtUtil jwtUtil) {
+    public RacerController(RacerRepository racerRepository,
+                           ParentRepository parentRepository,
+                           ParentRacerLinkRepository parentRacerLinkRepository,
+                           RegistrationRepository registrationRepository,
+                           RaceResultRepository raceResultRepository,
+                           JwtUtil jwtUtil) {
         this.racerRepository = racerRepository;
         this.parentRepository = parentRepository;
+        this.parentRacerLinkRepository = parentRacerLinkRepository;
+        this.registrationRepository = registrationRepository;
+        this.raceResultRepository = raceResultRepository;
         this.jwtUtil = jwtUtil;
+    }
+
+    // -------------------------
+    // Helpers
+    // -------------------------
+    private Parent getCurrentParent(String authHeader) {
+        String token = authHeader.substring(7);
+        String email = jwtUtil.extractUsername(token);
+
+        return parentRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Parent not found for email: " + email));
+    }
+
+    /**
+     * Parent can manage racer if:
+     *  - they are primary parent on Racer, OR
+     *  - ParentRacerLink exists
+     */
+    private boolean canManageRacer(Parent parent, Racer racer) {
+        if (racer.getParent() != null && racer.getParent().getId().equals(parent.getId())) {
+            return true;
+        }
+        return parentRacerLinkRepository.existsByParentAndRacer(parent, racer);
     }
 
     // 🧍 Get all racers for logged-in parent
     @GetMapping
     public ResponseEntity<?> getAllRacers(@RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.substring(7);
-        String email = jwtUtil.extractUsername(token);
-        System.out.println("🎯 Decoded email from token: " + email);
+        try {
+            Parent parent = getCurrentParent(authHeader);
 
-        Optional<Parent> parentOpt = parentRepository.findByEmail(email);
-        if (parentOpt.isEmpty()) {
-            System.out.println("⚠️ Parent not found for email: " + email);
+            List<Racer> racers = racerRepository.findAllVisibleToParent(parent);
+            return ResponseEntity.ok(racers);
+        } catch (Exception e) {
             return ResponseEntity.status(401).body("Parent not found");
         }
-
-        Parent parent = parentOpt.get();
-        System.out.println("✅ Found parent ID: " + parent.getId() + " for " + parent.getEmail());
-
-        List<Racer> racers = racerRepository.findAllVisibleToParent(parent);
-        System.out.println("🏎️ Racers found for parent: " + racers.size());
-        racers.forEach(r -> System.out.println(" - " + r.getFirstName() + " " + r.getLastName()));
-
-        return ResponseEntity.ok(racers);
     }
 
     // ➕ Add new racer
     @PostMapping
     public ResponseEntity<?> addRacer(@RequestHeader("Authorization") String authHeader,
                                       @RequestBody Racer racer) {
-        String token = authHeader.substring(7);
-        String email = jwtUtil.extractUsername(token);
+        try {
+            Parent parent = getCurrentParent(authHeader);
 
-        Optional<Parent> parentOpt = parentRepository.findByEmail(email);
-        if (parentOpt.isEmpty()) return ResponseEntity.status(401).body("Parent not found");
+            racer.setParent(parent); // ✅ critical line
 
-        Parent parent = parentOpt.get();
-        racer.setParent(parent); // ✅ critical line
-
-        Racer saved = racerRepository.save(racer);
-        System.out.println("✅ Saved racer: " + saved.getFirstName() + " for parent ID " + parent.getId());
-        return ResponseEntity.ok(saved);
+            Racer saved = racerRepository.save(racer);
+            return ResponseEntity.ok(saved);
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body("Parent not found");
+        }
     }
 
     // ✏️ Update racer
@@ -71,18 +96,19 @@ public class RacerController {
     public ResponseEntity<?> updateRacer(@PathVariable Long id,
                                          @RequestHeader("Authorization") String authHeader,
                                          @RequestBody Racer updatedRacer) {
-        String token = authHeader.substring(7);
-        String email = jwtUtil.extractUsername(token);
-
-        Optional<Parent> parentOpt = parentRepository.findByEmail(email);
-        if (parentOpt.isEmpty()) return ResponseEntity.status(401).body("Parent not found");
+        Parent parent;
+        try {
+            parent = getCurrentParent(authHeader);
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body("Parent not found");
+        }
 
         Optional<Racer> existingOpt = racerRepository.findById(id);
         if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
 
         Racer existing = existingOpt.get();
 
-        if (!existing.getParent().getId().equals(parentOpt.get().getId())) {
+        if (!canManageRacer(parent, existing)) {
             return ResponseEntity.status(403).body("Unauthorized to edit this racer.");
         }
 
@@ -95,25 +121,36 @@ public class RacerController {
         return ResponseEntity.ok(saved);
     }
 
-    // 🗑️ Delete racer
+    // 🗑️ Delete racer (FIXED)
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteRacer(@PathVariable Long id,
                                          @RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.substring(7);
-        String email = jwtUtil.extractUsername(token);
 
-        Optional<Parent> parentOpt = parentRepository.findByEmail(email);
-        if (parentOpt.isEmpty()) return ResponseEntity.status(401).body("Parent not found");
+        Parent parent;
+        try {
+            parent = getCurrentParent(authHeader);
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body("Parent not found");
+        }
 
         Optional<Racer> racerOpt = racerRepository.findById(id);
         if (racerOpt.isEmpty()) return ResponseEntity.notFound().build();
 
         Racer racer = racerOpt.get();
-        if (!racer.getParent().getId().equals(parentOpt.get().getId())) {
+
+        if (!canManageRacer(parent, racer)) {
             return ResponseEntity.status(403).body("Unauthorized to delete this racer.");
         }
 
-        racerRepository.delete(racer);
+        // ✅ Delete dependent rows first to prevent FK constraint errors
+        // (These methods must exist in your repositories)
+        parentRacerLinkRepository.deleteByRacerId(id);
+        registrationRepository.deleteByRacerId(id);
+        raceResultRepository.deleteByRacerId(id);
+
+        // Now delete the racer
+        racerRepository.deleteById(id);
+
         return ResponseEntity.ok("Racer deleted successfully.");
     }
 }

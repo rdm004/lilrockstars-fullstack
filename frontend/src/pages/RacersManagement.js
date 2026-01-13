@@ -3,6 +3,7 @@ import Layout from "../components/Layout";
 import Modal from "../components/Modal";
 import apiClient from "../utils/apiClient";
 import "../styles/RacersManagement.css";
+import DeleteRacerConfirmModal from "../components/DeleteRacerConfirmModal"; // ✅ NEW
 
 const getDivisionFromAge = (ageRaw) => {
     const age = Number(ageRaw);
@@ -21,6 +22,10 @@ const RacersManagement = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editMode, setEditMode] = useState(false);
+
+    // ✅ Delete modal state
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [racerToDelete, setRacerToDelete] = useState(null);
 
     const emptyForm = {
         id: null,
@@ -50,16 +55,24 @@ const RacersManagement = () => {
         void fetchRacers();
     }, []);
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this racer?")) return;
+    // ✅ NEW: open delete modal (no window.confirm)
+    const openDeleteRacer = (racer) => {
+        setRacerToDelete(racer);
+        setDeleteModalOpen(true);
+    };
 
+    // ✅ NEW: confirmed delete (checkbox checked)
+    const confirmDeleteRacer = async (racerId) => {
         try {
-            await apiClient.delete(`/racers/${id}`);
+            await apiClient.delete(`/racers/${racerId}`);
             // refresh list
             void fetchRacers();
         } catch (err) {
             console.error("Error deleting racer:", err);
             alert("❌ Failed to delete racer.");
+        } finally {
+            setDeleteModalOpen(false);
+            setRacerToDelete(null);
         }
     };
 
@@ -110,8 +123,21 @@ const RacersManagement = () => {
         }
     };
 
+    const racerToDeleteName = racerToDelete
+        ? `${racerToDelete.firstName || ""} ${racerToDelete.lastName || ""}`.trim()
+        : "this racer";
+
     return (
         <Layout title="Racers Management">
+            {/* ✅ Delete confirmation modal */}
+            <DeleteRacerConfirmModal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                onConfirm={confirmDeleteRacer}
+                racerId={racerToDelete?.id}
+                racerName={racerToDeleteName}
+            />
+
             <div className="racers-container">
                 <div className="racers-header">
                     <h1>Racers Management</h1>
@@ -157,7 +183,7 @@ const RacersManagement = () => {
                                     </button>
                                     <button
                                         className="delete-btn"
-                                        onClick={() => handleDelete(racer.id)}
+                                        onClick={() => openDeleteRacer(racer)} // ✅ UPDATED
                                     >
                                         Delete
                                     </button>
@@ -169,6 +195,7 @@ const RacersManagement = () => {
                 )}
             </div>
 
+            {/* Add/Edit Modal */}
             <Modal
                 title={editMode ? "Edit Racer" : "Add Racer"}
                 isOpen={isModalOpen}

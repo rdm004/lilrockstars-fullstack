@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import "../styles/ParentDashboard.css";
 import { formatRaceDate } from "../utils/dateUtils";
+import DeleteRacerConfirmModal from "../components/DeleteRacerConfirmModal"; // ✅ NEW
 
 function ParentDashboard() {
     const [parent, setParent] = useState(null);
@@ -20,6 +21,10 @@ function ParentDashboard() {
     const [loading, setLoading] = useState(true);
     const [registrations, setRegistrations] = useState({});
     // key: `${racerId}|${raceId}` -> { id, racerId, raceId }
+
+    // ✅ Delete modal state
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [racerToDelete, setRacerToDelete] = useState(null);
 
     // 👥 Co-parent invite state
     const [coParentEmail, setCoParentEmail] = useState("");
@@ -139,29 +144,38 @@ function ParentDashboard() {
             });
     };
 
-    const handleDeleteRacer = (id) => {
-        apiClient
-            .delete(`/racers/${id}`)
-            .then(() => {
-                setRacers(racers.filter((r) => r.id !== id));
-                // Also remove any registrations associated with this racer
-                setRegistrations((prev) => {
-                    const copy = { ...prev };
-                    Object.keys(copy).forEach((key) => {
-                        if (key.startsWith(`${id}|`)) {
-                            delete copy[key];
-                        }
-                    });
-                    return copy;
+    // ✅ NEW: open delete modal instead of deleting immediately
+    const openDeleteRacer = (racer) => {
+        setRacerToDelete(racer);
+        setDeleteModalOpen(true);
+    };
+
+    // ✅ NEW: confirmed delete (checkbox was checked)
+    const confirmDeleteRacer = async (racerId) => {
+        try {
+            await apiClient.delete(`/racers/${racerId}`);
+
+            // remove racer
+            setRacers((prev) => prev.filter((r) => r.id !== racerId));
+
+            // remove any registrations associated with this racer
+            setRegistrations((prev) => {
+                const copy = { ...prev };
+                Object.keys(copy).forEach((key) => {
+                    if (key.startsWith(`${racerId}|`)) delete copy[key];
                 });
-                setStatusMessage("❌ Racer removed.");
-                setTimeout(() => setStatusMessage(""), 2000);
-            })
-            .catch((err) => {
-                console.error("Error deleting racer:", err);
-                setStatusMessage("❌ Error removing racer.");
-                setTimeout(() => setStatusMessage(""), 2000);
+                return copy;
             });
+
+            setStatusMessage("🗑️ Racer deleted.");
+        } catch (err) {
+            console.error("Error deleting racer:", err);
+            setStatusMessage("❌ Error removing racer.");
+        } finally {
+            setDeleteModalOpen(false);
+            setRacerToDelete(null);
+            setTimeout(() => setStatusMessage(""), 2000);
+        }
     };
 
     // === Race Registration ===
@@ -225,8 +239,21 @@ function ParentDashboard() {
         return <p>Loading dashboard...</p>;
     }
 
+    const racerToDeleteName = racerToDelete
+        ? `${racerToDelete.firstName || ""} ${racerToDelete.lastName || ""}`.trim()
+        : "this racer";
+
     return (
         <div className="dashboard-container">
+            {/* ✅ Delete confirmation modal */}
+            <DeleteRacerConfirmModal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                onConfirm={confirmDeleteRacer}
+                racerId={racerToDelete?.id}
+                racerName={racerToDeleteName}
+            />
+
             {/* Header with welcome + co-parent invite + logout */}
             <div className="dashboard-header">
                 <div className="welcome-section">
@@ -322,7 +349,7 @@ function ParentDashboard() {
                                         </button>
                                         <button
                                             className="remove-btn"
-                                            onClick={() => handleDeleteRacer(racer.id)}
+                                            onClick={() => openDeleteRacer(racer)} // ✅ UPDATED
                                         >
                                             Remove
                                         </button>
