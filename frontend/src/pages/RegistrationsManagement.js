@@ -441,7 +441,7 @@ const RegistrationsManagement = () => {
                                                 <td>{r.division || "-"}</td>
                                                 <td>{r.parentEmail || "-"}</td>
                                                 <td style={{ textAlign: "right" }}>
-                                                    <button className="delete-btn" onClick={() => handleDelete(r.id)}>
+                                                    <button className="delete-btn" onClick={() => handleDelete(reg.id)}>
                                                         Delete
                                                     </button>
                                                 </td>
