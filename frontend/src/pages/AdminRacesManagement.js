@@ -241,7 +241,7 @@ const AdminRacesManagement = () => {
                     }}
                 >
                     <div>
-                        <h1 style={{ margin: 0, color: "#f47c2a"}}>Events</h1>
+                        <h1 style={{ margin: 0, color: "#000"}}>Events</h1>
                         <p style={{ margin: "1.5rem 0 0", color: "#1e63ff", fontSize: 16 }}>
                             Upcoming Events: <b>{upcomingCount}</b>
                         </p>
@@ -288,7 +288,7 @@ const AdminRacesManagement = () => {
                         {/* ✅ PAST EVENTS */}
                         <div style={{ marginTop: "2rem" }}>
                             <h2 style={{ marginTop: "2.5rem", color: "#666" }}>Past Events</h2>
-                            <p style={{ fontSize: "0.9rem", color: "#777" }}>
+                            <p style={{ fontSize: "0.9rem", color: "#1e63ff" }}>
                                 Past events are kept for historical results and cannot be deleted.
                             </p>
 
