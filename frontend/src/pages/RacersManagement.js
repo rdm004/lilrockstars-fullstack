@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+// frontend/src/pages/RacersManagement.js
+import React, { useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
 import Modal from "../components/Modal";
 import apiClient from "../utils/apiClient";
 import "../styles/RacersManagement.css";
-import DeleteRacerConfirmModal from "../components/DeleteRacerConfirmModal"; // ✅ NEW
 
 const getDivisionFromAge = (ageRaw) => {
     const age = Number(ageRaw);
@@ -15,17 +15,25 @@ const getDivisionFromAge = (ageRaw) => {
     return "N/A";
 };
 
+const DIVISION_OPTIONS = [
+    "All Divisions",
+    "3 Year Old Division",
+    "4 Year Old Division",
+    "5 Year Old Division",
+    "Snack Pack Division",
+];
+
 const RacersManagement = () => {
     const [racers, setRacers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
+    // ✅ Division filter + optional search
+    const [divisionFilter, setDivisionFilter] = useState("All Divisions");
+    const [searchTerm, setSearchTerm] = useState("");
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editMode, setEditMode] = useState(false);
-
-    // ✅ Delete modal state
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-    const [racerToDelete, setRacerToDelete] = useState(null);
 
     const emptyForm = {
         id: null,
@@ -55,24 +63,47 @@ const RacersManagement = () => {
         void fetchRacers();
     }, []);
 
-    // ✅ NEW: open delete modal (no window.confirm)
-    const openDeleteRacer = (racer) => {
-        setRacerToDelete(racer);
-        setDeleteModalOpen(true);
-    };
+    // ✅ Filtered list (division dropdown + search box)
+    const filteredRacers = useMemo(() => {
+        const q = searchTerm.trim().toLowerCase();
 
-    // ✅ NEW: confirmed delete (checkbox checked)
-    const confirmDeleteRacer = async (racerId) => {
+        return (racers || [])
+            .map((r) => {
+                const division = getDivisionFromAge(r.age);
+                const name = `${r.firstName ?? ""} ${r.lastName ?? ""}`.trim().toLowerCase();
+                const car = String(r.carNumber ?? "").toLowerCase();
+                return { ...r, _division: division, _name: name, _car: car };
+            })
+            .filter((r) => {
+                const matchesDivision =
+                    divisionFilter === "All Divisions" || r._division === divisionFilter;
+
+                const matchesSearch =
+                    !q || r._name.includes(q) || r._car.includes(q) || String(r.age ?? "").includes(q);
+
+                return matchesDivision && matchesSearch;
+            })
+            .sort((a, b) => {
+                // Optional: sort by division then car number
+                if (a._division !== b._division) return a._division.localeCompare(b._division);
+
+                const carA = Number(String(a.carNumber ?? "").replace(/\D/g, "")) || 9999;
+                const carB = Number(String(b.carNumber ?? "").replace(/\D/g, "")) || 9999;
+                if (carA !== carB) return carA - carB;
+
+                return a._name.localeCompare(b._name);
+            });
+    }, [racers, divisionFilter, searchTerm]);
+
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this racer?")) return;
+
         try {
-            await apiClient.delete(`/racers/${racerId}`);
-            // refresh list
+            await apiClient.delete(`/racers/${id}`);
             void fetchRacers();
         } catch (err) {
             console.error("Error deleting racer:", err);
             alert("❌ Failed to delete racer.");
-        } finally {
-            setDeleteModalOpen(false);
-            setRacerToDelete(null);
         }
     };
 
@@ -123,35 +154,84 @@ const RacersManagement = () => {
         }
     };
 
-    const racerToDeleteName = racerToDelete
-        ? `${racerToDelete.firstName || ""} ${racerToDelete.lastName || ""}`.trim()
-        : "this racer";
+    const clearFilters = () => {
+        setDivisionFilter("All Divisions");
+        setSearchTerm("");
+    };
 
     return (
         <Layout title="Racers Management">
-            {/* ✅ Delete confirmation modal */}
-            <DeleteRacerConfirmModal
-                isOpen={deleteModalOpen}
-                onClose={() => setDeleteModalOpen(false)}
-                onConfirm={confirmDeleteRacer}
-                racerId={racerToDelete?.id}
-                racerName={racerToDeleteName}
-            />
-
             <div className="racers-container">
                 <div className="racers-header">
                     <h1>Racers Management</h1>
-                    <button className="add-btn" onClick={handleOpenAdd}>
-                        + Add Racer
-                    </button>
+
+                    {/* ✅ Filter controls */}
+                    <div
+                        style={{
+                            display: "flex",
+                            gap: "0.75rem",
+                            alignItems: "center",
+                            flexWrap: "wrap",
+                        }}
+                    >
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Search name or car #..."
+                            style={{
+                                padding: "0.55rem 0.75rem",
+                                borderRadius: "6px",
+                                border: "1px solid #ddd",
+                                minWidth: "220px",
+                            }}
+                        />
+
+                        <select
+                            value={divisionFilter}
+                            onChange={(e) => setDivisionFilter(e.target.value)}
+                            style={{
+                                padding: "0.55rem 0.75rem",
+                                borderRadius: "6px",
+                                border: "1px solid #ddd",
+                                minWidth: "220px",
+                            }}
+                        >
+                            {DIVISION_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>
+                                    {opt}
+                                </option>
+                            ))}
+                        </select>
+
+                        <button
+                            type="button"
+                            className="add-btn"
+                            onClick={clearFilters}
+                            style={{ backgroundColor: "#444" }}
+                            title="Clear search and filters"
+                        >
+                            Clear
+                        </button>
+
+                        <button className="add-btn" onClick={handleOpenAdd}>
+                            + Add Racer
+                        </button>
+                    </div>
                 </div>
+
+                {!loading && !error && (
+                    <p style={{ marginTop: 0, color: "#666" }}>
+                        Showing <b>{filteredRacers.length}</b> of <b>{racers.length}</b> racers
+                    </p>
+                )}
 
                 {loading ? (
                     <p className="loading">Loading racers...</p>
                 ) : error ? (
                     <p className="error">{error}</p>
-                ) : racers.length === 0 ? (
-                    <p>No racers found.</p>
+                ) : filteredRacers.length === 0 ? (
+                    <p>No racers found for the current filters.</p>
                 ) : (
                     <table className="racers-table">
                         <thead>
@@ -165,7 +245,7 @@ const RacersManagement = () => {
                         </tr>
                         </thead>
                         <tbody>
-                        {racers.map((racer, index) => (
+                        {filteredRacers.map((racer, index) => (
                             <tr key={racer.id}>
                                 <td>{index + 1}</td>
                                 <td>
@@ -175,16 +255,10 @@ const RacersManagement = () => {
                                 <td>{getDivisionFromAge(racer.age)}</td>
                                 <td>{racer.carNumber}</td>
                                 <td>
-                                    <button
-                                        className="edit-btn"
-                                        onClick={() => handleOpenEdit(racer)}
-                                    >
+                                    <button className="edit-btn" onClick={() => handleOpenEdit(racer)}>
                                         Edit
                                     </button>
-                                    <button
-                                        className="delete-btn"
-                                        onClick={() => openDeleteRacer(racer)} // ✅ UPDATED
-                                    >
+                                    <button className="delete-btn" onClick={() => handleDelete(racer.id)}>
                                         Delete
                                     </button>
                                 </td>
@@ -195,7 +269,7 @@ const RacersManagement = () => {
                 )}
             </div>
 
-            {/* Add/Edit Modal */}
+            {/* Modal */}
             <Modal
                 title={editMode ? "Edit Racer" : "Add Racer"}
                 isOpen={isModalOpen}
@@ -207,9 +281,7 @@ const RacersManagement = () => {
                 <input
                     type="text"
                     value={formData.firstName}
-                    onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, firstName: e.target.value }))
-                    }
+                    onChange={(e) => setFormData((prev) => ({ ...prev, firstName: e.target.value }))}
                     required
                 />
 
@@ -217,9 +289,7 @@ const RacersManagement = () => {
                 <input
                     type="text"
                     value={formData.lastName}
-                    onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, lastName: e.target.value }))
-                    }
+                    onChange={(e) => setFormData((prev) => ({ ...prev, lastName: e.target.value }))}
                     required
                 />
 
@@ -229,9 +299,7 @@ const RacersManagement = () => {
                     min="2"
                     max="7"
                     value={formData.age}
-                    onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, age: e.target.value }))
-                    }
+                    onChange={(e) => setFormData((prev) => ({ ...prev, age: e.target.value }))}
                     required
                 />
 
@@ -239,9 +307,7 @@ const RacersManagement = () => {
                 <input
                     type="text"
                     value={formData.carNumber}
-                    onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, carNumber: e.target.value }))
-                    }
+                    onChange={(e) => setFormData((prev) => ({ ...prev, carNumber: e.target.value }))}
                     required
                 />
 

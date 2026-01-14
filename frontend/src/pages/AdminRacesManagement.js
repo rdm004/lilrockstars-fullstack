@@ -13,6 +13,20 @@ const EMPTY_FORM = {
     description: "",
 };
 
+const startOfToday = () => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+};
+
+const isPastRace = (raceDate) => {
+    if (!raceDate) return false;
+    const d = new Date(raceDate);
+    if (Number.isNaN(d.getTime())) return false;
+    d.setHours(0, 0, 0, 0);
+    return d < startOfToday();
+};
+
 const AdminRacesManagement = () => {
     const [races, setRaces] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -34,14 +48,16 @@ const AdminRacesManagement = () => {
             // Normalize fields (supports either your mapped UI shape or raw backend)
             const normalized = data.map((x) => ({
                 id: x.id,
-                raceName: x.raceName ?? x.name ?? "",
+                raceName: x.raceName ?? x.raceName ?? x.name ?? "",
                 raceDate: x.raceDate ?? x.date ?? "",
                 location: x.location ?? "",
                 description: x.description ?? "",
             }));
 
             // Sort by date ascending
-            normalized.sort((a, b) => new Date(a.raceDate || 0) - new Date(b.raceDate || 0));
+            normalized.sort(
+                (a, b) => new Date(a.raceDate || 0) - new Date(b.raceDate || 0)
+            );
 
             setRaces(normalized);
         } catch (e) {
@@ -78,7 +94,7 @@ const AdminRacesManagement = () => {
         if (!window.confirm("Delete this event?")) return;
 
         try {
-            // DELETE /api/races/{id}
+            // DELETE /api/admin/races/{id}
             await apiClient.delete(`/admin/races/${id}`);
             setRaces((prev) => prev.filter((x) => x.id !== id));
         } catch (e) {
@@ -96,7 +112,7 @@ const AdminRacesManagement = () => {
         };
 
         if (!payload.raceName || !payload.raceDate) {
-            alert("Race Name and Race Date are required.");
+            alert("Event Name and Event Date are required.");
             return;
         }
 
@@ -123,19 +139,93 @@ const AdminRacesManagement = () => {
         if (!dateStr) return "";
         const d = new Date(dateStr);
         if (Number.isNaN(d.getTime())) return dateStr;
-        return d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "2-digit" });
+        return d.toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "long",
+            day: "2-digit",
+        });
     };
 
-    const upcomingCount = useMemo(() => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return races.filter((r) => {
-            const d = new Date(r.raceDate);
-            if (Number.isNaN(d.getTime())) return false;
-            d.setHours(0, 0, 0, 0);
-            return d >= today;
-        }).length;
-    }, [races]);
+    const upcomingRaces = useMemo(
+        () => (races || []).filter((r) => !isPastRace(r.raceDate)),
+        [races]
+    );
+
+    const pastRaces = useMemo(
+        () => (races || []).filter((r) => isPastRace(r.raceDate)),
+        [races]
+    );
+
+    const upcomingCount = useMemo(() => upcomingRaces.length, [upcomingRaces]);
+
+    const renderRacesTable = ({ rows, allowDelete }) => {
+        if (!rows || rows.length === 0) {
+            return <p style={{ marginTop: "10px" }}>No events found.</p>;
+        }
+
+        return (
+            <div style={{ overflowX: "auto" }}>
+                <table
+                    className="admin-races-table"
+                    style={{ width: "100%", borderCollapse: "collapse" }}
+                >
+                    <thead>
+                    <tr style={{ background: "#f8f9fa" }}>
+                        <th style={thStyle}>Event</th>
+                        <th style={thStyle}>Date</th>
+                        <th style={thStyle}>Location</th>
+                        <th style={thStyle}>Description</th>
+                        <th style={thStyle}>Actions</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    {rows.map((r) => {
+                        const past = isPastRace(r.raceDate);
+
+                        return (
+                            <tr key={r.id}>
+                                <td style={tdStyle}>{r.raceName}</td>
+                                <td style={tdStyle}>{formatDate(r.raceDate)}</td>
+                                <td style={tdStyle}>{r.location || "-"}</td>
+                                <td style={tdStyle}>{r.description || "-"}</td>
+
+                                <td style={{ ...tdStyle, whiteSpace: "nowrap" }}>
+                                    <button
+                                        className="edit-btn"
+                                        onClick={() => handleOpenEdit(r)}
+                                        style={{ marginRight: "8px" }}
+                                    >
+                                        Edit
+                                    </button>
+
+                                    {allowDelete ? (
+                                        <button
+                                            className="delete-btn"
+                                            onClick={() => handleDeleteRace(r.id)}
+                                            disabled={past}
+                                            title={
+                                                past
+                                                    ? "Past events are archived to protect results/history."
+                                                    : "Delete event"
+                                            }
+                                            style={{
+                                                opacity: past ? 0.5 : 1,
+                                                cursor: past ? "not-allowed" : "pointer",
+                                            }}
+                                        >
+                                            Delete
+                                        </button>
+                                    ) : null}
+                                </td>
+                            </tr>
+                        );
+                    })}
+                    </tbody>
+                </table>
+            </div>
+        );
+    };
 
     return (
         <Layout title="Events Management">
@@ -168,41 +258,22 @@ const AdminRacesManagement = () => {
                     <p className="error" style={{ color: "#d33" }}>
                         {error}
                     </p>
-                ) : races.length === 0 ? (
-                    <p>No events found.</p>
                 ) : (
-                    <div style={{ overflowX: "auto" }}>
-                        <table className="admin-races-table" style={{ width: "100%", borderCollapse: "collapse" }}>
-                            <thead>
-                            <tr style={{ background: "#f8f9fa" }}>
-                                <th style={{ textAlign: "left", padding: "12px", borderBottom: "1px solid #eee" }}>Event</th>
-                                <th style={{ textAlign: "left", padding: "12px", borderBottom: "1px solid #eee" }}>Date</th>
-                                <th style={{ textAlign: "left", padding: "12px", borderBottom: "1px solid #eee" }}>Location</th>
-                                <th style={{ textAlign: "left", padding: "12px", borderBottom: "1px solid #eee" }}>Description</th>
-                                <th style={{ textAlign: "left", padding: "12px", borderBottom: "1px solid #eee" }}>Actions</th>
-                            </tr>
-                            </thead>
+                    <>
+                        {/* ✅ UPCOMING EVENTS */}
+                        <h2 style={{ margin: "0 0 10px" }}>Upcoming Events</h2>
+                        {renderRacesTable({ rows: upcomingRaces, allowDelete: true })}
 
-                            <tbody>
-                            {races.map((r) => (
-                                <tr key={r.id}>
-                                    <td style={{ padding: "12px", borderBottom: "1px solid #f0f0f0" }}>{r.raceName}</td>
-                                    <td style={{ padding: "12px", borderBottom: "1px solid #f0f0f0" }}>{formatDate(r.raceDate)}</td>
-                                    <td style={{ padding: "12px", borderBottom: "1px solid #f0f0f0" }}>{r.location || "-"}</td>
-                                    <td style={{ padding: "12px", borderBottom: "1px solid #f0f0f0" }}>{r.description || "-"}</td>
-                                    <td style={{ padding: "12px", borderBottom: "1px solid #f0f0f0", whiteSpace: "nowrap" }}>
-                                        <button className="edit-btn" onClick={() => handleOpenEdit(r)} style={{ marginRight: "8px" }}>
-                                            Edit
-                                        </button>
-                                        <button className="delete-btn" onClick={() => handleDeleteRace(r.id)}>
-                                            Delete
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                            </tbody>
-                        </table>
-                    </div>
+                        {/* ✅ PAST EVENTS */}
+                        <div style={{ marginTop: "2rem" }}>
+                            <h2 style={{ margin: "0 0 6px" }}>Past Events</h2>
+                            <p style={{ margin: "0 0 12px", color: "#666" }}>
+                                Past events are archived to protect history and results.
+                            </p>
+                            {/* We still allow Edit, but Delete is disabled (safe). */}
+                            {renderRacesTable({ rows: pastRaces, allowDelete: true })}
+                        </div>
+                    </>
                 )}
 
                 <Modal
@@ -216,7 +287,9 @@ const AdminRacesManagement = () => {
                     <input
                         type="text"
                         value={form.raceName}
-                        onChange={(e) => setForm((p) => ({ ...p, raceName: e.target.value }))}
+                        onChange={(e) =>
+                            setForm((p) => ({ ...p, raceName: e.target.value }))
+                        }
                         required
                     />
 
@@ -224,7 +297,9 @@ const AdminRacesManagement = () => {
                     <input
                         type="date"
                         value={form.raceDate}
-                        onChange={(e) => setForm((p) => ({ ...p, raceDate: e.target.value }))}
+                        onChange={(e) =>
+                            setForm((p) => ({ ...p, raceDate: e.target.value }))
+                        }
                         required
                     />
 
@@ -232,19 +307,34 @@ const AdminRacesManagement = () => {
                     <input
                         type="text"
                         value={form.location}
-                        onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
+                        onChange={(e) =>
+                            setForm((p) => ({ ...p, location: e.target.value }))
+                        }
                     />
 
                     <label>Description</label>
                     <textarea
                         rows={3}
                         value={form.description}
-                        onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+                        onChange={(e) =>
+                            setForm((p) => ({ ...p, description: e.target.value }))
+                        }
                     />
                 </Modal>
             </div>
         </Layout>
     );
+};
+
+const thStyle = {
+    textAlign: "left",
+    padding: "12px",
+    borderBottom: "1px solid #eee",
+};
+
+const tdStyle = {
+    padding: "12px",
+    borderBottom: "1px solid #f0f0f0",
 };
 
 export default AdminRacesManagement;
