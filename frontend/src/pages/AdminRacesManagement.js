@@ -242,7 +242,7 @@ const AdminRacesManagement = () => {
                 >
                     <div>
                         <h1 style={{ margin: 0 }}>Events</h1>
-                        <p style={{ margin: "0.35rem 0 0", color: "#666" }}>
+                        <p style={{ margin: "0.35rem 0 0", color: "#1e63ff" }}>
                             Upcoming events: <b>{upcomingCount}</b>
                         </p>
                     </div>
