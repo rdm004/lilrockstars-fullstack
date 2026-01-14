@@ -28,17 +28,16 @@ public interface RacerRepository extends JpaRepository<Racer, Long> {
     // Admin search (ONLY racers with a parent)
     // ==========================================================
     @Query("""
-           select distinct r
-           from Racer r
-           left join ParentRacerLink l on l.racer = r
-           where
-             (r.parent is not null or l.parent is not null)
-             and (
-                 lower(concat(coalesce(r.firstName,''),' ',coalesce(r.lastName,''))) like lower(concat('%', :q, '%'))
-              or lower(coalesce(r.firstName,'')) like lower(concat('%', :q, '%'))
-              or lower(coalesce(r.lastName,'')) like lower(concat('%', :q, '%'))
-              or lower(coalesce(r.carNumber,'')) like lower(concat('%', :q, '%'))
-             )
-           """)
+   select distinct r
+   from Racer r
+   left join ParentRacerLink l on l.racer = r
+   where
+     (r.parent is not null or l.parent is not null)
+     and (
+         lower(r.firstName) like lower(concat('%', :q, '%'))
+      or lower(r.lastName) like lower(concat('%', :q, '%'))
+      or lower(r.carNumber) like lower(concat('%', :q, '%'))
+     )
+   """)
     List<Racer> searchAdminRacers(@Param("q") String q);
 }
