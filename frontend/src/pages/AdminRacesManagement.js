@@ -261,18 +261,57 @@ const AdminRacesManagement = () => {
                 ) : (
                     <>
                         {/* ✅ UPCOMING EVENTS */}
-                        <h2 style={{ margin: "0 0 10px" }}>Upcoming Events</h2>
-                        {renderRacesTable({ rows: upcomingRaces, allowDelete: true })}
+                        <h2 style={{ marginTop: "1rem" }}>Upcoming Events</h2>
 
+                        <table className="admin-races-table">
+                            <tbody>
+                            {upcomingRaces.map((r) => (
+                                <tr key={r.id}>
+                                    <td>{r.raceName}</td>
+                                    <td>{formatDate(r.raceDate)}</td>
+                                    <td>{r.location || "-"}</td>
+                                    <td>{r.description || "-"}</td>
+                                    <td>
+                                        <button className="edit-btn" onClick={() => handleOpenEdit(r)}>
+                                            Edit
+                                        </button>
+                                        <button
+                                            className="delete-btn"
+                                            onClick={() => handleDeleteRace(r.id)}
+                                        >
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
                         {/* ✅ PAST EVENTS */}
-                        <div style={{ marginTop: "2rem" }}>
-                            <h2 style={{ margin: "0 0 6px" }}>Past Events</h2>
-                            <p style={{ margin: "0 0 12px", color: "#1e63ff" }}>
-                                Past events are archived to protect history and results.
-                            </p>
-                            {/* We still allow Edit, but Delete is disabled (safe). */}
-                            {renderRacesTable({ rows: pastRaces, allowDelete: true })}
-                        </div>
+                        <h2 style={{ marginTop: "1rem" }}>Upcoming Events</h2>
+
+                        <table className="admin-races-table">
+                            <tbody>
+                            {upcomingRaces.map((r) => (
+                                <tr key={r.id}>
+                                    <td>{r.raceName}</td>
+                                    <td>{formatDate(r.raceDate)}</td>
+                                    <td>{r.location || "-"}</td>
+                                    <td>{r.description || "-"}</td>
+                                    <td>
+                                        <button className="edit-btn" onClick={() => handleOpenEdit(r)}>
+                                            Edit
+                                        </button>
+                                        <button
+                                            className="delete-btn"
+                                            onClick={() => handleDeleteRace(r.id)}
+                                        >
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
                     </>
                 )}
 
