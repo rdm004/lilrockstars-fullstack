@@ -377,7 +377,7 @@ const RegistrationsManagement = () => {
                 <div className="registrations-header" style={{ alignItems: "flex-start" }}>
                     <div>
                         <h1 style={{ marginBottom: 4 }}>Registrations</h1>
-                        <p style={{ margin: 2, color: "#1e63ff" }}>
+                        <p style={{ margin: "6px 0 10px", color: "#1e63ff" }}>
                             Admin view: print sign-in sheets and manage registrations.
                         </p>
                     </div>
