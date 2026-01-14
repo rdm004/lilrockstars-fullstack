@@ -1,0 +1,209 @@
+.results-page {
+    padding: 2rem;
+    background: #fdfbf8;
+    min-height: 100vh;
+}
+
+.results-header h2 {
+    margin: 0;
+}
+
+.muted {
+    color: #666;
+}
+
+.small {
+    font-size: 0.9rem;
+}
+
+.loading {
+    font-style: italic;
+    color: #666;
+}
+
+.error {
+    color: #b91c1c;
+    font-weight: 600;
+}
+
+.controls {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0 1.25rem;
+    flex-wrap: wrap;
+}
+
+.control span {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+}
+
+.control select {
+    width: 360px;
+    max-width: 100%;
+    padding: 0.55rem 0.7rem;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.division-tabs {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.division-tab {
+    border: 1px solid #ddd;
+    background: #fff;
+    padding: 0.55rem 0.85rem;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.division-tab.active {
+    border-color: #f47c2a;
+    background: #fff7ed;
+}
+
+.bulk-card {
+    background: #fff;
+    border: 1px solid #f47c2a;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.bulk-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.bulk-header h3 {
+    margin: 0;
+    color: #f47c2a;
+}
+
+.bulk-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.btn-primary {
+    background: #f47c2a;
+    color: #fff;
+    border: none;
+    padding: 0.55rem 0.85rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 800;
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-light {
+    background: #f3f3f3;
+    color: #111;
+    border: 1px solid #bbb;
+    padding: 0.55rem 0.85rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.btn-danger {
+    background: #e94b3c;
+    color: white;
+    border: none;
+    padding: 0.45rem 0.7rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.bulk-table-wrap,
+.table-wrap {
+    overflow-x: auto;
+    margin-top: 0.75rem;
+}
+
+.bulk-table,
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.bulk-table th,
+.bulk-table td,
+.results-table th,
+.results-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.bulk-table th,
+.results-table th {
+    background: #f8f9fa;
+    font-weight: 800;
+    color: #333;
+}
+
+.bulk-table select,
+.bulk-table input {
+    width: 100%;
+    min-width: 220px;
+    padding: 0.5rem 0.6rem;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.bulk-table input {
+    min-width: unset;
+}
+
+.col-small {
+    width: 120px;
+    white-space: nowrap;
+}
+
+.existing-results h3 {
+    margin-top: 0;
+}
+
+.division-section {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.division-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+}
+
+.division-title h4 {
+    margin: 0;
+    color: #111;
+}
+
+@media (max-width: 700px) {
+    .results-page {
+        padding: 1.25rem;
+    }
+}
