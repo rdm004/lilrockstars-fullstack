@@ -12,6 +12,9 @@ const RegistrationsManagement = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
+    // Division filter per raceId (admin dropdown)
+    const [divisionFilterByRace, setDivisionFilterByRace] = useState({});
+
     // ---------------------------
     // Helpers
     // ---------------------------
@@ -23,6 +26,11 @@ const RegistrationsManagement = () => {
             month: "long",
             day: "2-digit",
         });
+    };
+
+    const getDivisionsForRace = (rows) => {
+        const set = new Set((rows || []).map(r => r.division).filter(Boolean));
+        return ["All Divisions", ...Array.from(set)];
     };
 
     const toCarNumberInt = (carNumber) => {
@@ -276,12 +284,17 @@ const RegistrationsManagement = () => {
     // ---------------------------
     // Print sign-in sheet
     // ---------------------------
-    const printSignInSheet = (raceId) => {
+    const printSignInSheet = (raceId, divisionFilter = "All Divisions") => {
         const race = racesById.get(Number(raceId));
         const raceTitle = race?.raceName || race?.name || `Race #${raceId}`;
         const raceDate = race?.raceDate ? formatRaceDate(race.raceDate) : "";
 
-        const rows = (regsByRace.get(Number(raceId)) || []).slice();
+        let rows = (regsByRace.get(Number(raceId)) || []).slice();
+
+        if (divisionFilter !== "All Divisions") {
+            rows = rows.filter((r) => r.division === divisionFilter);
+        }
+
         rows.sort((a, b) => {
             const d = divisionRank(a.division) - divisionRank(b.division);
             if (d !== 0) return d;
@@ -395,6 +408,13 @@ const RegistrationsManagement = () => {
                         const raceDate = race?.raceDate ? formatRaceDate(race.raceDate) : "";
                         const rows = regsByRace.get(Number(raceId)) || [];
 
+                        const selectedDivision = divisionFilterByRace[raceId] || "All Divisions";
+
+                        const filteredRows =
+                            selectedDivision === "All Divisions"
+                                ? rows
+                                : rows.filter((r) => r.division === selectedDivision);
+
                         return (
                             <div
                                 key={raceId}
@@ -406,9 +426,37 @@ const RegistrationsManagement = () => {
                                     marginBottom: "18px",
                                 }}
                             >
-                                <div style={{ textAlign: "center", marginBottom: "10px" }}>
-                                    <h2 style={{ margin: 0, color: "#f47c2a" }}>{raceName}</h2>
-                                    <p style={{ margin: "6px 0 10px", color: "#666" }}>{raceDate}</p>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "center",
+                                        gap: "12px",
+                                        flexWrap: "wrap",
+                                        marginTop: "10px",
+                                    }}
+                                >
+                                    <select
+                                        value={selectedDivision}
+                                        onChange={(e) =>
+                                            setDivisionFilterByRace((prev) => ({
+                                                ...prev,
+                                                [raceId]: e.target.value,
+                                            }))
+                                        }
+                                        style={{
+                                            padding: "8px 10px",
+                                            borderRadius: "8px",
+                                            border: "1px solid #bbb",
+                                            background: "#fff",
+                                            minWidth: "220px",
+                                        }}
+                                    >
+                                        {getDivisionsForRace(rows).map((div) => (
+                                            <option key={div} value={div}>
+                                                {div}
+                                            </option>
+                                        ))}
+                                    </select>
 
                                     <button
                                         type="button"
@@ -418,7 +466,7 @@ const RegistrationsManagement = () => {
                                             color: "#111",
                                             border: "1px solid #bbb",
                                         }}
-                                        onClick={() => printSignInSheet(raceId)}
+                                        onClick={() => printSignInSheet(raceId, selectedDivision)}
                                     >
                                         🖨️ Print Sign-In Sheet
                                     </button>
@@ -436,12 +484,12 @@ const RegistrationsManagement = () => {
                                     </thead>
 
                                     <tbody>
-                                    {rows.length === 0 ? (
+                                    {filteredRows.length === 0 ? (
                                         <tr>
                                             <td colSpan="5">No registrations for this race yet.</td>
                                         </tr>
                                     ) : (
-                                        rows.map((r) => (
+                                        filteredRows.map((r) => (
                                             <tr key={r.id}>
                                                 <td>{r.racerName || "-"}</td>
                                                 <td>
