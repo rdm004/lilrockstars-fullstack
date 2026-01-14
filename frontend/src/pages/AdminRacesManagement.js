@@ -267,7 +267,7 @@ const AdminRacesManagement = () => {
                         {/* ✅ PAST EVENTS */}
                         <div style={{ marginTop: "2rem" }}>
                             <h2 style={{ margin: "0 0 6px" }}>Past Events</h2>
-                            <p style={{ margin: "0 0 12px", color: "#666" }}>
+                            <p style={{ margin: "0 0 12px", color: "#1e63ff" }}>
                                 Past events are archived to protect history and results.
                             </p>
                             {/* We still allow Edit, but Delete is disabled (safe). */}
