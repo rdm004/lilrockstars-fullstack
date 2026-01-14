@@ -12,8 +12,7 @@ const RegistrationsManagement = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    // Division filter per raceId (admin dropdown)
-    const [divisionFilterByRace, setDivisionFilterByRace] = useState({});
+    const [showPastEvents, setShowPastEvents] = useState(false);
 
     // ---------------------------
     // Helpers
@@ -26,11 +25,6 @@ const RegistrationsManagement = () => {
             month: "long",
             day: "2-digit",
         });
-    };
-
-    const getDivisionsForRace = (rows) => {
-        const set = new Set((rows || []).map(r => r.division).filter(Boolean));
-        return ["All Divisions", ...Array.from(set)];
     };
 
     const toCarNumberInt = (carNumber) => {
@@ -58,6 +52,7 @@ const RegistrationsManagement = () => {
         return 99;
     };
 
+    // safely read racer id from many shapes
     const getRacerId = (r) => {
         const id = r?.id ?? r?.racerId ?? r?.racerID;
         return id !== undefined && id !== null ? Number(id) : null;
@@ -65,21 +60,29 @@ const RegistrationsManagement = () => {
 
     const getRacerName = (r) => {
         if (!r) return "-";
+
         const first = r.firstName ?? r.first_name ?? "";
         const last = r.lastName ?? r.last_name ?? "";
         const full = `${first} ${last}`.trim();
         if (full) return full;
+
         return r.racerName || r.fullName || r.name || r.displayName || "-";
     };
 
     const getRacerDivision = (r) => {
         if (!r) return "-";
 
+        // if division stored directly (any of these)
         const direct =
-            r.division || r.divisionName || r.ageDivision || r.className;
+            r.division ||
+            r.divisionName ||
+            r.ageDivision ||
+            r.className ||
+            r.division_name;
 
         if (direct) return direct;
 
+        // otherwise compute from age
         const age = r.age ?? r.racerAge ?? r.ageYears ?? r.age_years;
         return divisionFromAge(age);
     };
@@ -96,7 +99,7 @@ const RegistrationsManagement = () => {
     };
 
     // ---------------------------
-    // Lookup maps
+    // Maps for lookup
     // ---------------------------
     const racersById = useMemo(() => {
         const m = new Map();
@@ -109,9 +112,9 @@ const RegistrationsManagement = () => {
 
     const racesById = useMemo(() => {
         const m = new Map();
-        (races || []).forEach((r) => {
-            const id = Number(r?.id ?? r?.raceId ?? r?.raceID);
-            if (id) m.set(id, r);
+        (races || []).forEach((race) => {
+            const id = Number(race?.id ?? race?.raceId ?? race?.raceID);
+            if (id) m.set(id, race);
         });
         return m;
     }, [races]);
@@ -135,42 +138,25 @@ const RegistrationsManagement = () => {
 
             const raw = regsRes.data || [];
 
-            // ✅ Helpful debug (leave for now)
-            // console.log("REG RAW SAMPLE:", raw?.[0]);
-
+            // Normalize registrations (supports DTO or nested entities)
             const normalized = raw.map((row) => {
                 const nestedRacerId =
                     row?.racer?.id ?? row?.racer?.racerId ?? row?.racer?.racerID;
+
                 const nestedRaceId =
                     row?.race?.id ?? row?.race?.raceId ?? row?.race?.raceID;
 
                 return {
-                    // ✅ Defensive: support id or registrationId
-                    id: row.id ?? row.registrationId ?? row.registrationID,
+                    id: row?.id,
+                    racerId: row?.racerId ?? row?.racerID ?? nestedRacerId ?? row?.racer_id ?? "",
+                    raceId: row?.raceId ?? row?.raceID ?? nestedRaceId ?? row?.race_id ?? "",
+                    status: row?.status ?? null,
+                    parentEmail: row?.parentEmail ?? row?.parent_email ?? null,
 
-                    racerId:
-                        row.racerId ??
-                        row.racerID ??
-                        nestedRacerId ??
-                        row.racer_id ??
-                        "",
-
-                    raceId:
-                        row.raceId ??
-                        row.raceID ??
-                        nestedRaceId ??
-                        row.race_id ??
-                        "",
-
-                    // status might not exist on your entity (fine)
-                    status: row.status ?? null,
-
-                    parentEmail: row.parentEmail ?? row.parent_email ?? null,
-
-                    // Optional display fields if backend sends them
-                    racerName: row.racerName ?? null,
-                    division: row.division ?? null,
-                    carNumber: row.carNumber ?? null,
+                    // optional fields if backend already sends them
+                    racerName: row?.racerName ?? null,
+                    division: row?.division ?? null,
+                    carNumber: row?.carNumber ?? null,
                 };
             });
 
@@ -225,55 +211,63 @@ const RegistrationsManagement = () => {
     }, [registrations, racersById, racesById]);
 
     // ---------------------------
-    // Group by raceId + sort rows (division then car #)
+    // Group by race
     // ---------------------------
     const regsByRace = useMemo(() => {
         const m = new Map();
 
         hydratedRows.forEach((row) => {
-            const raceId = Number(row.raceId);
-            if (!m.has(raceId)) m.set(raceId, []);
-            m.get(raceId).push(row);
+            const raceIdNum = Number(row.raceId);
+            if (!m.has(raceIdNum)) m.set(raceIdNum, []);
+            m.get(raceIdNum).push(row);
         });
 
-        for (const [raceId, rows] of m.entries()) {
+        for (const [raceIdNum, rows] of m.entries()) {
             rows.sort((a, b) => {
                 const d = divisionRank(a.division) - divisionRank(b.division);
                 if (d !== 0) return d;
                 return toCarNumberInt(a.carNumber) - toCarNumberInt(b.carNumber);
             });
-            m.set(raceId, rows);
+            m.set(raceIdNum, rows);
         }
 
         return m;
     }, [hydratedRows]);
 
+    // Hide past events (optional toggle)
     const sortedRaceIds = useMemo(() => {
         const ids = Array.from(regsByRace.keys());
-        ids.sort((a, b) => {
-            const ra = racesById.get(a);
-            const rb = racesById.get(b);
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const filtered = ids.filter((id) => {
+            const race = racesById.get(Number(id));
+            if (!race?.raceDate) return true;
+            const d = new Date(race.raceDate);
+            d.setHours(0, 0, 0, 0);
+            return showPastEvents ? true : d >= today;
+        });
+
+        filtered.sort((a, b) => {
+            const ra = racesById.get(Number(a));
+            const rb = racesById.get(Number(b));
             const da = ra?.raceDate ? new Date(ra.raceDate).getTime() : 0;
             const db = rb?.raceDate ? new Date(rb.raceDate).getTime() : 0;
             return da - db;
         });
-        return ids;
-    }, [regsByRace, racesById]);
+
+        return filtered;
+    }, [regsByRace, racesById, showPastEvents]);
 
     // ---------------------------
-    // Delete (ADMIN)
+    // Delete
     // ---------------------------
     const handleDelete = async (id) => {
         if (!window.confirm("Delete this registration?")) return;
 
-        if (!id) {
-            console.error("Delete blocked: missing registration id");
-            alert("❌ Cannot delete: missing registration id from API.");
-            return;
-        }
-
         try {
-            await apiClient.delete(`/admin/registrations/${id}`); // => /api/admin/registrations/{id}
+            await apiClient.delete(`/admin/registrations/${id}`);
             setRegistrations((prev) => prev.filter((r) => r.id !== id));
         } catch (err) {
             console.error("Error deleting registration:", err);
@@ -282,19 +276,14 @@ const RegistrationsManagement = () => {
     };
 
     // ---------------------------
-    // Print sign-in sheet
+    // Print
     // ---------------------------
-    const printSignInSheet = (raceId, divisionFilter = "All Divisions") => {
+    const printSignInSheet = (raceId) => {
         const race = racesById.get(Number(raceId));
         const raceTitle = race?.raceName || race?.name || `Race #${raceId}`;
-        const raceDate = race?.raceDate ? formatRaceDate(race.raceDate) : "";
+        const raceDateText = race?.raceDate ? formatRaceDate(race.raceDate) : "";
 
-        let rows = (regsByRace.get(Number(raceId)) || []).slice();
-
-        if (divisionFilter !== "All Divisions") {
-            rows = rows.filter((r) => r.division === divisionFilter);
-        }
-
+        const rows = (regsByRace.get(Number(raceId)) || []).slice();
         rows.sort((a, b) => {
             const d = divisionRank(a.division) - divisionRank(b.division);
             if (d !== 0) return d;
@@ -303,7 +292,7 @@ const RegistrationsManagement = () => {
 
         const html = `
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>${raceTitle} Sign-In Sheet</title>
@@ -329,7 +318,7 @@ const RegistrationsManagement = () => {
       <div class="note">Sorted by Division, then Car #</div>
     </div>
     <div class="meta">
-      <div><b>Date:</b> ${raceDate || "-"}</div>
+      <div><b>Date:</b> ${raceDateText || "-"}</div>
       <div><b>Printed:</b> ${new Date().toLocaleString()}</div>
     </div>
   </div>
@@ -351,16 +340,15 @@ const RegistrationsManagement = () => {
                 ? `<tr><td colspan="6">No registrations found for this race.</td></tr>`
                 : rows
                     .map(
-                        (r) => `
-          <tr>
-            <td>${r.racerName || "-"}</td>
-            <td>${r.carNumber ? `#${String(r.carNumber).replace(/^#/, "")}` : "-"}</td>
-            <td>${r.division || "-"}</td>
-            <td>${r.parentEmail || "-"}</td>
-            <td></td>
-            <td><span class="checkbox"></span></td>
-          </tr>
-        `
+                        (row) => `
+        <tr>
+          <td>${row.racerName || "-"}</td>
+          <td>${row.carNumber ? `#${String(row.carNumber).replace(/^#/, "")}` : "-"}</td>
+          <td>${row.division || "-"}</td>
+          <td>${row.parentEmail || "-"}</td>
+          <td></td>
+          <td><span class="checkbox"></span></td>
+        </tr>`
                     )
                     .join("")
         }
@@ -386,12 +374,23 @@ const RegistrationsManagement = () => {
     return (
         <Layout title="Registrations Management">
             <div className="registrations-container">
-                <div className="registrations-header">
+                <div className="registrations-header" style={{ alignItems: "flex-start" }}>
                     <div>
-                        <h1 style={{ marginBottom: 6 }}>Registrations</h1>
+                        <h1 style={{ marginBottom: 4 }}>Registrations</h1>
                         <p style={{ margin: 0, color: "#666" }}>
                             Admin view: print sign-in sheets and manage registrations.
                         </p>
+                    </div>
+
+                    <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                        <label style={{ display: "flex", gap: 8, alignItems: "center", color: "#444" }}>
+                            <input
+                                type="checkbox"
+                                checked={showPastEvents}
+                                onChange={(e) => setShowPastEvents(e.target.checked)}
+                            />
+                            Show past events
+                        </label>
                     </div>
                 </div>
 
@@ -405,15 +404,8 @@ const RegistrationsManagement = () => {
                     sortedRaceIds.map((raceId) => {
                         const race = racesById.get(Number(raceId));
                         const raceName = race?.raceName || race?.name || `Race #${raceId}`;
-                        const raceDate = race?.raceDate ? formatRaceDate(race.raceDate) : "";
+                        const raceDateText = race?.raceDate ? formatRaceDate(race.raceDate) : "";
                         const rows = regsByRace.get(Number(raceId)) || [];
-
-                        const selectedDivision = divisionFilterByRace[raceId] || "All Divisions";
-
-                        const filteredRows =
-                            selectedDivision === "All Divisions"
-                                ? rows
-                                : rows.filter((r) => r.division === selectedDivision);
 
                         return (
                             <div
@@ -426,37 +418,9 @@ const RegistrationsManagement = () => {
                                     marginBottom: "18px",
                                 }}
                             >
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        justifyContent: "center",
-                                        gap: "12px",
-                                        flexWrap: "wrap",
-                                        marginTop: "10px",
-                                    }}
-                                >
-                                    <select
-                                        value={selectedDivision}
-                                        onChange={(e) =>
-                                            setDivisionFilterByRace((prev) => ({
-                                                ...prev,
-                                                [raceId]: e.target.value,
-                                            }))
-                                        }
-                                        style={{
-                                            padding: "8px 10px",
-                                            borderRadius: "8px",
-                                            border: "1px solid #bbb",
-                                            background: "#fff",
-                                            minWidth: "220px",
-                                        }}
-                                    >
-                                        {getDivisionsForRace(rows).map((div) => (
-                                            <option key={div} value={div}>
-                                                {div}
-                                            </option>
-                                        ))}
-                                    </select>
+                                <div style={{ textAlign: "center", marginBottom: "10px" }}>
+                                    <h2 style={{ margin: 0, color: "#f47c2a" }}>{raceName}</h2>
+                                    <p style={{ margin: "6px 0 10px", color: "#666" }}>{raceDateText}</p>
 
                                     <button
                                         type="button"
@@ -466,7 +430,7 @@ const RegistrationsManagement = () => {
                                             color: "#111",
                                             border: "1px solid #bbb",
                                         }}
-                                        onClick={() => printSignInSheet(raceId, selectedDivision)}
+                                        onClick={() => printSignInSheet(raceId)}
                                     >
                                         🖨️ Print Sign-In Sheet
                                     </button>
@@ -484,27 +448,19 @@ const RegistrationsManagement = () => {
                                     </thead>
 
                                     <tbody>
-                                    {filteredRows.length === 0 ? (
+                                    {rows.length === 0 ? (
                                         <tr>
                                             <td colSpan="5">No registrations for this race yet.</td>
                                         </tr>
                                     ) : (
-                                        filteredRows.map((r) => (
-                                            <tr key={r.id}>
-                                                <td>{r.racerName || "-"}</td>
-                                                <td>
-                                                    {r.carNumber
-                                                        ? `#${String(r.carNumber).replace(/^#/, "")}`
-                                                        : "-"}
-                                                </td>
-                                                <td>{r.division || "-"}</td>
-                                                <td>{r.parentEmail || "-"}</td>
+                                        rows.map((row) => (
+                                            <tr key={row.id}>
+                                                <td>{row.racerName || "-"}</td>
+                                                <td>{row.carNumber ? `#${String(row.carNumber).replace(/^#/, "")}` : "-"}</td>
+                                                <td>{row.division || "-"}</td>
+                                                <td>{row.parentEmail || "-"}</td>
                                                 <td style={{ textAlign: "right" }}>
-                                                    <button
-                                                        type="button"
-                                                        className="delete-btn"
-                                                        onClick={() => handleDelete(r.id)}
-                                                    >
+                                                    <button className="delete-btn" onClick={() => handleDelete(row.id)}>
                                                         Delete
                                                     </button>
                                                 </td>
