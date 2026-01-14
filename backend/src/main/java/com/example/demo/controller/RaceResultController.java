@@ -24,11 +24,13 @@ public class RaceResultController {
                 .toList();
     }
 
-    // simple DTO so frontend gets flat data
+    // flat DTO for frontend
     public static class RaceResultResponse {
         public Long id;
+        public Long raceId;
         public String raceName;
-        public String raceDate;
+        public String raceDate;   // yyyy-MM-dd
+        public Long racerId;
         public String racerName;
         public String division;
         public int placement;
@@ -36,9 +38,14 @@ public class RaceResultController {
         public static RaceResultResponse fromEntity(RaceResult rr) {
             RaceResultResponse dto = new RaceResultResponse();
             dto.id = rr.getId();
+
+            dto.raceId = rr.getRace().getId();
             dto.raceName = rr.getRace().getRaceName();
-            dto.raceDate = rr.getRace().getRaceDate().toString(); // ISO yyyy-MM-dd
+            dto.raceDate = rr.getRace().getRaceDate() != null ? rr.getRace().getRaceDate().toString() : null;
+
+            dto.racerId = rr.getRacer().getId();
             dto.racerName = rr.getRacer().getFirstName() + " " + rr.getRacer().getLastName();
+
             dto.division = rr.getDivision();
             dto.placement = rr.getPlacement();
             return dto;
