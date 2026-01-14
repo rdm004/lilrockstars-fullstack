@@ -287,31 +287,30 @@ const AdminRacesManagement = () => {
                             </tbody>
                         </table>
                         {/* ✅ PAST EVENTS */}
-                        <h2 style={{ marginTop: "1rem" }}>Upcoming Events</h2>
+                        <div style={{ marginTop: "2rem" }}>
+                            <h2 style={{ marginTop: "2.5rem", color: "#666" }}>Past Events</h2>
+                            <p style={{ fontSize: "0.9rem", color: "#777" }}>
+                                Past events are kept for historical results and cannot be deleted.
+                            </p>
 
-                        <table className="admin-races-table">
-                            <tbody>
-                            {upcomingRaces.map((r) => (
-                                <tr key={r.id}>
-                                    <td>{r.raceName}</td>
-                                    <td>{formatDate(r.raceDate)}</td>
-                                    <td>{r.location || "-"}</td>
-                                    <td>{r.description || "-"}</td>
-                                    <td>
-                                        <button className="edit-btn" onClick={() => handleOpenEdit(r)}>
-                                            Edit
-                                        </button>
-                                        <button
-                                            className="delete-btn"
-                                            onClick={() => handleDeleteRace(r.id)}
-                                        >
-                                            Delete
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                            </tbody>
-                        </table>
+                            <table className="admin-races-table">
+                                <tbody>
+                                {pastRaces.map((r) => (
+                                    <tr key={r.id} style={{ opacity: 0.6 }}>
+                                        <td>{r.raceName}</td>
+                                        <td>{formatDate(r.raceDate)}</td>
+                                        <td>{r.location || "-"}</td>
+                                        <td>{r.description || "-"}</td>
+                                        <td>
+                    <span style={{ fontSize: "0.85rem", color: "#999" }}>
+                        Archived
+                    </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </>
                 )}
 
