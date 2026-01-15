@@ -464,7 +464,7 @@ const ResultsManagement = () => {
                                     <thead>
                                     <tr>
                                         <th>Racer</th>
-                                        <th className="col-small">Placement</th>
+                                        <th className="col-small">Place</th>
                                         <th className="col-small"></th>
                                     </tr>
                                     </thead>
@@ -482,46 +482,38 @@ const ResultsManagement = () => {
                                         return (
                                             <tr key={idx}>
                                                 <td>
-                                                    <select
-                                                        value={row.racerId}
-                                                        onChange={(e) =>
-                                                            setBulkCell(idx, "racerId", e.target.value)
-                                                        }
-                                                    >
-                                                        <option value="">-- Select Racer --</option>
-                                                        {options.map((r) => (
-                                                            <option key={r.id} value={r.id}>
-                                                                {racerLabel(r)}
-                                                            </option>
-                                                        ))}
-                                                    </select>
+                                                    <div className="bulk-racer-cell">
+                                                        <select
+                                                            value={row.racerId}
+                                                            onChange={(e) => setBulkCell(idx, "racerId", e.target.value)}
+                                                        >
+                                                            <option value="">-- Select Racer --</option>
+                                                            {racersForActiveDivision.map((r) => (
+                                                                <option key={r.id} value={r.id}>
+                                                                    {racerLabel(r)}
+                                                                </option>
+                                                            ))}
+                                                        </select>
 
-                                                    {/* Helpful hint */}
-                                                    {row.racerId &&
-                                                    registeredRacerIds.has(Number(row.racerId)) ? (
-                                                        <div className="muted small" style={{ marginTop: 6 }}>
-                                                            ✅ Registered for this event
-                                                        </div>
-                                                    ) : row.racerId ? (
-                                                        <div className="muted small" style={{ marginTop: 6 }}>
-                                                            ➕ Not registered (walk-up OK)
-                                                        </div>
-                                                    ) : null}
+                                                        {row.racerId && registeredRacerIds.has(Number(row.racerId)) ? (
+                                                            <div className="muted small">✅ Registered for this event</div>
+                                                        ) : row.racerId ? (
+                                                            <div className="muted small">➕ Walk-up racer</div>
+                                                        ) : null}
+                                                    </div>
                                                 </td>
 
-                                                <td className="col-small">
+                                                <td className="col-small bulk-place-cell">
                                                     <input
                                                         type="number"
                                                         min="1"
                                                         value={row.placement}
-                                                        onChange={(e) =>
-                                                            setBulkCell(idx, "placement", e.target.value)
-                                                        }
+                                                        onChange={(e) => setBulkCell(idx, "placement", e.target.value)}
                                                         placeholder="1"
                                                     />
                                                 </td>
 
-                                                <td className="col-small">
+                                                <td className="col-small bulk-actions-cell">
                                                     <button
                                                         type="button"
                                                         className="btn-danger"
