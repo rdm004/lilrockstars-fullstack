@@ -1,10 +1,10 @@
 // frontend/src/pages/ParentDashboard.js
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import "../styles/ParentDashboard.css";
 import { formatRaceDate } from "../utils/dateUtils";
-import DeleteRacerConfirmModal from "../components/DeleteRacerConfirmModal"; // ✅ NEW
+import DeleteRacerConfirmModal from "../components/DeleteRacerConfirmModal"; // ✅
 
 function ParentDashboard() {
     const [parent, setParent] = useState(null);
@@ -97,6 +97,37 @@ function ParentDashboard() {
         loadDashboard();
     }, [navigate]);
 
+    // ✅ UX: Next upcoming race card
+    const nextRace = useMemo(() => {
+        if (!races || races.length === 0) return null;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const upcoming = races
+            .filter((r) => r?.date && new Date(r.date) >= today)
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        return upcoming[0] || null;
+    }, [races]);
+
+    // ✅ UX: Summary "You have X racers registered for Y events"
+    const registrationSummary = useMemo(() => {
+        const regValues = Object.values(registrations || {});
+        const uniqueRacerIds = new Set();
+        const uniqueRaceIds = new Set();
+
+        regValues.forEach((reg) => {
+            if (reg?.racerId) uniqueRacerIds.add(reg.racerId);
+            if (reg?.raceId) uniqueRaceIds.add(reg.raceId);
+        });
+
+        return {
+            registeredRacersCount: uniqueRacerIds.size,
+            totalEventsCount: uniqueRaceIds.size,
+        };
+    }, [registrations]);
+
     // === Logout ===
     const handleLogout = () => {
         localStorage.removeItem("token");
@@ -144,13 +175,13 @@ function ParentDashboard() {
             });
     };
 
-    // ✅ NEW: open delete modal instead of deleting immediately
+    // ✅ open delete modal instead of deleting immediately
     const openDeleteRacer = (racer) => {
         setRacerToDelete(racer);
         setDeleteModalOpen(true);
     };
 
-    // ✅ NEW: confirmed delete (checkbox was checked)
+    // ✅ confirmed delete (checkbox was checked)
     const confirmDeleteRacer = async (racerId) => {
         try {
             await apiClient.delete(`/racers/${racerId}`);
@@ -225,9 +256,7 @@ function ParentDashboard() {
             setCoParentEmail("");
         } catch (err) {
             console.error("Error sending co-parent invite:", err);
-            const msg =
-                err.response?.data?.message ||
-                "Sorry, we couldn't send that invite. Please try again.";
+            const msg = err.response?.data?.message || "Sorry, we couldn't send that invite. Please try again.";
             setInviteStatus("❌ " + msg);
         } finally {
             setInviteLoading(false);
@@ -287,6 +316,34 @@ function ParentDashboard() {
                 </div>
             </div>
 
+            {/* ✅ NEW: Next Race + Summary */}
+            <div className="dashboard-top-row">
+                <div className="next-race-card">
+                    <h2 className="next-race-title">🏁 Next Upcoming Race</h2>
+
+                    {nextRace ? (
+                        <>
+                            <div className="next-race-name">{nextRace.name}</div>
+                            <div className="next-race-meta">
+                                <span>📅 {formatRaceDate(nextRace.date)}</span>
+                                {nextRace.location ? <span>📍 {nextRace.location}</span> : null}
+                            </div>
+                            {nextRace.description ? <p className="next-race-desc">{nextRace.description}</p> : null}
+                        </>
+                    ) : (
+                        <p className="next-race-empty">No upcoming races scheduled yet.</p>
+                    )}
+                </div>
+
+                <div className="registration-summary-card">
+                    <h2 className="summary-title">📌 Quick Summary</h2>
+                    <p className="summary-text">
+                        You have <b>{registrationSummary.registeredRacersCount}</b> racer(s) registered for{" "}
+                        <b>{registrationSummary.totalEventsCount}</b> total event(s).
+                    </p>
+                </div>
+            </div>
+
             {/* === Racer Section === */}
             <section className="racer-section">
                 <h2>Your Racers</h2>
@@ -298,39 +355,28 @@ function ParentDashboard() {
                                     <input
                                         type="text"
                                         value={editingRacer.firstName}
-                                        onChange={(e) =>
-                                            setEditingRacer({ ...editingRacer, firstName: e.target.value })
-                                        }
+                                        onChange={(e) => setEditingRacer({ ...editingRacer, firstName: e.target.value })}
                                     />
                                     <input
                                         type="text"
                                         value={editingRacer.lastName}
-                                        onChange={(e) =>
-                                            setEditingRacer({ ...editingRacer, lastName: e.target.value })
-                                        }
+                                        onChange={(e) => setEditingRacer({ ...editingRacer, lastName: e.target.value })}
                                     />
                                     <input
                                         type="number"
                                         value={editingRacer.age}
-                                        onChange={(e) =>
-                                            setEditingRacer({ ...editingRacer, age: e.target.value })
-                                        }
+                                        onChange={(e) => setEditingRacer({ ...editingRacer, age: e.target.value })}
                                     />
                                     <input
                                         type="text"
                                         value={editingRacer.carNumber}
-                                        onChange={(e) =>
-                                            setEditingRacer({ ...editingRacer, carNumber: e.target.value })
-                                        }
+                                        onChange={(e) => setEditingRacer({ ...editingRacer, carNumber: e.target.value })}
                                     />
                                     <div className="edit-buttons">
                                         <button className="save-btn" onClick={handleSaveEdit}>
                                             Save
                                         </button>
-                                        <button
-                                            className="cancel-btn"
-                                            onClick={() => setEditingRacer(null)}
-                                        >
+                                        <button className="cancel-btn" onClick={() => setEditingRacer(null)}>
                                             Cancel
                                         </button>
                                     </div>
@@ -347,10 +393,7 @@ function ParentDashboard() {
                                         <button className="edit-btn" onClick={() => startEdit(racer)}>
                                             Edit
                                         </button>
-                                        <button
-                                            className="remove-btn"
-                                            onClick={() => openDeleteRacer(racer)} // ✅ UPDATED
-                                        >
+                                        <button className="remove-btn" onClick={() => openDeleteRacer(racer)}>
                                             Remove
                                         </button>
                                     </div>
@@ -363,25 +406,20 @@ function ParentDashboard() {
                 {/* === Add Racer Form === */}
                 <form onSubmit={handleAddRacer} className="racer-form">
                     <h3>Add a New Racer</h3>
-                    <p className="age-note">
-                        * Age is determined as of January 1 of the race season.
-                    </p>
+                    <p className="age-note">* Age is determined as of January 1 of the race season.</p>
+
                     <input
                         type="text"
                         placeholder="First Name"
                         value={newRacer.firstName}
-                        onChange={(e) =>
-                            setNewRacer({ ...newRacer, firstName: e.target.value })
-                        }
+                        onChange={(e) => setNewRacer({ ...newRacer, firstName: e.target.value })}
                         required
                     />
                     <input
                         type="text"
                         placeholder="Last Name"
                         value={newRacer.lastName}
-                        onChange={(e) =>
-                            setNewRacer({ ...newRacer, lastName: e.target.value })
-                        }
+                        onChange={(e) => setNewRacer({ ...newRacer, lastName: e.target.value })}
                         required
                     />
                     <input
@@ -395,9 +433,7 @@ function ParentDashboard() {
                         type="text"
                         placeholder="Car Number"
                         value={newRacer.carNumber}
-                        onChange={(e) =>
-                            setNewRacer({ ...newRacer, carNumber: e.target.value })
-                        }
+                        onChange={(e) => setNewRacer({ ...newRacer, carNumber: e.target.value })}
                         required
                     />
                     <button type="submit">Add Racer</button>
@@ -417,27 +453,19 @@ function ParentDashboard() {
                             <h3>
                                 {racer.firstName} {racer.lastName} — #{racer.carNumber}
                             </h3>
+
                             <div className="race-list">
                                 {races.map((race) => {
                                     const key = `${racer.id}|${race.id}`;
                                     const isRegistered = !!registrations[key];
 
                                     return (
-                                        <div
-                                            key={race.id}
-                                            className={`race-item ${isRegistered ? "registered" : ""}`}
-                                        >
+                                        <div key={race.id} className={`race-item ${isRegistered ? "registered" : ""}`}>
                                             <label>
                                                 <input
                                                     type="checkbox"
                                                     checked={isRegistered}
-                                                    onChange={(e) =>
-                                                        handleRaceRegistration(
-                                                            racer.id,
-                                                            race.id,
-                                                            e.target.checked
-                                                        )
-                                                    }
+                                                    onChange={(e) => handleRaceRegistration(racer.id, race.id, e.target.checked)}
                                                 />
                                                 {`${race.name} — ${formatRaceDate(race.date)}`}
                                             </label>

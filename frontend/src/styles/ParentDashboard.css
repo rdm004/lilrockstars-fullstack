@@ -1,3 +1,69 @@
+/* ===== Parent Dashboard Top Cards ===== */
+.dashboard-top-row {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 1rem;
+    margin: 1rem 0 1.5rem;
+}
+
+.next-race-card,
+.registration-summary-card {
+    background: #fff;
+    border: 1px solid #f47c2a;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+.next-race-title,
+.summary-title {
+    margin: 0 0 0.6rem;
+    color: #f47c2a;
+    font-size: 1.1rem;
+}
+
+.next-race-name {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #111;
+    margin-bottom: 0.4rem;
+}
+
+.next-race-meta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    color: #444;
+    font-size: 0.95rem;
+    margin-bottom: 0.6rem;
+}
+
+.next-race-desc {
+    margin: 0;
+    color: #666;
+    font-size: 0.95rem;
+    line-height: 1.35;
+}
+
+.next-race-empty {
+    margin: 0;
+    color: #666;
+}
+
+.summary-text {
+    margin: 0;
+    font-size: 1rem;
+    color: #333;
+}
+
+/* Mobile */
+@media (max-width: 850px) {
+    .dashboard-top-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+
 /* --- DASHBOARD CONTAINER --- */
 .dashboard-container {
     max-width: 1000px;
