@@ -23,11 +23,7 @@ const formatRaceDate = (dateStr) => {
     if (!dateStr) return "";
     const d = new Date(dateStr);
     if (Number.isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-    });
+    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
 };
 
 // Try admin endpoints first, fall back to public endpoints (so you don’t break anything)
@@ -57,13 +53,17 @@ const tryDelete = async (adminPath, fallbackPath) => {
     }
 };
 
+// ---- helpers
+const toCarNumberInt = (carNumber) => {
+    if (carNumber === null || carNumber === undefined) return 9999;
+    const n = String(carNumber).replace(/[^0-9]/g, "");
+    return n ? Number(n) : 9999;
+};
+
 const ResultsManagement = () => {
     const [races, setRaces] = useState([]);
     const [racers, setRacers] = useState([]);
     const [results, setResults] = useState([]);
-
-    // ✅ NEW: admin registrations (used for auto-populate)
-    const [adminRegistrations, setAdminRegistrations] = useState([]);
 
     const [selectedRaceId, setSelectedRaceId] = useState("");
     const [activeDivision, setActiveDivision] = useState(DIVISIONS[0]);
@@ -72,18 +72,16 @@ const ResultsManagement = () => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
 
-    // Bulk rows for the active division
-    const [bulkRows, setBulkRows] = useState([
-        { racerId: "", placement: "" },
-        { racerId: "", placement: "" },
-        { racerId: "", placement: "" },
-    ]);
+    // registrations for selected race (admin view)
+    const [raceRegistrations, setRaceRegistrations] = useState([]);
+    const [regsLoading, setRegsLoading] = useState(false);
 
-    // ✅ NEW: track registered racers for this event+division
-    const [registeredRacerIds, setRegisteredRacerIds] = useState(new Set());
+    // Bulk entry rows (auto-populated per division)
+    // row shape: { racerId: "", place: "" }
+    const [bulkRows, setBulkRows] = useState([]);
 
     // ---------------------------
-    // Load base data
+    // Load base data (races, racers, results)
     // ---------------------------
     useEffect(() => {
         const load = async () => {
@@ -91,23 +89,21 @@ const ResultsManagement = () => {
                 setLoading(true);
                 setError("");
 
-                // Races (events)
-                const racesRes = await apiClient.get("/races"); // public is fine
+                // Races
+                const racesRes = await apiClient.get("/races");
                 const mappedRaces = (racesRes.data || []).map((r) => ({
                     id: r.id,
-                    raceName: r.raceName || r.name || "",
-                    raceDate: r.raceDate || "",
-                    location: r.location || "",
-                    description: r.description || "",
+                    raceName: r.raceName || r.raceName || r.raceName || r.raceName || r.raceName, // safe noop
+                    name: r.raceName || r.name,
+                    raceDate: r.raceDate,
+                    location: r.location,
+                    description: r.description,
                 }));
 
-                mappedRaces.sort(
-                    (a, b) => new Date(a.raceDate || 0) - new Date(b.raceDate || 0)
-                );
+                mappedRaces.sort((a, b) => new Date(a.raceDate || 0) - new Date(b.raceDate || 0));
                 setRaces(mappedRaces);
 
-                // Racers — admin needs “all racers”, but if you don’t have /admin/racers yet,
-                // this falls back to /racers (which might only show parent racers).
+                // Racers (admin ideally = all racers; fallback = parent's racers)
                 const racersData = await tryGet("/admin/racers", "/racers");
                 setRacers(racersData);
 
@@ -115,23 +111,12 @@ const ResultsManagement = () => {
                 const resultsData = await tryGet("/admin/results", "/results");
                 setResults(resultsData);
 
-                // ✅ NEW: Admin Registrations for auto-populate
-                // Your backend controller is /api/admin/registrations
-                try {
-                    const regs = await apiClient.get("/admin/registrations");
-                    setAdminRegistrations(regs.data || []);
-                } catch (e) {
-                    console.warn("Could not load /admin/registrations (auto-populate will be disabled).", e);
-                    setAdminRegistrations([]);
-                }
-
-                // Default race selection: next upcoming, else first
+                // Default selected race: next upcoming, else first
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
-                const upcoming = mappedRaces.find(
-                    (x) => x.raceDate && new Date(x.raceDate) >= today
-                );
-                setSelectedRaceId(String((upcoming || mappedRaces[0] || {}).id || ""));
+                const upcoming = mappedRaces.find((x) => x.raceDate && new Date(x.raceDate) >= today);
+                const first = upcoming || mappedRaces[0] || null;
+                setSelectedRaceId(first ? String(first.id) : "");
             } catch (e) {
                 console.error("ResultsManagement load error:", e);
                 setError("Could not load races/racers/results.");
@@ -144,7 +129,7 @@ const ResultsManagement = () => {
     }, []);
 
     // ---------------------------
-    // Helpers / derived
+    // Derived maps
     // ---------------------------
     const racersById = useMemo(() => {
         const m = new Map();
@@ -157,7 +142,47 @@ const ResultsManagement = () => {
         return races.find((r) => Number(r.id) === id) || null;
     }, [races, selectedRaceId]);
 
+    // ---------------------------
+    // Load registrations for selected race (FAST)
+    // ---------------------------
+    useEffect(() => {
+        const loadRaceRegs = async () => {
+            if (!selectedRaceId) {
+                setRaceRegistrations([]);
+                return;
+            }
+
+            setRegsLoading(true);
+            try {
+                // Preferred endpoint (you should add this in backend):
+                // GET /api/admin/registrations/by-race/{raceId}
+                let data = [];
+                try {
+                    const res = await apiClient.get(`/admin/registrations/by-race/${selectedRaceId}`);
+                    data = res.data || [];
+                } catch (e) {
+                    // Fallback: if you only have GET /admin/registrations (all),
+                    // we’ll fetch and filter client-side (slower).
+                    const all = await apiClient.get("/admin/registrations");
+                    const raw = all.data || [];
+                    data = raw.filter((row) => Number(row.raceId) === Number(selectedRaceId));
+                }
+
+                setRaceRegistrations(data);
+            } catch (e) {
+                console.error("Failed loading registrations for race:", e);
+                setRaceRegistrations([]);
+            } finally {
+                setRegsLoading(false);
+            }
+        };
+
+        void loadRaceRegs();
+    }, [selectedRaceId]);
+
+    // ---------------------------
     // Normalize results into a consistent shape
+    // ---------------------------
     const normalizedResults = useMemo(() => {
         return (results || []).map((row) => {
             const racer = row.racer || null;
@@ -182,18 +207,17 @@ const ResultsManagement = () => {
                 racerId,
                 racerName,
                 division,
-                placement: Number(row.placement ?? 0),
+                place: Number(row.placement ?? row.place ?? row.Place ?? 0), // supports existing shape
             };
         });
     }, [results]);
 
-    // Filter results to selected race
     const resultsForSelectedRace = useMemo(() => {
         const rid = Number(selectedRaceId);
         return normalizedResults.filter((r) => {
             if (r.raceId != null) return Number(r.raceId) === rid;
 
-            // fallback for DTO-only shapes
+            // fallback: name/date match
             const nameOk = selectedRace?.raceName ? r.raceName === selectedRace.raceName : true;
             const dateOk = selectedRace?.raceDate
                 ? String(r.raceDate).startsWith(String(selectedRace.raceDate))
@@ -213,25 +237,20 @@ const ResultsManagement = () => {
         });
 
         Object.keys(groups).forEach((div) => {
-            groups[div].sort((a, b) => (a.placement || 999) - (b.placement || 999));
+            groups[div].sort((a, b) => (a.place || 999) - (b.place || 999));
         });
 
         return groups;
     }, [resultsForSelectedRace]);
 
     const racerLabel = (r) => {
-        const name =
-            `${r.firstName || ""} ${r.lastName || ""}`.trim() || `Racer #${r.id}`;
+        const name = `${r.firstName || ""} ${r.lastName || ""}`.trim() || `Racer #${r.id}`;
         const car = r.carNumber ? ` (#${String(r.carNumber).replace(/^#/, "")})` : "";
-        const div = r.division
-            ? ` — ${r.division}`
-            : r.age
-                ? ` — ${divisionFromAge(r.age)}`
-                : "";
+        const div = r.division ? ` — ${r.division}` : r.age ? ` — ${divisionFromAge(r.age)}` : "";
         return `${name}${car}${div}`;
     };
 
-    const racersForActiveDivisionAll = useMemo(() => {
+    const racersForActiveDivision = useMemo(() => {
         return (racers || [])
             .map((r) => ({
                 ...r,
@@ -239,80 +258,92 @@ const ResultsManagement = () => {
             }))
             .filter((r) => r._division === activeDivision)
             .sort((a, b) => {
-                const an = String(a.carNumber || "").replace(/\D/g, "");
-                const bn = String(b.carNumber || "").replace(/\D/g, "");
-                return (
-                    Number(an || 9999) - Number(bn || 9999) ||
-                    racerLabel(a).localeCompare(racerLabel(b))
-                );
+                return toCarNumberInt(a.carNumber) - toCarNumberInt(b.carNumber);
             });
     }, [racers, activeDivision]);
 
-    // ✅ NEW: auto-populate registered racers for selected event + division
+    // ---------------------------
+    // Auto-populate registered racers when division changes
+    // ---------------------------
+    const registeredRacerIdsForDivision = useMemo(() => {
+        // Your AdminRegistrationsController returns:
+        // racerId, racerFirstName, racerLastName, carNumber, racerDivision, etc.
+        const ids = new Set();
+        (raceRegistrations || []).forEach((row) => {
+            const div = row.racerDivision || row.division || "";
+            const racerId = row.racerId ?? row.racer_id ?? null;
+            if (!racerId) return;
+            if (div === activeDivision) ids.add(Number(racerId));
+        });
+        return ids;
+    }, [raceRegistrations, activeDivision]);
+
+    const autoPopulateDivision = () => {
+        // build rows from registered racers for this event+division
+        const regRacers = (raceRegistrations || [])
+            .filter((row) => (row.racerDivision || row.division) === activeDivision)
+            .map((row) => {
+                const racerId = Number(row.racerId ?? row.racer_id);
+                const racer = racersById.get(racerId);
+                const carNumber = row.carNumber ?? racer?.carNumber ?? "";
+                return { racerId: String(racerId), carNumber };
+            })
+            .sort((a, b) => toCarNumberInt(a.carNumber) - toCarNumberInt(b.carNumber));
+
+        // Keep any already-entered place values if same racerId exists
+        setBulkRows((prev) => {
+            const prevByRacerId = new Map((prev || []).map((r) => [String(r.racerId), r]));
+            const rows = regRacers.map((r) => ({
+                racerId: r.racerId,
+                place: prevByRacerId.get(String(r.racerId))?.place || "",
+            }));
+
+            // Always give 3 extra blank rows for adding unregistered racers quickly
+            rows.push({ racerId: "", place: "" }, { racerId: "", place: "" }, { racerId: "", place: "" });
+            return rows;
+        });
+    };
+
+    // when division changes OR selected race changes, auto-populate
     useEffect(() => {
-        const raceIdNum = Number(selectedRaceId);
-        if (!raceIdNum || !activeDivision) {
-            setRegisteredRacerIds(new Set());
+        if (!selectedRaceId) {
+            setBulkRows([]);
             return;
         }
-
-        // Admin registration row shapes:
-        // registrationId, raceId, racerId, racerDivision, racerAge, carNumber, ...
-        const regsFor = (adminRegistrations || []).filter((r) => {
-            const rRaceId = Number(r.raceId);
-            const div =
-                r.racerDivision || (r.racerAge != null ? divisionFromAge(r.racerAge) : "");
-            return rRaceId === raceIdNum && div === activeDivision;
-        });
-
-        const ids = new Set(regsFor.map((r) => Number(r.racerId)).filter(Boolean));
-        setRegisteredRacerIds(ids);
-
-        // Auto-create rows for registered racers (placements blank)
-        const autoRows = regsFor
-            .map((r) => ({
-                racerId: String(r.racerId || ""),
-                placement: "",
-                _auto: true, // helpful flag (not required)
-            }))
-            .filter((x) => x.racerId);
-
-        // If there are registered racers, replace bulkRows with them.
-        // If none, keep your default 3 empty rows.
-        if (autoRows.length > 0) {
-            setBulkRows(autoRows);
-        } else {
-            setBulkRows([
-                { racerId: "", placement: "" },
-                { racerId: "", placement: "" },
-                { racerId: "", placement: "" },
-            ]);
-        }
-    }, [selectedRaceId, activeDivision, adminRegistrations]);
+        autoPopulateDivision();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeDivision, selectedRaceId, raceRegistrations]);
 
     // ---------------------------
     // Bulk entry actions
     // ---------------------------
     const setBulkCell = (idx, key, value) => {
-        setBulkRows((prev) =>
-            prev.map((r, i) => (i === idx ? { ...r, [key]: value } : r))
-        );
+        setBulkRows((prev) => prev.map((r, i) => (i === idx ? { ...r, [key]: value } : r)));
     };
 
-    const addBulkRow = () => {
-        setBulkRows((prev) => [...prev, { racerId: "", placement: "" }]);
+    const addExtraRow = () => {
+        setBulkRows((prev) => [...prev, { racerId: "", place: "" }]);
     };
 
     const removeBulkRow = (idx) => {
         setBulkRows((prev) => prev.filter((_, i) => i !== idx));
     };
 
-    const clearBulk = () => {
-        setBulkRows([
-            { racerId: "", placement: "" },
-            { racerId: "", placement: "" },
-            { racerId: "", placement: "" },
-        ]);
+    const clearPlacesOnly = () => {
+        setBulkRows((prev) => prev.map((r) => ({ ...r, place: "" })));
+    };
+
+    // only show NON-registered racers in the dropdown for extra additions
+    const nonRegisteredRacersForDivision = useMemo(() => {
+        return racersForActiveDivision.filter((r) => !registeredRacerIdsForDivision.has(Number(r.id)));
+    }, [racersForActiveDivision, registeredRacerIdsForDivision]);
+
+    const placeClass = (val) => {
+        const n = Number(val);
+        if (n === 1) return "place-1";
+        if (n === 2) return "place-2";
+        if (n === 3) return "place-3";
+        return "";
     };
 
     const saveBulk = async () => {
@@ -322,15 +353,15 @@ const ResultsManagement = () => {
             return;
         }
 
-        const cleaned = bulkRows
+        const cleaned = (bulkRows || [])
             .map((r) => ({
                 racerId: Number(r.racerId),
-                placement: Number(r.placement),
+                place: Number(r.place),
             }))
-            .filter((r) => r.racerId && r.placement);
+            .filter((r) => r.racerId && r.place);
 
         if (cleaned.length === 0) {
-            alert("Add at least one racer + placement.");
+            alert("Add at least one racer + place.");
             return;
         }
 
@@ -344,7 +375,7 @@ const ResultsManagement = () => {
                     raceId: raceIdNum,
                     racerId: Number(row.racerId),
                     division,
-                    placement: row.placement,
+                    placement: row.place, // backend expects "placement"
                 };
 
                 await tryPost("/admin/results", "/results", payload);
@@ -352,9 +383,6 @@ const ResultsManagement = () => {
 
             const refreshed = await tryGet("/admin/results", "/results");
             setResults(refreshed);
-
-            // keep auto rows; just wipe placements (nice UX)
-            setBulkRows((prev) => prev.map((r) => ({ ...r, placement: "" })));
 
             alert(`✅ Saved ${cleaned.length} result(s).`);
         } catch (e) {
@@ -365,9 +393,6 @@ const ResultsManagement = () => {
         }
     };
 
-    // ---------------------------
-    // Delete result (if backend supports it)
-    // ---------------------------
     const deleteResult = async (resultId) => {
         if (!window.confirm("Delete this result entry?")) return;
         try {
@@ -390,8 +415,7 @@ const ResultsManagement = () => {
                     <div>
                         <h2>Race Results</h2>
                         <p className="muted">
-                            Pick an event, then enter results by division. Racers do <b>not</b>{" "}
-                            need to be registered to be added.
+                            Pick an event, then enter results by division. Racers do <b>not</b> need to be registered to be added.
                         </p>
                     </div>
                 </div>
@@ -406,19 +430,17 @@ const ResultsManagement = () => {
                         <div className="controls">
                             <label className="control">
                                 <span>Event</span>
-                                <select
-                                    value={selectedRaceId}
-                                    onChange={(e) => setSelectedRaceId(e.target.value)}
-                                >
+                                <select value={selectedRaceId} onChange={(e) => setSelectedRaceId(e.target.value)}>
                                     <option value="">-- Select Event --</option>
                                     {races.map((r) => (
                                         <option key={r.id} value={r.id}>
-                                            {r.raceName}{" "}
-                                            {r.raceDate ? `(${formatRaceDate(r.raceDate)})` : ""}
+                                            {r.raceName || r.name} {r.raceDate ? `(${formatRaceDate(r.raceDate)})` : ""}
                                         </option>
                                     ))}
                                 </select>
                             </label>
+
+                            {regsLoading && <span className="muted small">Loading registrations…</span>}
                         </div>
 
                         {/* Division tabs */}
@@ -427,9 +449,7 @@ const ResultsManagement = () => {
                                 <button
                                     key={d}
                                     type="button"
-                                    className={`division-tab ${
-                                        activeDivision === d ? "active" : ""
-                                    }`}
+                                    className={`division-tab ${activeDivision === d ? "active" : ""}`}
                                     onClick={() => setActiveDivision(d)}
                                 >
                                     {d.replace(" Division", "")}
@@ -437,23 +457,24 @@ const ResultsManagement = () => {
                             ))}
                         </div>
 
-                        {/* Bulk entry table */}
+                        {/* Bulk entry */}
                         <div className="bulk-card">
                             <div className="bulk-header">
-                                <h3>Bulk Add — {activeDivision}</h3>
+                                <h3>
+                                    Bulk Add — {activeDivision}{" "}
+                                    <span className="muted small">
+                    (Registered: {Array.from(registeredRacerIdsForDivision).length})
+                  </span>
+                                </h3>
+
                                 <div className="bulk-actions">
-                                    <button type="button" className="btn-light" onClick={addBulkRow}>
-                                        + Row
+                                    <button type="button" className="btn-light" onClick={addExtraRow}>
+                                        + Add Extra Racer
                                     </button>
-                                    <button type="button" className="btn-light" onClick={clearBulk}>
-                                        Clear
+                                    <button type="button" className="btn-light" onClick={clearPlacesOnly}>
+                                        Clear Places
                                     </button>
-                                    <button
-                                        type="button"
-                                        className="btn-primary"
-                                        onClick={saveBulk}
-                                        disabled={saving}
-                                    >
+                                    <button type="button" className="btn-primary" onClick={saveBulk} disabled={saving}>
                                         {saving ? "Saving…" : "Save All"}
                                     </button>
                                 </div>
@@ -468,57 +489,53 @@ const ResultsManagement = () => {
                                         <th className="col-small"></th>
                                     </tr>
                                     </thead>
+
                                     <tbody>
-                                    {bulkRows.map((row, idx) => {
-                                        // ✅ Only show unregistered racers in dropdown
-                                        // BUT allow the currently selected racer to remain visible
-                                        const options = racersForActiveDivisionAll.filter((r) => {
-                                            const id = Number(r.id);
-                                            const isSelected = String(id) === String(row.racerId);
-                                            const isRegistered = registeredRacerIds.has(id);
-                                            return isSelected || !isRegistered;
-                                        });
+                                    {(bulkRows || []).map((row, idx) => {
+                                        const selectedId = row.racerId ? Number(row.racerId) : null;
+                                        const isRegistered = selectedId ? registeredRacerIdsForDivision.has(selectedId) : false;
 
                                         return (
-                                            <tr key={idx}>
+                                            <tr key={idx} className={placeClass(row.place)}>
                                                 <td>
-                                                    <div className="bulk-racer-cell">
-                                                        <select
-                                                            value={row.racerId}
-                                                            onChange={(e) => setBulkCell(idx, "racerId", e.target.value)}
-                                                        >
-                                                            <option value="">-- Select Racer --</option>
-                                                            {racersForActiveDivision.map((r) => (
+                                                    <select
+                                                        value={row.racerId}
+                                                        onChange={(e) => setBulkCell(idx, "racerId", e.target.value)}
+                                                    >
+                                                        <option value="">
+                                                            {isRegistered ? "-- (Registered racer) --" : "-- Select Racer --"}
+                                                        </option>
+
+                                                        {/* Registered racers (for this division) first */}
+                                                        {racersForActiveDivision
+                                                            .filter((r) => registeredRacerIdsForDivision.has(Number(r.id)))
+                                                            .map((r) => (
                                                                 <option key={r.id} value={r.id}>
-                                                                    {racerLabel(r)}
+                                                                    ✅ {racerLabel(r)}
                                                                 </option>
                                                             ))}
-                                                        </select>
 
-                                                        {row.racerId && registeredRacerIds.has(Number(row.racerId)) ? (
-                                                            <div className="muted small">✅ Registered for this event</div>
-                                                        ) : row.racerId ? (
-                                                            <div className="muted small">➕ Walk-up racer</div>
-                                                        ) : null}
-                                                    </div>
+                                                        {/* Then non-registered racers */}
+                                                        {nonRegisteredRacersForDivision.map((r) => (
+                                                            <option key={r.id} value={r.id}>
+                                                                {racerLabel(r)}
+                                                            </option>
+                                                        ))}
+                                                    </select>
                                                 </td>
 
-                                                <td className="col-small bulk-place-cell">
+                                                <td className="col-small">
                                                     <input
                                                         type="number"
                                                         min="1"
-                                                        value={row.placement}
-                                                        onChange={(e) => setBulkCell(idx, "placement", e.target.value)}
+                                                        value={row.place}
+                                                        onChange={(e) => setBulkCell(idx, "place", e.target.value)}
                                                         placeholder="1"
                                                     />
                                                 </td>
 
-                                                <td className="col-small bulk-actions-cell">
-                                                    <button
-                                                        type="button"
-                                                        className="btn-danger"
-                                                        onClick={() => removeBulkRow(idx)}
-                                                    >
+                                                <td className="col-small">
+                                                    <button type="button" className="btn-danger" onClick={() => removeBulkRow(idx)}>
                                                         ✖
                                                     </button>
                                                 </td>
@@ -530,15 +547,13 @@ const ResultsManagement = () => {
                             </div>
 
                             <p className="muted small">
-                                Tip: When you choose an event + division, all registered racers
-                                for that division will auto-fill above. You can still add walk-up
-                                racers using “+ Row”.
+                                Registered racers auto-fill for this event/division. Use “Add Extra Racer” for walk-ups.
                             </p>
                         </div>
 
                         {/* Existing results grouped by division */}
                         <div className="existing-results">
-                            <h3>Existing Results (for selected event)</h3>
+                            <h3>Existing Results (selected event)</h3>
 
                             {DIVISIONS.map((div) => {
                                 const rows = groupedByDivision[div] || [];
@@ -566,24 +581,15 @@ const ResultsManagement = () => {
                                                     </tr>
                                                 ) : (
                                                     rows.map((r) => {
-                                                        const racer = r.racerId
-                                                            ? racersById.get(Number(r.racerId))
-                                                            : null;
+                                                        const racer = r.racerId ? racersById.get(Number(r.racerId)) : null;
                                                         const car = racer?.carNumber || "";
                                                         return (
-                                                            <tr key={r.id}>
-                                                                <td className="col-small">{r.placement || "-"}</td>
+                                                            <tr key={r.id} className={placeClass(r.place)}>
+                                                                <td className="col-small">{r.place || "-"}</td>
                                                                 <td>{r.racerName || "-"}</td>
+                                                                <td className="col-small">{car ? `#${String(car).replace(/^#/, "")}` : "-"}</td>
                                                                 <td className="col-small">
-                                                                    {car
-                                                                        ? `#${String(car).replace(/^#/, "")}`
-                                                                        : "-"}
-                                                                </td>
-                                                                <td className="col-small">
-                                                                    <button
-                                                                        className="btn-danger"
-                                                                        onClick={() => deleteResult(r.id)}
-                                                                    >
+                                                                    <button className="btn-danger" onClick={() => deleteResult(r.id)}>
                                                                         Delete
                                                                     </button>
                                                                 </td>
