@@ -233,3 +233,8 @@
         padding: 1.25rem;
     }
 }
+
+/* podium colors */
+.place-1 td { background: rgba(255, 215, 0, 0.18); }   /* gold */
+.place-2 td { background: rgba(192, 192, 192, 0.18); } /* silver */
+.place-3 td { background: rgba(205, 127, 50, 0.18); }  /* bronze */
