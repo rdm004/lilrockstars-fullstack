@@ -3,7 +3,12 @@ import Layout from "../components/Layout";
 import apiClient from "../utils/apiClient";
 import "../styles/ResultsManagement.css";
 
-const DIVISIONS = ["3 Year Old Division", "4 Year Old Division", "5 Year Old Division", "Snack Pack Division"];
+const DIVISIONS = [
+    "3 Year Old Division",
+    "4 Year Old Division",
+    "5 Year Old Division",
+    "Snack Pack Division",
+];
 
 const divisionFromAge = (ageRaw) => {
     const age = Number(ageRaw);
@@ -18,7 +23,11 @@ const formatRaceDate = (dateStr) => {
     if (!dateStr) return "";
     const d = new Date(dateStr);
     if (Number.isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+    return d.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+    });
 };
 
 // Try admin endpoints first, fall back to public endpoints (so you don’t break anything)
@@ -40,14 +49,6 @@ const tryPost = async (adminPath, fallbackPath, payload) => {
     }
 };
 
-const tryPut = async (adminPath, fallbackPath, payload) => {
-    try {
-        return await apiClient.put(adminPath, payload);
-    } catch {
-        return await apiClient.put(fallbackPath, payload);
-    }
-};
-
 const tryDelete = async (adminPath, fallbackPath) => {
     try {
         return await apiClient.delete(adminPath);
@@ -60,6 +61,9 @@ const ResultsManagement = () => {
     const [races, setRaces] = useState([]);
     const [racers, setRacers] = useState([]);
     const [results, setResults] = useState([]);
+
+    // ✅ NEW: admin registrations (used for auto-populate)
+    const [adminRegistrations, setAdminRegistrations] = useState([]);
 
     const [selectedRaceId, setSelectedRaceId] = useState("");
     const [activeDivision, setActiveDivision] = useState(DIVISIONS[0]);
@@ -75,6 +79,9 @@ const ResultsManagement = () => {
         { racerId: "", placement: "" },
     ]);
 
+    // ✅ NEW: track registered racers for this event+division
+    const [registeredRacerIds, setRegisteredRacerIds] = useState(new Set());
+
     // ---------------------------
     // Load base data
     // ---------------------------
@@ -88,30 +95,42 @@ const ResultsManagement = () => {
                 const racesRes = await apiClient.get("/races"); // public is fine
                 const mappedRaces = (racesRes.data || []).map((r) => ({
                     id: r.id,
-                    raceName: r.raceName ?? r.raceName ?? r.raceName ?? r.raceName ?? r.raceName, // harmless
-                    name: r.raceName || r.name,
-                    raceDate: r.raceDate,
-                    location: r.location,
-                    description: r.description,
+                    raceName: r.raceName || r.name || "",
+                    raceDate: r.raceDate || "",
+                    location: r.location || "",
+                    description: r.description || "",
                 }));
 
-                mappedRaces.sort((a, b) => new Date(a.raceDate || 0) - new Date(b.raceDate || 0));
+                mappedRaces.sort(
+                    (a, b) => new Date(a.raceDate || 0) - new Date(b.raceDate || 0)
+                );
                 setRaces(mappedRaces);
 
                 // Racers — admin needs “all racers”, but if you don’t have /admin/racers yet,
-                // this falls back to /racers (which will only show the logged-in parent's racers).
+                // this falls back to /racers (which might only show parent racers).
                 const racersData = await tryGet("/admin/racers", "/racers");
                 setRacers(racersData);
 
-                // Results — your existing endpoint is /results
+                // Results
                 const resultsData = await tryGet("/admin/results", "/results");
                 setResults(resultsData);
+
+                // ✅ NEW: Admin Registrations for auto-populate
+                // Your backend controller is /api/admin/registrations
+                try {
+                    const regs = await apiClient.get("/admin/registrations");
+                    setAdminRegistrations(regs.data || []);
+                } catch (e) {
+                    console.warn("Could not load /admin/registrations (auto-populate will be disabled).", e);
+                    setAdminRegistrations([]);
+                }
 
                 // Default race selection: next upcoming, else first
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
-
-                const upcoming = mappedRaces.find((x) => x.raceDate && new Date(x.raceDate) >= today);
+                const upcoming = mappedRaces.find(
+                    (x) => x.raceDate && new Date(x.raceDate) >= today
+                );
                 setSelectedRaceId(String((upcoming || mappedRaces[0] || {}).id || ""));
             } catch (e) {
                 console.error("ResultsManagement load error:", e);
@@ -140,10 +159,6 @@ const ResultsManagement = () => {
 
     // Normalize results into a consistent shape
     const normalizedResults = useMemo(() => {
-        // Your backend RaceResultController returns:
-        // { id, raceName, raceDate, racerName, division, placement }
-        // But for management we also want raceId + racerId when possible.
-        // If your admin endpoint later returns IDs, we’ll use them automatically.
         return (results || []).map((row) => {
             const racer = row.racer || null;
             const race = row.race || null;
@@ -176,12 +191,13 @@ const ResultsManagement = () => {
     const resultsForSelectedRace = useMemo(() => {
         const rid = Number(selectedRaceId);
         return normalizedResults.filter((r) => {
-            // If we have IDs, match by ID
             if (r.raceId != null) return Number(r.raceId) === rid;
 
-            // Else fallback to matching by name/date (works with your current DTO)
+            // fallback for DTO-only shapes
             const nameOk = selectedRace?.raceName ? r.raceName === selectedRace.raceName : true;
-            const dateOk = selectedRace?.raceDate ? String(r.raceDate).startsWith(String(selectedRace.raceDate)) : true;
+            const dateOk = selectedRace?.raceDate
+                ? String(r.raceDate).startsWith(String(selectedRace.raceDate))
+                : true;
             return nameOk && dateOk;
         });
     }, [normalizedResults, selectedRaceId, selectedRace]);
@@ -204,13 +220,18 @@ const ResultsManagement = () => {
     }, [resultsForSelectedRace]);
 
     const racerLabel = (r) => {
-        const name = `${r.firstName || ""} ${r.lastName || ""}`.trim() || `Racer #${r.id}`;
+        const name =
+            `${r.firstName || ""} ${r.lastName || ""}`.trim() || `Racer #${r.id}`;
         const car = r.carNumber ? ` (#${String(r.carNumber).replace(/^#/, "")})` : "";
-        const div = r.division ? ` — ${r.division}` : r.age ? ` — ${divisionFromAge(r.age)}` : "";
+        const div = r.division
+            ? ` — ${r.division}`
+            : r.age
+                ? ` — ${divisionFromAge(r.age)}`
+                : "";
         return `${name}${car}${div}`;
     };
 
-    const racersForActiveDivision = useMemo(() => {
+    const racersForActiveDivisionAll = useMemo(() => {
         return (racers || [])
             .map((r) => ({
                 ...r,
@@ -220,15 +241,62 @@ const ResultsManagement = () => {
             .sort((a, b) => {
                 const an = String(a.carNumber || "").replace(/\D/g, "");
                 const bn = String(b.carNumber || "").replace(/\D/g, "");
-                return (Number(an || 9999) - Number(bn || 9999)) || racerLabel(a).localeCompare(racerLabel(b));
+                return (
+                    Number(an || 9999) - Number(bn || 9999) ||
+                    racerLabel(a).localeCompare(racerLabel(b))
+                );
             });
     }, [racers, activeDivision]);
+
+    // ✅ NEW: auto-populate registered racers for selected event + division
+    useEffect(() => {
+        const raceIdNum = Number(selectedRaceId);
+        if (!raceIdNum || !activeDivision) {
+            setRegisteredRacerIds(new Set());
+            return;
+        }
+
+        // Admin registration row shapes:
+        // registrationId, raceId, racerId, racerDivision, racerAge, carNumber, ...
+        const regsFor = (adminRegistrations || []).filter((r) => {
+            const rRaceId = Number(r.raceId);
+            const div =
+                r.racerDivision || (r.racerAge != null ? divisionFromAge(r.racerAge) : "");
+            return rRaceId === raceIdNum && div === activeDivision;
+        });
+
+        const ids = new Set(regsFor.map((r) => Number(r.racerId)).filter(Boolean));
+        setRegisteredRacerIds(ids);
+
+        // Auto-create rows for registered racers (placements blank)
+        const autoRows = regsFor
+            .map((r) => ({
+                racerId: String(r.racerId || ""),
+                placement: "",
+                _auto: true, // helpful flag (not required)
+            }))
+            .filter((x) => x.racerId);
+
+        // If there are registered racers, replace bulkRows with them.
+        // If none, keep your default 3 empty rows.
+        if (autoRows.length > 0) {
+            setBulkRows(autoRows);
+        } else {
+            setBulkRows([
+                { racerId: "", placement: "" },
+                { racerId: "", placement: "" },
+                { racerId: "", placement: "" },
+            ]);
+        }
+    }, [selectedRaceId, activeDivision, adminRegistrations]);
 
     // ---------------------------
     // Bulk entry actions
     // ---------------------------
     const setBulkCell = (idx, key, value) => {
-        setBulkRows((prev) => prev.map((r, i) => (i === idx ? { ...r, [key]: value } : r)));
+        setBulkRows((prev) =>
+            prev.map((r, i) => (i === idx ? { ...r, [key]: value } : r))
+        );
     };
 
     const addBulkRow = () => {
@@ -240,7 +308,11 @@ const ResultsManagement = () => {
     };
 
     const clearBulk = () => {
-        setBulkRows([{ racerId: "", placement: "" }, { racerId: "", placement: "" }, { racerId: "", placement: "" }]);
+        setBulkRows([
+            { racerId: "", placement: "" },
+            { racerId: "", placement: "" },
+            { racerId: "", placement: "" },
+        ]);
     };
 
     const saveBulk = async () => {
@@ -264,8 +336,6 @@ const ResultsManagement = () => {
 
         setSaving(true);
         try {
-            // Post one-by-one (works now).
-            // Later we can create /api/admin/results/bulk and send the whole list at once.
             for (const row of cleaned) {
                 const racer = racersById.get(Number(row.racerId));
                 const division = racer?.division || divisionFromAge(racer?.age);
@@ -280,11 +350,12 @@ const ResultsManagement = () => {
                 await tryPost("/admin/results", "/results", payload);
             }
 
-            // Refresh results list
             const refreshed = await tryGet("/admin/results", "/results");
             setResults(refreshed);
 
-            clearBulk();
+            // keep auto rows; just wipe placements (nice UX)
+            setBulkRows((prev) => prev.map((r) => ({ ...r, placement: "" })));
+
             alert(`✅ Saved ${cleaned.length} result(s).`);
         } catch (e) {
             console.error("Bulk save error:", e);
@@ -319,7 +390,8 @@ const ResultsManagement = () => {
                     <div>
                         <h2>Race Results</h2>
                         <p className="muted">
-                            Pick an event, then enter results by division. Racers do <b>not</b> need to be registered to be added.
+                            Pick an event, then enter results by division. Racers do <b>not</b>{" "}
+                            need to be registered to be added.
                         </p>
                     </div>
                 </div>
@@ -334,11 +406,15 @@ const ResultsManagement = () => {
                         <div className="controls">
                             <label className="control">
                                 <span>Event</span>
-                                <select value={selectedRaceId} onChange={(e) => setSelectedRaceId(e.target.value)}>
+                                <select
+                                    value={selectedRaceId}
+                                    onChange={(e) => setSelectedRaceId(e.target.value)}
+                                >
                                     <option value="">-- Select Event --</option>
                                     {races.map((r) => (
                                         <option key={r.id} value={r.id}>
-                                            {r.raceName || r.name} {r.raceDate ? `(${formatRaceDate(r.raceDate)})` : ""}
+                                            {r.raceName}{" "}
+                                            {r.raceDate ? `(${formatRaceDate(r.raceDate)})` : ""}
                                         </option>
                                     ))}
                                 </select>
@@ -351,7 +427,9 @@ const ResultsManagement = () => {
                                 <button
                                     key={d}
                                     type="button"
-                                    className={`division-tab ${activeDivision === d ? "active" : ""}`}
+                                    className={`division-tab ${
+                                        activeDivision === d ? "active" : ""
+                                    }`}
                                     onClick={() => setActiveDivision(d)}
                                 >
                                     {d.replace(" Division", "")}
@@ -370,7 +448,12 @@ const ResultsManagement = () => {
                                     <button type="button" className="btn-light" onClick={clearBulk}>
                                         Clear
                                     </button>
-                                    <button type="button" className="btn-primary" onClick={saveBulk} disabled={saving}>
+                                    <button
+                                        type="button"
+                                        className="btn-primary"
+                                        onClick={saveBulk}
+                                        disabled={saving}
+                                    >
                                         {saving ? "Saving…" : "Save All"}
                                     </button>
                                 </div>
@@ -386,43 +469,78 @@ const ResultsManagement = () => {
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    {bulkRows.map((row, idx) => (
-                                        <tr key={idx}>
-                                            <td>
-                                                <select
-                                                    value={row.racerId}
-                                                    onChange={(e) => setBulkCell(idx, "racerId", e.target.value)}
-                                                >
-                                                    <option value="">-- Select Racer --</option>
-                                                    {racersForActiveDivision.map((r) => (
-                                                        <option key={r.id} value={r.id}>
-                                                            {racerLabel(r)}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </td>
-                                            <td className="col-small">
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    value={row.placement}
-                                                    onChange={(e) => setBulkCell(idx, "placement", e.target.value)}
-                                                    placeholder="1"
-                                                />
-                                            </td>
-                                            <td className="col-small">
-                                                <button type="button" className="btn-danger" onClick={() => removeBulkRow(idx)}>
-                                                    ✖
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {bulkRows.map((row, idx) => {
+                                        // ✅ Only show unregistered racers in dropdown
+                                        // BUT allow the currently selected racer to remain visible
+                                        const options = racersForActiveDivisionAll.filter((r) => {
+                                            const id = Number(r.id);
+                                            const isSelected = String(id) === String(row.racerId);
+                                            const isRegistered = registeredRacerIds.has(id);
+                                            return isSelected || !isRegistered;
+                                        });
+
+                                        return (
+                                            <tr key={idx}>
+                                                <td>
+                                                    <select
+                                                        value={row.racerId}
+                                                        onChange={(e) =>
+                                                            setBulkCell(idx, "racerId", e.target.value)
+                                                        }
+                                                    >
+                                                        <option value="">-- Select Racer --</option>
+                                                        {options.map((r) => (
+                                                            <option key={r.id} value={r.id}>
+                                                                {racerLabel(r)}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+
+                                                    {/* Helpful hint */}
+                                                    {row.racerId &&
+                                                    registeredRacerIds.has(Number(row.racerId)) ? (
+                                                        <div className="muted small" style={{ marginTop: 6 }}>
+                                                            ✅ Registered for this event
+                                                        </div>
+                                                    ) : row.racerId ? (
+                                                        <div className="muted small" style={{ marginTop: 6 }}>
+                                                            ➕ Not registered (walk-up OK)
+                                                        </div>
+                                                    ) : null}
+                                                </td>
+
+                                                <td className="col-small">
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        value={row.placement}
+                                                        onChange={(e) =>
+                                                            setBulkCell(idx, "placement", e.target.value)
+                                                        }
+                                                        placeholder="1"
+                                                    />
+                                                </td>
+
+                                                <td className="col-small">
+                                                    <button
+                                                        type="button"
+                                                        className="btn-danger"
+                                                        onClick={() => removeBulkRow(idx)}
+                                                    >
+                                                        ✖
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                     </tbody>
                                 </table>
                             </div>
 
                             <p className="muted small">
-                                Tip: set placements (1,2,3…) as you enter them. If a racer isn’t showing in this division, check their age/division on the Racers page.
+                                Tip: When you choose an event + division, all registered racers
+                                for that division will auto-fill above. You can still add walk-up
+                                racers using “+ Row”.
                             </p>
                         </div>
 
@@ -456,15 +574,24 @@ const ResultsManagement = () => {
                                                     </tr>
                                                 ) : (
                                                     rows.map((r) => {
-                                                        const racer = r.racerId ? racersById.get(Number(r.racerId)) : null;
+                                                        const racer = r.racerId
+                                                            ? racersById.get(Number(r.racerId))
+                                                            : null;
                                                         const car = racer?.carNumber || "";
                                                         return (
                                                             <tr key={r.id}>
                                                                 <td className="col-small">{r.placement || "-"}</td>
                                                                 <td>{r.racerName || "-"}</td>
-                                                                <td className="col-small">{car ? `#${String(car).replace(/^#/, "")}` : "-"}</td>
                                                                 <td className="col-small">
-                                                                    <button className="btn-danger" onClick={() => deleteResult(r.id)}>
+                                                                    {car
+                                                                        ? `#${String(car).replace(/^#/, "")}`
+                                                                        : "-"}
+                                                                </td>
+                                                                <td className="col-small">
+                                                                    <button
+                                                                        className="btn-danger"
+                                                                        onClick={() => deleteResult(r.id)}
+                                                                    >
                                                                         Delete
                                                                     </button>
                                                                 </td>
