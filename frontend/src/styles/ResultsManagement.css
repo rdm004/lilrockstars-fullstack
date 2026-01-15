@@ -238,3 +238,62 @@
 .place-1 td { background: rgba(255, 215, 0, 0.18); }   /* gold */
 .place-2 td { background: rgba(192, 192, 192, 0.18); } /* silver */
 .place-3 td { background: rgba(205, 127, 50, 0.18); }  /* bronze */
+
+
+/* =========================
+   Existing Results - Compact
+   ========================= */
+
+.existing-results .division-section {
+    padding: 0.75rem;          /* was 1rem */
+    border-radius: 10px;
+}
+
+.existing-results .division-title h4 {
+    font-size: 1rem;
+}
+
+.existing-results .division-title .muted {
+    font-size: 0.85rem;
+}
+
+/* compact table */
+.existing-results .results-table th,
+.existing-results .results-table td {
+    padding: 0.45rem 0.6rem;   /* tighter rows */
+    font-size: 0.88rem;        /* smaller text */
+    line-height: 1.15;
+}
+
+.existing-results .results-table th {
+    font-size: 0.85rem;
+    font-weight: 800;
+}
+
+/* tighten small columns */
+.existing-results .results-table .col-small {
+    width: 80px;               /* was 120px */
+    white-space: nowrap;
+}
+
+/* keep racer column from being huge */
+.existing-results .results-table td:nth-child(2),
+.existing-results .results-table th:nth-child(2) {
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* smaller delete button inside existing results */
+.existing-results .results-table .btn-danger {
+    padding: 0.28rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+/* optional: reduce space between division blocks */
+.existing-results .division-section {
+    margin-bottom: 0.75rem; /* was 1rem */
+}
