@@ -178,4 +178,10 @@
     .races-intro {
         margin-bottom: 1rem;
     }
+
+    /* Optional: a subtle divider between upcoming and past */
+    .races-container h2 {
+        color: #f47c2a;
+        margin-bottom: 1rem;
+    }
 }
