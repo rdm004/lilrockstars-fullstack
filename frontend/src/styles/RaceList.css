@@ -180,8 +180,43 @@
     }
 
     /* Optional: a subtle divider between upcoming and past */
-    .races-container h2 {
-        color: #f47c2a;
-        margin-bottom: 1rem;
-    }
+
+}
+.races-container h2 {
+    color: #f47c2a;
+    margin-bottom: 1rem;
+}
+/* Section headers */
+.races-section-title {
+    text-align: center;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    color: #f47c2a;
+}
+
+/* Past races toggle row */
+.past-races-header {
+    margin-top: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Toggle button */
+.past-toggle-btn {
+    background: #f3f3f3;
+    border: 1px solid #bbb;
+    color: #111;
+    padding: 0.55rem 0.9rem;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.12s ease, background 0.2s ease;
+}
+
+.past-toggle-btn:hover {
+    background: #e9e9e9;
+    transform: translateY(-1px);
 }

@@ -9,13 +9,15 @@ const RaceList = () => {
     const [allRaces, setAllRaces] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // ✅ Toggle (collapsed by default)
+    const [showPastRaces, setShowPastRaces] = useState(false);
+
     const navigate = useNavigate();
 
     useEffect(() => {
         const loadRaces = async () => {
             try {
                 setLoading(true);
-
                 const res = await apiClient.get("/races");
 
                 const mapped = (res.data || []).map((race) => ({
@@ -117,19 +119,36 @@ const RaceList = () => {
             ) : (
                 <>
                     {/* ✅ UPCOMING */}
-                    <h2 style={{ textAlign: "center", marginTop: "1rem" }}>Upcoming Races</h2>
+                    <h2 className="races-section-title">Upcoming Races</h2>
                     {upcomingRaces.length === 0 ? (
                         <p>No upcoming races found.</p>
                     ) : (
                         renderRaceGrid(upcomingRaces)
                     )}
 
-                    {/* ✅ PAST */}
-                    <h2 style={{ textAlign: "center", marginTop: "2.25rem" }}>Past Races</h2>
-                    {pastRaces.length === 0 ? (
-                        <p>No past races found.</p>
-                    ) : (
-                        renderRaceGrid(pastRaces)
+                    {/* ✅ PAST with TOGGLE */}
+                    <div className="past-races-header">
+                        <h2 className="races-section-title" style={{ margin: 0 }}>
+                            Past Races
+                        </h2>
+
+                        <button
+                            type="button"
+                            className="past-toggle-btn"
+                            onClick={() => setShowPastRaces((prev) => !prev)}
+                        >
+                            {showPastRaces ? "Hide Past Races ▲" : `Show Past Races (${pastRaces.length}) ▼`}
+                        </button>
+                    </div>
+
+                    {showPastRaces && (
+                        <>
+                            {pastRaces.length === 0 ? (
+                                <p>No past races found.</p>
+                            ) : (
+                                renderRaceGrid(pastRaces)
+                            )}
+                        </>
                     )}
                 </>
             )}
