@@ -1,3 +1,5 @@
+/* frontend/src/styles/ResultsManagement.css */
+
 .results-page {
     padding: 2rem;
     background: #fdfbf8;
@@ -141,7 +143,7 @@
 }
 
 /* ----------------------------
-   Tables
+   Tables (shared)
 ----------------------------- */
 .bulk-table-wrap,
 .table-wrap {
@@ -163,7 +165,7 @@
     padding: 0.75rem;
     border-bottom: 1px solid #eee;
     text-align: left;
-    vertical-align: middle; /* ✅ keep inputs aligned */
+    vertical-align: middle;
 }
 
 .bulk-table th,
@@ -173,12 +175,12 @@
     color: #333;
 }
 
-/* ✅ FIX: make select + input same height so they align horizontally */
+/* ✅ keep select + input same height so they align horizontally */
 .bulk-table select,
 .bulk-table input {
     width: 100%;
-    height: 40px;            /* ✅ consistent height */
-    box-sizing: border-box;  /* ✅ prevents overflow */
+    height: 40px;
+    box-sizing: border-box;
     padding: 0.5rem 0.6rem;
     border-radius: 8px;
     border: 1px solid #ddd;
@@ -186,23 +188,40 @@
 
 /* Racer column can be wide, Place column should be narrow */
 .col-small {
-    width: 140px;       /* a bit wider for "Place" */
+    width: 140px;
     white-space: nowrap;
 }
 
 /* ----------------------------
-   Existing Results sections
+   Podium coloring (1/2/3)
 ----------------------------- */
+.place-1 td { background: rgba(255, 215, 0, 0.18); }    /* gold */
+.place-2 td { background: rgba(192, 192, 192, 0.18); }  /* silver */
+.place-3 td { background: rgba(205, 127, 50, 0.18); }   /* bronze */
+
+/* ----------------------------
+   Existing Results (2-column grid layout)
+   NOTE: This assumes your <h3> is NOT inside .existing-results.
+   If your <h3> is inside, wrap it in .existing-results-wrap and keep grid on .existing-results.
+----------------------------- */
+.existing-results {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    align-items: start;
+}
+
 .existing-results h3 {
     margin-top: 0;
 }
 
+/* each division card */
 .division-section {
     background: #fff;
     border: 1px solid #eee;
     border-radius: 12px;
-    padding: 1rem;
-    margin-bottom: 1rem;
+    padding: 0.75rem;
+    margin-bottom: 0; /* grid gap handles spacing */
 }
 
 .division-title {
@@ -215,53 +234,29 @@
 .division-title h4 {
     margin: 0;
     color: #111;
-}
-
-/* ----------------------------
-   Podium coloring (1/2/3)
-   (Works when row has class place-1 / place-2 / place-3)
------------------------------ */
-.place-1 td { background: rgba(255, 215, 0, 0.20); }   /* gold */
-.place-2 td { background: rgba(192, 192, 192, 0.22); } /* silver */
-.place-3 td { background: rgba(205, 127, 50, 0.22); }  /* bronze */
-
-/* ----------------------------
-   Mobile
------------------------------ */
-@media (max-width: 700px) {
-    .results-page {
-        padding: 1.25rem;
-    }
-}
-
-/* podium colors */
-.place-1 td { background: rgba(255, 215, 0, 0.18); }   /* gold */
-.place-2 td { background: rgba(192, 192, 192, 0.18); } /* silver */
-.place-3 td { background: rgba(205, 127, 50, 0.18); }  /* bronze */
-
-
-/* =========================
-   Existing Results - Compact
-   ========================= */
-
-.existing-results .division-section {
-    padding: 0.75rem;          /* was 1rem */
-    border-radius: 10px;
-}
-
-.existing-results .division-title h4 {
     font-size: 1rem;
 }
 
-.existing-results .division-title .muted {
+.division-title .muted {
     font-size: 0.85rem;
 }
 
-/* compact table */
+/* compact table in existing results */
+.existing-results .results-table {
+    width: auto;              /* prevent full-width stretch */
+    max-width: 100%;
+    table-layout: auto;
+}
+
+.existing-results .table-wrap {
+    display: flex;
+    justify-content: flex-start; /* change to center if you prefer */
+}
+
 .existing-results .results-table th,
 .existing-results .results-table td {
     padding: 0.45rem 0.6rem;   /* tighter rows */
-    font-size: 0.88rem;        /* smaller text */
+    font-size: 0.88rem;
     line-height: 1.15;
 }
 
@@ -270,54 +265,10 @@
     font-weight: 800;
 }
 
-/* tighten small columns */
-.existing-results .results-table .col-small {
-    width: 80px;               /* was 120px */
-    white-space: nowrap;
-}
-
-/* keep racer column from being huge */
-.existing-results .results-table td:nth-child(2),
-.existing-results .results-table th:nth-child(2) {
-    max-width: 320px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* smaller delete button inside existing results */
-.existing-results .results-table .btn-danger {
-    padding: 0.28rem 0.55rem;
-    border-radius: 6px;
-    font-size: 0.82rem;
-    font-weight: 800;
-}
-
-/* optional: reduce space between division blocks */
-.existing-results .division-section {
-    margin-bottom: 0.75rem; /* was 1rem */
-}
-
-/* =========================
-   Existing Results – Prevent Full-Width Stretch
-   ========================= */
-
-/* keep table only as wide as its content */
-.existing-results .results-table {
-    width: auto;              /* override 100% */
-    max-width: 100%;
-    table-layout: auto;
-}
-
-/* center the table inside its container */
-.existing-results .table-wrap {
-    display: flex;
-    justify-content: flex-start; /* change to center if you prefer */
-}
-
-/* tighter fixed column sizing */
+/* tighter small columns */
 .existing-results .results-table .col-small {
     width: 70px;
+    white-space: nowrap;
 }
 
 /* constrain Racer column */
@@ -335,4 +286,27 @@
 .existing-results .results-table td:last-child {
     width: 90px;
     text-align: left;
+}
+
+/* smaller delete button inside existing results */
+.existing-results .results-table .btn-danger {
+    padding: 0.28rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+/* ----------------------------
+   Mobile
+----------------------------- */
+@media (max-width: 900px) {
+    .existing-results {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+    .results-page {
+        padding: 1.25rem;
+    }
 }
