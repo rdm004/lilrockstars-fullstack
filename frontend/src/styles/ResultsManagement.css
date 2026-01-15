@@ -297,3 +297,42 @@
 .existing-results .division-section {
     margin-bottom: 0.75rem; /* was 1rem */
 }
+
+/* =========================
+   Existing Results – Prevent Full-Width Stretch
+   ========================= */
+
+/* keep table only as wide as its content */
+.existing-results .results-table {
+    width: auto;              /* override 100% */
+    max-width: 100%;
+    table-layout: auto;
+}
+
+/* center the table inside its container */
+.existing-results .table-wrap {
+    display: flex;
+    justify-content: flex-start; /* change to center if you prefer */
+}
+
+/* tighter fixed column sizing */
+.existing-results .results-table .col-small {
+    width: 70px;
+}
+
+/* constrain Racer column */
+.existing-results .results-table th:nth-child(2),
+.existing-results .results-table td:nth-child(2) {
+    min-width: 220px;
+    max-width: 320px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Actions column tighter */
+.existing-results .results-table th:last-child,
+.existing-results .results-table td:last-child {
+    width: 90px;
+    text-align: left;
+}
