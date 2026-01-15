@@ -44,8 +44,17 @@ const Home = () => {
                     description: race.description,
                 }));
 
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
                 const sorted = mapped
                     .filter((r) => !!r.date)
+                    .filter((r) => {
+                        const d = new Date(r.date);
+                        if (Number.isNaN(d.getTime())) return false; // ignore bad dates
+                        d.setHours(0, 0, 0, 0);
+                        return d >= today;
+                    })
                     .sort((a, b) => new Date(a.date) - new Date(b.date))
                     .slice(0, 3);
 
