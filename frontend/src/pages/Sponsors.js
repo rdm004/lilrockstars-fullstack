@@ -1,6 +1,5 @@
 // frontend/src/pages/Sponsors.js
 import React, { useMemo } from "react";
-import Layout from "../components/Layout";
 import SponsorsData from "../data/SponsorsData";
 import "../styles/Sponsors.css";
 
