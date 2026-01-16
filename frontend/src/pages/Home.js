@@ -6,6 +6,7 @@ import apiClient from "../utils/apiClient";
 import { formatRaceDate } from "../utils/dateUtils";
 import sponsorsData from "../data/SponsorsData";
 import galleryPhotos from "../data/GalleryData";
+import { buildStandingsFromFlatResults, DIVISIONS} from "../utils/standingUtils";
 
 const Home = () => {
     // 🏁 Upcoming races
@@ -78,38 +79,24 @@ const Home = () => {
                 setStandingsError("");
 
                 const res = await apiClient.get("/results");
-                const results = res.data || [];
+                const flat = res.data || [];
 
-                const pointsByPlacement = { 1: 13, 2: 10, 3: 8 };
-                const divisionMap = {};
+                const standingsByDivision = buildStandingsFromFlatResults(flat);
 
-                results.forEach((r) => {
-                    if (!r.division || !r.racerName) return;
-
-                    if (!divisionMap[r.division]) divisionMap[r.division] = {};
-
-                    if (!divisionMap[r.division][r.racerName]) {
-                        divisionMap[r.division][r.racerName] = { name: r.racerName, points: 0 };
-                    }
-
-                    const pts = pointsByPlacement[r.placement] ?? 1;
-                    divisionMap[r.division][r.racerName].points += pts;
-                });
-
-                const standingsArr = Object.keys(divisionMap).map((division) => {
-                    const racersArr = Object.values(divisionMap[division])
-                        .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name))
+                // Turn into the same structure your Home UI expects:
+                // [{ division, leaders: [{ position, name, points }] }]
+                const standingsArr = DIVISIONS.map((division) => {
+                    const leaders = (standingsByDivision[division] || [])
                         .slice(0, 3)
-                        .map((racer, idx) => ({
+                        .map((r, idx) => ({
                             position: idx + 1,
-                            name: racer.name,
-                            points: racer.points,
+                            name: r.name,
+                            points: r.points,
                         }));
 
-                    return { division, leaders: racersArr };
+                    return { division, leaders };
                 });
 
-                standingsArr.sort((a, b) => a.division.localeCompare(b.division));
                 setStandings(standingsArr);
             } catch (err) {
                 console.error("Error loading standings:", err);

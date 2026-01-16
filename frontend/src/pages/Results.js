@@ -1,13 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import "../styles/Results.css";
 import apiClient from "../utils/apiClient";
+import { buildStandingsFromFlatResults, DIVISIONS } from "../utils/standingUtils";
 
-const DIVISIONS = [
-    "3 Year Old Division",
-    "4 Year Old Division",
-    "5 Year Old Division",
-    "Snack Pack Division",
-];
 
 const getMedal = (place) => {
     if (place === 1) return "🥇";
@@ -105,47 +100,19 @@ const Results = () => {
     };
 
     const standings = useMemo(() => {
-        const pointsTable = { 1: 13, 2: 10, 3: 8 };
-        const totals = {};
+        const flat = [];
 
         results.forEach((race) => {
             (race.results || []).forEach((r) => {
-                const pts = pointsTable[r.placement] ?? 1;
-                const key = `${r.division}-${r.name}`;
-
-                if (!totals[key]) {
-                    totals[key] = {
-                        name: r.name,
-                        division: r.division,
-                        points: 0,
-                        races: 0,
-                        wins: 0,
-                        seconds: 0,
-                        thirds: 0,
-                    };
-                }
-
-                totals[key].points += pts;
-                totals[key].races += 1;
-                if (r.placement === 1) totals[key].wins += 1;
-                if (r.placement === 2) totals[key].seconds += 1;
-                if (r.placement === 3) totals[key].thirds += 1;
+                flat.push({
+                    division: r.division,
+                    racerName: r.name,
+                    placement: r.placement,
+                });
             });
         });
 
-        const out = {};
-        DIVISIONS.forEach((div) => {
-            const racers = Object.values(totals).filter((r) => r.division === div);
-            out[div] = racers.sort((a, b) => {
-                if (b.points !== a.points) return b.points - a.points;
-                if (b.wins !== a.wins) return b.wins - a.wins;
-                if (b.seconds !== a.seconds) return b.seconds - a.seconds;
-                if (b.thirds !== a.thirds) return b.thirds - a.thirds;
-                return b.races - a.races;
-            });
-        });
-
-        return out;
+        return buildStandingsFromFlatResults(flat);
     }, [results]);
 
     return (
