@@ -6,13 +6,12 @@
     min-height: 100vh;
 }
 
-/* header spacing */
-.sponsors-header h1 {
-    margin: 0;
-}
-
 .sponsors-header {
     margin-bottom: 1rem;
+}
+
+.sponsors-header h1 {
+    margin: 0 0 0.5rem;
 }
 
 .muted {
@@ -23,15 +22,16 @@
     font-size: 0.9rem;
 }
 
-/* each tier block */
+/* section blocks */
 .sponsors-block {
-    margin-top: 2.25rem;             /* ✅ more separation between sections */
+    margin-top: 2rem;
     background: #fff;
     border: 1px solid #eee;
     border-radius: 14px;
-    padding: 1.5rem;                 /* ✅ more breathing room */
+    padding: 1.5rem;
 }
 
+/* title row */
 .block-title-row {
     display: flex;
     justify-content: space-between;
@@ -44,23 +44,29 @@
     margin: 0;
 }
 
-/* ✅ Shared grid behavior for all sponsor grids */
-.featured-grid,
-.series-grid {
+/* ===== Featured row ===== */
+.featured-grid {
     display: grid;
-    gap: 1.75rem; /* ✅ more space between cards */
-    align-items: stretch;
+    gap: 1.25rem;
+    grid-template-columns: repeat(4, minmax(220px, 1fr));
 }
 
-/* ===== Featured row (top 4) ===== */
-.featured-grid {
-    /* ✅ This prevents “forced 1 column” on medium widths */
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+@media (max-width: 1100px) {
+    .featured-grid {
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+    }
+}
+
+@media (max-width: 650px) {
+    .featured-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* ===== Series partners grid ===== */
 .series-grid {
-    /* ✅ Nice responsive auto wrap */
+    display: grid;
+    gap: 1.25rem;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
@@ -68,12 +74,10 @@
 .sponsor-card {
     border: 1px solid #eee;
     border-radius: 12px;
-    padding: 1.25rem;               /* ✅ bigger padding */
+    padding: 1.25rem;
     background: #fff;
-    text-decoration: none;
-    color: inherit;
 
-    display: flex;                  /* ✅ more predictable than grid here */
+    display: flex;
     flex-direction: column;
     gap: 0.75rem;
 
@@ -95,7 +99,6 @@
     font-size: 0.85rem;
     font-weight: 800;
     color: #f47c2a;
-    margin-bottom: 0.25rem;
 }
 
 .sponsor-logo {
@@ -105,7 +108,7 @@
     background: #fafafa;
     border-radius: 10px;
     border: 1px solid #eee;
-    padding: 0.5rem;               /* ✅ adds space around logo */
+    padding: 0.5rem;
 }
 
 .sponsor-logo.placeholder {
@@ -124,10 +127,14 @@
     line-height: 1.2;
 }
 
-/* optional link styling */
 .sponsor-link {
     font-size: 0.9rem;
     font-weight: 800;
     color: #1e63ff;
-    margin-top: auto;              /* ✅ pushes link to bottom */
+    text-decoration: none;
+    margin-top: auto;
+}
+
+.sponsor-link:hover {
+    text-decoration: underline;
 }

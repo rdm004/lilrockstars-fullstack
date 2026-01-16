@@ -24,19 +24,23 @@ const Sponsors = () => {
     );
 
     return (
-        <div className="sponsors-container">
-            <h1>🤝 Sponsors 🤝</h1>
-            <p className="sponsors-intro">
-                Thanks to our partners who make Lil Rockstars Racing possible.
-            </p>
+        <div className="sponsors-page">
+            <div className="sponsors-header">
+                <h1>🤝 Sponsors 🤝</h1>
+                <p className="muted">
+                    Thanks to our partners who make Lil Rockstars Racing possible.
+                </p>
+            </div>
 
             {sponsors.length === 0 ? (
                 <p>No sponsors found yet. Check back soon!</p>
             ) : (
                 <>
                     {/* Featured row (top 4 across) */}
-                    <section className="sponsors-section">
-                        <h2 className="sponsors-section-title">Featured Partners</h2>
+                    <section className="sponsors-block">
+                        <div className="block-title-row">
+                            <h2>Featured Partners</h2>
+                        </div>
 
                         <div className="featured-grid">
                             {FEATURED_TIERS.map((tier) => {
@@ -60,16 +64,16 @@ const Sponsors = () => {
                                                     </div>
                                                 )}
 
-                                                <h3 className="sponsor-name">{sponsor.name}</h3>
+                                                <div className="sponsor-name">{sponsor.name}</div>
 
                                                 {sponsor.website && (
                                                     <a
                                                         href={sponsor.website}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="sponsor-button"
+                                                        className="sponsor-link"
                                                     >
-                                                        Visit Website
+                                                        Visit Website →
                                                     </a>
                                                 )}
                                             </>
@@ -83,13 +87,16 @@ const Sponsors = () => {
                     </section>
 
                     {/* Series partners (grid) */}
-                    <section className="sponsors-section">
-                        <h2 className="sponsors-section-title">Series Partners</h2>
+                    <section className="sponsors-block">
+                        <div className="block-title-row">
+                            <h2>Series Partners</h2>
+                            <span className="muted small">{seriesSponsors.length} sponsor(s)</span>
+                        </div>
 
                         {seriesSponsors.length === 0 ? (
                             <p className="muted">No series partners listed yet.</p>
                         ) : (
-                            <div className="sponsors-grid">
+                            <div className="series-grid">
                                 {seriesSponsors.map((s) => (
                                     <div key={s.id} className="sponsor-card">
                                         {s.logoUrl ? (
@@ -104,16 +111,16 @@ const Sponsors = () => {
                                             </div>
                                         )}
 
-                                        <h3 className="sponsor-name">{s.name}</h3>
+                                        <div className="sponsor-name">{s.name}</div>
 
                                         {s.website && (
                                             <a
                                                 href={s.website}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="sponsor-button"
+                                                className="sponsor-link"
                                             >
-                                                Visit Website
+                                                Visit Website →
                                             </a>
                                         )}
                                     </div>
