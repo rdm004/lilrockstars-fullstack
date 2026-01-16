@@ -12,10 +12,11 @@
 
 .sponsors-header h1 {
     margin: 0 0 0.5rem;
+    text-align: center;
 }
 
 .muted {
-    color: #666;
+    color: #1e63ff;
 }
 
 .small {
