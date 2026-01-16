@@ -20,7 +20,7 @@ const SponsorsData = [
         id: 3,
         name: "Culbertson Electric",
         tier: "Green Flag Partner",
-        logoUrl: "",
+        logoUrl: "/sponsors/culbertson-electric.png",
         website: "",
     },
     {
