@@ -1,5 +1,20 @@
 // frontend/src/data/SponsorsData.js
 
+const featuredTiers = [
+    "Victory Lane Partner",
+    "Pole Position Partner",
+    "Green Flag Partner",
+    "Pre-Race Tech Partner",
+];
+
+const featuredSponsors = SponsorsData.filter(s =>
+    featuredTiers.includes(s.tier)
+);
+
+const seriesSponsors = SponsorsData.filter(
+    s => s.tier === "Series Partner"
+);
+
 const SponsorsData = [
     // 🏆 Tier Partners
     {
