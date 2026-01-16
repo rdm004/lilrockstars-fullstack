@@ -10,8 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Comparator;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/registrations")
@@ -23,10 +23,6 @@ public class AdminRegistrationsController {
         this.registrationRepository = registrationRepository;
     }
 
-    /**
-     * Row-level DTO for admin UI (flat list).
-     * Admin dashboard can group this by race.
-     */
     public record AdminRegistrationRow(
             Long registrationId,
             Long raceId,
@@ -63,12 +59,6 @@ public class AdminRegistrationsController {
         );
     }
 
-    /**
-     * ✅ Admin: list all registrations with joined race + racer info.
-     * This keeps your parent endpoints untouched.
-     *
-     * NOTE: @Transactional keeps Hibernate session open for lazy relationships.
-     */
     @GetMapping
     @Transactional(readOnly = true)
     public ResponseEntity<List<AdminRegistrationRow>> getAllAdminRegistrations() {
@@ -76,7 +66,6 @@ public class AdminRegistrationsController {
 
         List<AdminRegistrationRow> rows = regs.stream()
                 .map(this::toRow)
-                // sort by race date desc, then race name, then division, then placement-like by name
                 .sorted(Comparator
                         .comparing(AdminRegistrationRow::raceDate, Comparator.nullsLast(Comparator.reverseOrder()))
                         .thenComparing(AdminRegistrationRow::raceName, Comparator.nullsLast(String::compareToIgnoreCase))
@@ -90,8 +79,25 @@ public class AdminRegistrationsController {
     }
 
     /**
-     * ✅ Admin: delete a registration by id (unregister a racer from a race).
+     * ✅ NEW: fast fetch registrations for ONE race
+     * GET /api/admin/registrations/by-race/{raceId}
      */
+    @GetMapping("/by-race/{raceId}")
+    @Transactional(readOnly = true)
+    public ResponseEntity<List<AdminRegistrationRow>> getByRace(@PathVariable Long raceId) {
+        List<Registration> regs = registrationRepository.findByRaceId(raceId);
+
+        List<AdminRegistrationRow> rows = regs.stream()
+                .map(this::toRow)
+                .sorted(Comparator
+                        .comparing(AdminRegistrationRow::racerLastName, Comparator.nullsLast(String::compareToIgnoreCase))
+                        .thenComparing(AdminRegistrationRow::racerFirstName, Comparator.nullsLast(String::compareToIgnoreCase))
+                )
+                .toList();
+
+        return ResponseEntity.ok(rows);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteRegistration(@PathVariable Long id) {
         if (!registrationRepository.existsById(id)) {
