@@ -6,15 +6,15 @@ const SponsorsData = [
         id: 1,
         name: "Fayetteville Heating and Air",
         tier: "Victory Lane Partner",
-        logoUrl: "",
-        website: "",
+        logoUrl: "/sponsors/fayetteviille-heating.jpg",
+        website: "https://www.fayettevilleheatingandair.com/",
     },
     {
         id: 2,
         name: "Eco Advantage Termite and Pest Solutions",
         tier: "Pole Position Partner",
-        logoUrl: "",
-        website: "",
+        logoUrl: "/sponsors/eco-advantage.jpg",
+        website: "https://www.ecoadvantagenc.com/",
     },
     {
         id: 3,
@@ -27,8 +27,8 @@ const SponsorsData = [
         id: 4,
         name: "Simpson Race Products",
         tier: "Pre-Race Tech Partner",
-        logoUrl: "",
-        website: "",
+        logoUrl: "/sponsors/simpson.jpg",
+        website: "https://www.simpsonraceproducts.com/",
     },
 
     // ===== Series Partners =====
