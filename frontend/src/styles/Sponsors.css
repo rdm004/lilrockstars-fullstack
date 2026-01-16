@@ -151,3 +151,7 @@ p.muted{
 .sponsor-link:hover {
     text-decoration: underline;
 }
+
+.sponsor-button {
+    align-content: center;
+}

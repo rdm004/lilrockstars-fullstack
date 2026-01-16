@@ -32,9 +32,9 @@ const SponsorsData = [
     },
 
     // ===== Series Partners =====
-    { id: 5, name: "Gen3 Performance Imaging", tier: "Series Partner", logoUrl: "", website: "" },
+    { id: 5, name: "Gen3 Performance Imaging", tier: "Series Partner", logoUrl: "/sponsors/gen3-performance.jpg", website: "" },
     { id: 6, name: "Cashwell Home Services", tier: "Series Partner", logoUrl: "", website: "" },
-    { id: 7, name: "Clear Cut Landscaping", tier: "Series Partner", logoUrl: "", website: "" },
+    { id: 7, name: "Clear Cut Landscaping", tier: "Series Partner", logoUrl: "/sponsors/clearcut.jpg", website: "https://www.clearcutlandscapeandexcavation.com/" },
     { id: 8, name: "Red Line Tire and Auto", tier: "Series Partner", logoUrl: "", website: "" },
     { id: 9, name: "Brownies Towing", tier: "Series Partner", logoUrl: "", website: "" },
     { id: 10, name: "Fast Lane Towing", tier: "Series Partner", logoUrl: "", website: "" },
