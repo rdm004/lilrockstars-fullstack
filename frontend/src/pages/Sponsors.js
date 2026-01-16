@@ -1,7 +1,7 @@
 // frontend/src/pages/Sponsors.js
 import React, { useMemo } from "react";
-import SponsorsData from "../data/SponsorsData";
 import "../styles/Sponsors.css";
+import SponsorsData from "../data/SponsorsData";
 
 const FEATURED_TIERS = [
     "Victory Lane Partner",
@@ -11,142 +11,119 @@ const FEATURED_TIERS = [
 ];
 
 const Sponsors = () => {
-    // -----------------------------
-    // ✅ BLOCK: data grouping
-    // -----------------------------
-    const { featuredSponsors, seriesSponsors, sponsorsByTier } = useMemo(() => {
-        const featured = [];
-        const series = [];
-        const byTier = {};
+    const sponsors = SponsorsData || [];
 
-        (SponsorsData || []).forEach((s) => {
-            const tier = s.tier || "Other";
+    const featuredSponsors = useMemo(
+        () => sponsors.filter((s) => FEATURED_TIERS.includes(s.tier)),
+        [sponsors]
+    );
 
-            // bucket by tier (for optional future use)
-            if (!byTier[tier]) byTier[tier] = [];
-            byTier[tier].push(s);
-
-            // featured row
-            if (FEATURED_TIERS.includes(tier)) featured.push(s);
-
-            // series partners row(s)
-            if (tier === "Series Partner") series.push(s);
-        });
-
-        // Ensure featured row is in the same order as FEATURED_TIERS
-        featured.sort((a, b) => FEATURED_TIERS.indexOf(a.tier) - FEATURED_TIERS.indexOf(b.tier));
-
-        // Optional: sort series partners alphabetically
-        series.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-
-        return { featuredSponsors: featured, seriesSponsors: series, sponsorsByTier: byTier };
-    }, []);
-
-    // -----------------------------
-    // ✅ BLOCK: reusable sponsor card
-    // -----------------------------
-    const SponsorCard = ({ sponsor, variant = "normal" }) => {
-        const CardTag = sponsor.website ? "a" : "div";
-        const cardProps = sponsor.website
-            ? { href: sponsor.website, target: "_blank", rel: "noopener noreferrer" }
-            : {};
-
-        return (
-            <CardTag className={`sponsor-card ${variant}`} {...cardProps}>
-                <div className="sponsor-tier">{sponsor.tier}</div>
-
-                {sponsor.logoUrl ? (
-                    <img className="sponsor-logo" src={sponsor.logoUrl} alt={sponsor.name} />
-                ) : (
-                    <div className="sponsor-logo placeholder">{sponsor.name?.[0] || "★"}</div>
-                )}
-
-                <div className="sponsor-name">{sponsor.name}</div>
-
-                {sponsor.website ? (
-                    <div className="sponsor-link">Visit Website →</div>
-                ) : (
-                    <div className="sponsor-link muted">Website coming soon</div>
-                )}
-            </CardTag>
-        );
-    };
+    const seriesSponsors = useMemo(
+        () => sponsors.filter((s) => s.tier === "Series Partner"),
+        [sponsors]
+    );
 
     return (
-        <Layout title="Sponsors">
-            <div className="sponsors-page">
-                {/* =============================
-            ✅ BLOCK 1: Page header
-           ============================= */}
-                <header className="sponsors-header">
-                    <h1>🤝 Sponsors</h1>
-                    <p className="muted">
-                        Thanks to our partners who make Lil Rockstars Racing possible.
-                    </p>
-                </header>
+        <div className="sponsors-container">
+            <h1>🤝 Sponsors 🤝</h1>
+            <p className="sponsors-intro">
+                Thanks to our partners who make Lil Rockstars Racing possible.
+            </p>
 
-                {/* =============================
-            ✅ BLOCK 2: Featured sponsors (top row)
-            “top 4 sponsors across the first row”
-           ============================= */}
-                <section className="sponsors-block">
-                    <div className="block-title-row">
-                        <h2>Featured Partners</h2>
-                        <span className="muted small">Top tiers</span>
-                    </div>
+            {sponsors.length === 0 ? (
+                <p>No sponsors found yet. Check back soon!</p>
+            ) : (
+                <>
+                    {/* Featured row (top 4 across) */}
+                    <section className="sponsors-section">
+                        <h2 className="sponsors-section-title">Featured Partners</h2>
 
-                    {featuredSponsors.length === 0 ? (
-                        <p className="muted">No featured sponsors yet.</p>
-                    ) : (
                         <div className="featured-grid">
-                            {featuredSponsors.map((s) => (
-                                <SponsorCard key={s.id} sponsor={s} variant="featured" />
-                            ))}
+                            {FEATURED_TIERS.map((tier) => {
+                                const sponsor = featuredSponsors.find((s) => s.tier === tier);
+
+                                return (
+                                    <div key={tier} className="sponsor-card featured">
+                                        <div className="sponsor-tier">{tier}</div>
+
+                                        {sponsor ? (
+                                            <>
+                                                {sponsor.logoUrl ? (
+                                                    <img
+                                                        src={sponsor.logoUrl}
+                                                        alt={sponsor.name}
+                                                        className="sponsor-logo"
+                                                    />
+                                                ) : (
+                                                    <div className="sponsor-logo placeholder">
+                                                        {sponsor.name?.[0] || "S"}
+                                                    </div>
+                                                )}
+
+                                                <h3 className="sponsor-name">{sponsor.name}</h3>
+
+                                                {sponsor.website && (
+                                                    <a
+                                                        href={sponsor.website}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="sponsor-button"
+                                                    >
+                                                        Visit Website
+                                                    </a>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <p className="muted">Coming soon</p>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
-                    )}
-                </section>
+                    </section>
 
-                {/* =============================
-            ✅ BLOCK 3: Series partners (grid below)
-           ============================= */}
-                <section className="sponsors-block">
-                    <div className="block-title-row">
-                        <h2>Series Partners</h2>
-                        <span className="muted small">{seriesSponsors.length} sponsor(s)</span>
-                    </div>
+                    {/* Series partners (grid) */}
+                    <section className="sponsors-section">
+                        <h2 className="sponsors-section-title">Series Partners</h2>
 
-                    {seriesSponsors.length === 0 ? (
-                        <p className="muted">No series partners yet.</p>
-                    ) : (
-                        <div className="series-grid">
-                            {seriesSponsors.map((s) => (
-                                <SponsorCard key={s.id} sponsor={s} />
-                            ))}
-                        </div>
-                    )}
-                </section>
+                        {seriesSponsors.length === 0 ? (
+                            <p className="muted">No series partners listed yet.</p>
+                        ) : (
+                            <div className="sponsors-grid">
+                                {seriesSponsors.map((s) => (
+                                    <div key={s.id} className="sponsor-card">
+                                        {s.logoUrl ? (
+                                            <img
+                                                src={s.logoUrl}
+                                                alt={s.name}
+                                                className="sponsor-logo"
+                                            />
+                                        ) : (
+                                            <div className="sponsor-logo placeholder">
+                                                {s.name?.[0] || "S"}
+                                            </div>
+                                        )}
 
-                {/* =============================
-            ✅ BLOCK 4 (optional): Other tiers later
-            If you add more tiers in SponsorsData, you can render them here.
-           ============================= */}
-                {/* Example:
-        <section className="sponsors-block">
-          <h2>More Sponsors</h2>
-          {Object.keys(sponsorsByTier)
-            .filter(t => !FEATURED_TIERS.includes(t) && t !== "Series Partner")
-            .map(tier => (
-              <div key={tier}>
-                <h3>{tier}</h3>
-                <div className="series-grid">
-                  {sponsorsByTier[tier].map(s => <SponsorCard key={s.id} sponsor={s} />)}
-                </div>
-              </div>
-            ))}
-        </section>
-        */}
-            </div>
-        </Layout>
+                                        <h3 className="sponsor-name">{s.name}</h3>
+
+                                        {s.website && (
+                                            <a
+                                                href={s.website}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="sponsor-button"
+                                            >
+                                                Visit Website
+                                            </a>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                </>
+            )}
+        </div>
     );
 };
 
