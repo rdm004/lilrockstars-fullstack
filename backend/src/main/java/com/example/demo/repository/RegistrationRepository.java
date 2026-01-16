@@ -20,6 +20,12 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     // 🔹 To avoid duplicates (one racer/race pair once)
     Optional<Registration> findByRacerAndRace(Racer racer, Race race);
 
-    // ✅ NEW: Get registrations for one race (admin results auto-fill)
+    // ✅ Needed for "by race" admin endpoint
     List<Registration> findByRaceId(Long raceId);
+
+    // ✅ Needed for deleting racer safely (removes dependent registrations first)
+    void deleteByRacerId(Long racerId);
+
+    // ✅ Optional but helpful for delete confirmation counts
+    long countByRacerId(Long racerId);
 }
