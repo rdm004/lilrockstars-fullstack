@@ -80,7 +80,7 @@ const Sponsors = () => {
             <div className="sponsors-header">
                 <h1>🤝 Sponsors 🤝</h1>
                 <p className="sponsors-intro">
-                    Thanks to our partners who make Lil Rockstars Racing possible.
+                    Thanks to our partners who make Lil Rockstars Racing possible!!!
                 </p>
             </div>
 
