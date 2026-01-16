@@ -20,7 +20,7 @@ const SponsorsData = [
         id: 3,
         name: "Culbertson Electric",
         tier: "Green Flag Partner",
-        logoUrl: "/sponsors/culbertson-electric.png",
+        logoUrl: "/sponsors/culbertson-electric.jpg",
         website: "",
     },
     {
@@ -41,7 +41,7 @@ const SponsorsData = [
     { id: 11, name: "Quality Towing", tier: "Series Partner", logoUrl: "", website: "" },
     { id: 12, name: "Old South Apparel", tier: "Series Partner", logoUrl: "", website: "" },
     { id: 13, name: "Wisler Designs", tier: "Series Partner", logoUrl: "", website: "" },
-    { id: 14, name: "Bubba’s 33", tier: "Series Partner", logoUrl: "", website: "" },
+    { id: 14, name: "Bubba’s 33", tier: "Series Partner", logoUrl: "/sponsors/bubbas.jpg", website: "https://www.bubbas33.com/location/bubbas-33-fayettevillenc/detail?utm_source=facebook&utm_medium=social&utm_content=about" },
     { id: 15, name: "Five Star Entertainment", tier: "Series Partner", logoUrl: "", website: "" },
     { id: 16, name: "Paradise Acres", tier: "Series Partner", logoUrl: "", website: "" },
     { id: 17, name: "Raging Rooster Catering", tier: "Series Partner", logoUrl: "", website: "" },
