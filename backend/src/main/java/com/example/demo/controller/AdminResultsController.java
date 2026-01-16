@@ -50,19 +50,21 @@ public class AdminResultsController {
     private AdminResultRow toRow(RaceResult rr) {
         Race race = rr.getRace();
         Racer racer = rr.getRacer();
+
         String racerName = racer != null
-                ? ((racer.getFirstName() == null ? "" : racer.getFirstName()) + " " + (racer.getLastName() == null ? "" : racer.getLastName())).trim()
+                ? ((racer.getFirstName() == null ? "" : racer.getFirstName()) + " " +
+                (racer.getLastName() == null ? "" : racer.getLastName())).trim()
                 : null;
 
         return new AdminResultRow(
                 rr.getId(),
                 race != null ? race.getId() : null,
                 race != null ? race.getRaceName() : null,
-                race != null && race.getRaceDate() != null ? race.getRaceDate().toString() : null,
+                (race != null && race.getRaceDate() != null) ? race.getRaceDate().toString() : null,
                 racer != null ? racer.getId() : null,
                 racerName,
                 rr.getDivision(),
-                rr.getPlacement(),
+                rr.getPlacement(), // primitive int in entity, but DTO uses Integer for flexibility
                 racer != null ? racer.getCarNumber() : null
         );
     }
@@ -76,10 +78,13 @@ public class AdminResultsController {
         return raceResultRepository.findAll()
                 .stream()
                 .sorted(Comparator
-                        .comparing((RaceResult rr) -> rr.getRace() != null ? rr.getRace().getRaceDate() : null,
+                        .comparing((RaceResult rr) ->
+                                        rr.getRace() != null ? rr.getRace().getRaceDate() : null,
                                 Comparator.nullsLast(Comparator.reverseOrder()))
-                        .thenComparing(rr -> rr.getDivision() == null ? "" : rr.getDivision())
-                        .thenComparing(rr -> rr.getPlacement() == null ? 999 : rr.getPlacement())
+                        .thenComparing(rr -> rr.getDivision() == null ? "" : rr.getDivision(),
+                                String::compareToIgnoreCase)
+                        // ✅ FIX: placement is primitive int, so no null check
+                        .thenComparingInt(RaceResult::getPlacement)
                 )
                 .map(this::toRow)
                 .toList();
