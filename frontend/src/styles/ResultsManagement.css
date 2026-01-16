@@ -199,93 +199,83 @@
 .place-2 td { background: rgba(192, 192, 192, 0.18); }  /* silver */
 .place-3 td { background: rgba(205, 127, 50, 0.18); }   /* bronze */
 
-/* ----------------------------
-   Existing Results (2-column grid layout)
-   NOTE: This assumes your <h3> is NOT inside .existing-results.
-   If your <h3> is inside, wrap it in .existing-results-wrap and keep grid on .existing-results.
------------------------------ */
+/* =========================================================
+   Existing Results (FULL WIDTH, compact rows, NO GRID)
+   ========================================================= */
+
+/* IMPORTANT: kill the grid layout */
 .existing-results {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-    align-items: start;
+    display: block;  /* was grid */
 }
 
-.existing-results h3 {
-    margin-top: 0;
-}
-
-/* each division card */
-.division-section {
+/* each division card full width */
+.existing-results .division-section {
+    width: 100%;
     background: #fff;
     border: 1px solid #eee;
     border-radius: 12px;
     padding: 0.75rem;
-    margin-bottom: 0; /* grid gap handles spacing */
+    margin-bottom: 0.9rem;
 }
 
-.division-title {
+/* header row inside each division card */
+.existing-results .division-title {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
     gap: 1rem;
+    margin-bottom: 0.25rem;
 }
 
-.division-title h4 {
+.existing-results .division-title h4 {
     margin: 0;
     color: #111;
     font-size: 1rem;
 }
 
-.division-title .muted {
+.existing-results .division-title .muted {
     font-size: 0.85rem;
 }
 
-/* compact table in existing results */
-.existing-results .results-table {
-    width: auto;              /* prevent full-width stretch */
-    max-width: 100%;
-    table-layout: auto;
-}
-
+/* table should stretch full width of the card */
 .existing-results .table-wrap {
-    display: flex;
-    justify-content: flex-start; /* change to center if you prefer */
+    display: block;          /* was flex */
+    justify-content: unset;  /* remove */
 }
 
+.existing-results .results-table {
+    width: 100%;            /* stretch across the card */
+    table-layout: fixed;    /* makes columns predictable */
+}
+
+/* compact rows */
 .existing-results .results-table th,
 .existing-results .results-table td {
-    padding: 0.45rem 0.6rem;   /* tighter rows */
+    padding: 0.45rem 0.6rem;
     font-size: 0.88rem;
     line-height: 1.15;
 }
 
-.existing-results .results-table th {
-    font-size: 0.85rem;
-    font-weight: 800;
-}
-
-/* tighter small columns */
+/* tighten small columns */
 .existing-results .results-table .col-small {
-    width: 70px;
+    width: 80px;
     white-space: nowrap;
 }
 
-/* constrain Racer column */
+/* racer column takes the remaining space */
 .existing-results .results-table th:nth-child(2),
 .existing-results .results-table td:nth-child(2) {
-    min-width: 220px;
-    max-width: 320px;
+    width: auto;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* Actions column tighter */
+/* Actions column tighter + aligned right */
 .existing-results .results-table th:last-child,
 .existing-results .results-table td:last-child {
-    width: 90px;
-    text-align: left;
+    width: 110px;
+    text-align: right;
 }
 
 /* smaller delete button inside existing results */
@@ -299,12 +289,6 @@
 /* ----------------------------
    Mobile
 ----------------------------- */
-@media (max-width: 900px) {
-    .existing-results {
-        grid-template-columns: 1fr;
-    }
-}
-
 @media (max-width: 700px) {
     .results-page {
         padding: 1.25rem;
