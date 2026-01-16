@@ -6,7 +6,7 @@ const SponsorsData = [
         id: 1,
         name: "Fayetteville Heating and Air",
         tier: "Victory Lane Partner",
-        logoUrl: "/sponsors/fayetteviille-heating.jpg",
+        logoUrl: "/sponsors/fayetteville-heating.jpg",
         website: "https://www.fayettevilleheatingandair.com/",
     },
     {
@@ -20,7 +20,7 @@ const SponsorsData = [
         id: 3,
         name: "Culbertson Electric",
         tier: "Green Flag Partner",
-        logoUrl: "/sponsors/culbertson-electric.jpg",
+        logoUrl: "/sponsors/culbertson.jpg",
         website: "",
     },
     {
