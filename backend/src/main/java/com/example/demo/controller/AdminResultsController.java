@@ -32,11 +32,14 @@ public class AdminResultsController {
         this.racerRepository = racerRepository;
     }
 
+    /**
+     * Flat DTO for admin UI
+     */
     public record AdminResultRow(
             Long id,
             Long raceId,
             String raceName,
-            String raceDate,
+            String raceDate,   // ISO yyyy-MM-dd
             Long racerId,
             String racerName,
             String division,
@@ -47,49 +50,45 @@ public class AdminResultsController {
     private AdminResultRow toRow(RaceResult rr) {
         Race race = rr.getRace();
         Racer racer = rr.getRacer();
-
-        String racerName = "-";
-        String carNumber = null;
-
-        if (racer != null) {
-            String first = Optional.ofNullable(racer.getFirstName()).orElse("");
-            String last = Optional.ofNullable(racer.getLastName()).orElse("");
-            racerName = (first + " " + last).trim();
-            carNumber = racer.getCarNumber();
-        }
+        String racerName = racer != null
+                ? ((racer.getFirstName() == null ? "" : racer.getFirstName()) + " " + (racer.getLastName() == null ? "" : racer.getLastName())).trim()
+                : null;
 
         return new AdminResultRow(
                 rr.getId(),
                 race != null ? race.getId() : null,
                 race != null ? race.getRaceName() : null,
-                (race != null && race.getRaceDate() != null) ? race.getRaceDate().toString() : null,
+                race != null && race.getRaceDate() != null ? race.getRaceDate().toString() : null,
                 racer != null ? racer.getId() : null,
                 racerName,
                 rr.getDivision(),
                 rr.getPlacement(),
-                carNumber
+                racer != null ? racer.getCarNumber() : null
         );
     }
 
     /**
-     * ✅ Admin: list all results
+     * ✅ Get all results (admin)
      */
     @GetMapping
     @Transactional(readOnly = true)
-    public ResponseEntity<List<AdminResultRow>> getAll() {
-        List<AdminResultRow> rows = raceResultRepository.findAll()
+    public List<AdminResultRow> getAll() {
+        return raceResultRepository.findAll()
                 .stream()
-                .map(this::toRow)
                 .sorted(Comparator
-                        .comparing(AdminResultRow::raceDate, Comparator.nullsLast(Comparator.reverseOrder()))
-                        .thenComparing(AdminResultRow::division, Comparator.nullsLast(String::compareToIgnoreCase))
-                        .thenComparing(r -> r.placement() == null ? 9999 : r.placement())
+                        .comparing((RaceResult rr) -> rr.getRace() != null ? rr.getRace().getRaceDate() : null,
+                                Comparator.nullsLast(Comparator.reverseOrder()))
+                        .thenComparing(rr -> rr.getDivision() == null ? "" : rr.getDivision())
+                        .thenComparing(rr -> rr.getPlacement() == null ? 999 : rr.getPlacement())
                 )
+                .map(this::toRow)
                 .toList();
-
-        return ResponseEntity.ok(rows);
     }
 
+    /**
+     * ✅ Create a single result row
+     * payload expects: raceId, racerId, division, placement
+     */
     public record CreateResultRequest(
             Long raceId,
             Long racerId,
@@ -97,9 +96,6 @@ public class AdminResultsController {
             Integer placement
     ) {}
 
-    /**
-     * ✅ Admin: create one result row
-     */
     @PostMapping
     public ResponseEntity<?> create(@RequestBody CreateResultRequest req) {
         if (req == null || req.raceId() == null || req.racerId() == null || req.placement() == null) {
@@ -107,12 +103,12 @@ public class AdminResultsController {
         }
 
         Optional<Race> raceOpt = raceRepository.findById(req.raceId());
-        if (raceOpt.isEmpty()) return ResponseEntity.badRequest().body("Race not found: " + req.raceId());
+        if (raceOpt.isEmpty()) return ResponseEntity.badRequest().body("Race not found.");
 
         Optional<Racer> racerOpt = racerRepository.findById(req.racerId());
-        if (racerOpt.isEmpty()) return ResponseEntity.badRequest().body("Racer not found: " + req.racerId());
+        if (racerOpt.isEmpty()) return ResponseEntity.badRequest().body("Racer not found.");
 
-        // Enforce your rule: racer must be associated with a parent
+        // Your rule: racers must have a parent
         if (racerOpt.get().getParent() == null) {
             return ResponseEntity.badRequest().body("Racer must be associated with a parent.");
         }
@@ -128,7 +124,7 @@ public class AdminResultsController {
     }
 
     /**
-     * ✅ Admin: delete a result row
+     * ✅ Delete a result row
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
