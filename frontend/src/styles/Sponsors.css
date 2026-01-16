@@ -6,8 +6,13 @@
     min-height: 100vh;
 }
 
+/* header spacing */
 .sponsors-header h1 {
     margin: 0;
+}
+
+.sponsors-header {
+    margin-bottom: 1rem;
 }
 
 .muted {
@@ -18,12 +23,13 @@
     font-size: 0.9rem;
 }
 
+/* each tier block */
 .sponsors-block {
-    margin-top: 1.75rem;
+    margin-top: 2.25rem;             /* ✅ more separation between sections */
     background: #fff;
     border: 1px solid #eee;
     border-radius: 14px;
-    padding: 1.25rem;
+    padding: 1.5rem;                 /* ✅ more breathing room */
 }
 
 .block-title-row {
@@ -31,73 +37,53 @@
     justify-content: space-between;
     align-items: baseline;
     gap: 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
 }
 
 .block-title-row h2 {
     margin: 0;
 }
 
+/* ✅ Shared grid behavior for all sponsor grids */
+.featured-grid,
+.series-grid {
+    display: grid;
+    gap: 1.75rem; /* ✅ more space between cards */
+    align-items: stretch;
+}
+
 /* ===== Featured row (top 4) ===== */
 .featured-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(220px, 1fr));
-    gap: 1rem;
-}
-
-@media (max-width: 1100px) {
-    .featured-grid {
-        grid-template-columns: repeat(2, minmax(220px, 1fr));
-    }
-}
-
-@media (max-width: 650px) {
-    .featured-grid {
-        grid-template-columns: 1fr;
-    }
+    /* ✅ This prevents “forced 1 column” on medium widths */
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
 
 /* ===== Series partners grid ===== */
 .series-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(200px, 1fr));
-    gap: 0.9rem;
-}
-
-@media (max-width: 1100px) {
-    .series-grid {
-        grid-template-columns: repeat(3, minmax(200px, 1fr));
-    }
-}
-
-@media (max-width: 850px) {
-    .series-grid {
-        grid-template-columns: repeat(2, minmax(200px, 1fr));
-    }
-}
-
-@media (max-width: 520px) {
-    .series-grid {
-        grid-template-columns: 1fr;
-    }
+    /* ✅ Nice responsive auto wrap */
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 /* ===== Sponsor card ===== */
 .sponsor-card {
     border: 1px solid #eee;
     border-radius: 12px;
-    padding: 0.9rem;
+    padding: 1.25rem;               /* ✅ bigger padding */
     background: #fff;
     text-decoration: none;
     color: inherit;
-    display: grid;
-    gap: 0.5rem;
-    transition: transform 0.12s ease, box-shadow 0.12s ease;
+
+    display: flex;                  /* ✅ more predictable than grid here */
+    flex-direction: column;
+    gap: 0.75rem;
+
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
 }
 
 .sponsor-card:hover {
     transform: translateY(-1px);
     box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    border-color: #f47c2a;
 }
 
 .sponsor-card.featured {
@@ -109,6 +95,7 @@
     font-size: 0.85rem;
     font-weight: 800;
     color: #f47c2a;
+    margin-bottom: 0.25rem;
 }
 
 .sponsor-logo {
@@ -118,6 +105,7 @@
     background: #fafafa;
     border-radius: 10px;
     border: 1px solid #eee;
+    padding: 0.5rem;               /* ✅ adds space around logo */
 }
 
 .sponsor-logo.placeholder {
@@ -130,12 +118,16 @@
 }
 
 .sponsor-name {
-    font-weight: 800;
+    font-weight: 900;
     color: #111;
+    font-size: 1.1rem;
+    line-height: 1.2;
 }
 
+/* optional link styling */
 .sponsor-link {
     font-size: 0.9rem;
-    font-weight: 700;
+    font-weight: 800;
     color: #1e63ff;
+    margin-top: auto;              /* ✅ pushes link to bottom */
 }
