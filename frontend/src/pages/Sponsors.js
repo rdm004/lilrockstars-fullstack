@@ -30,6 +30,7 @@ const Sponsors = () => {
     const lightboxList = useMemo(() => {
         // keep display order: featured (if present) first, then series
         const featured = featuredSponsors.filter(Boolean);
+        const series = seriesSponsors;
 
         // Only include those with images in the lightbox carousel
         return [...featured, ...series].filter((s) => !!s.logoUrl);
