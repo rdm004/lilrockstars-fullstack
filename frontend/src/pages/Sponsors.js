@@ -28,7 +28,7 @@ const Sponsors = () => {
             <div className="sponsors-header">
                 <h1>🤝 Sponsors 🤝</h1>
                 <p className="muted">
-                    Thanks to our partners who make Lil Rockstars Racing possible!!!
+                    Thanks to our sponsors who make Lil Rockstars Racing possible!!!
                 </p>
             </div>
 
@@ -39,7 +39,7 @@ const Sponsors = () => {
                     {/* Featured row (top 4 across) */}
                     <section className="sponsors-block">
                         <div className="block-title-row">
-                            <h2>Featured Partners</h2>
+                            <h2>Featured Sponsors</h2>
                         </div>
 
                         <div className="featured-grid">
@@ -89,7 +89,7 @@ const Sponsors = () => {
                     {/* Series partners (grid) */}
                     <section className="sponsors-block">
                         <div className="block-title-row">
-                            <h2>Series Partners</h2>
+                            <h2>Series Sponsors</h2>
                             <span className="muted small">{seriesSponsors.length} sponsor(s)</span>
                         </div>
 
