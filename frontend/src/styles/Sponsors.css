@@ -21,6 +21,10 @@
     align-content: center;
 }
 
+.sponsors-section-title {
+    text-align: center;
+}
+
 .small {
     font-size: 0.9rem;
 }
