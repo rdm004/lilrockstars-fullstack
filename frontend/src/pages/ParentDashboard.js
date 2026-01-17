@@ -57,15 +57,22 @@ function ParentDashboard() {
                 setRacers(racersRes.data || []);
 
                 // 3) Races
+                // 3) Races (only ones that require registration)
                 const racesRes = await apiClient.get("/races");
+
                 const mappedRaces = (racesRes.data || []).map((race) => ({
                     id: race.id,
                     name: race.raceName,
                     date: race.raceDate,
                     location: race.location,
                     description: race.description,
+                    requiresRegistration: race.requiresRegistration ?? true, // ✅ NEW
                 }));
-                setRaces(mappedRaces);
+
+// ✅ Option A: remove info-only events from parent dashboard
+                const registrationOnlyRaces = mappedRaces.filter((r) => r.requiresRegistration === true);
+
+                setRaces(registrationOnlyRaces);
 
                 // 4) Existing registrations
                 try {
