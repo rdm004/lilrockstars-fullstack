@@ -52,7 +52,6 @@ const RegistrationsManagement = () => {
         return 99;
     };
 
-    // safely read racer id from many shapes
     const getRacerId = (r) => {
         const id = r?.id ?? r?.racerId ?? r?.racerID;
         return id !== undefined && id !== null ? Number(id) : null;
@@ -60,19 +59,16 @@ const RegistrationsManagement = () => {
 
     const getRacerName = (r) => {
         if (!r) return "-";
-
         const first = r.firstName ?? r.first_name ?? "";
         const last = r.lastName ?? r.last_name ?? "";
         const full = `${first} ${last}`.trim();
         if (full) return full;
-
         return r.racerName || r.fullName || r.name || r.displayName || "-";
     };
 
     const getRacerDivision = (r) => {
         if (!r) return "-";
 
-        // if division stored directly (any of these)
         const direct =
             r.division ||
             r.divisionName ||
@@ -82,7 +78,6 @@ const RegistrationsManagement = () => {
 
         if (direct) return direct;
 
-        // otherwise compute from age
         const age = r.age ?? r.racerAge ?? r.ageYears ?? r.age_years;
         return divisionFromAge(age);
     };
@@ -128,9 +123,11 @@ const RegistrationsManagement = () => {
             setError("");
 
             const [regsRes, racersRes, racesRes] = await Promise.all([
-                apiClient.get("/admin/registrations"), // => /api/admin/registrations
-                apiClient.get("/racers"),              // => /api/racers
-                apiClient.get("/races"),               // => /api/races
+                apiClient.get("/admin/registrations"), // /api/admin/registrations
+                // If you have /api/admin/racers (list), use that; otherwise leave /racers
+                // apiClient.get("/admin/racers"),
+                apiClient.get("/racers"),
+                apiClient.get("/races"),
             ]);
 
             setRacers(racersRes.data || []);
@@ -138,7 +135,7 @@ const RegistrationsManagement = () => {
 
             const raw = regsRes.data || [];
 
-            // Normalize registrations (supports DTO or nested entities)
+            // ✅ Normalize registrations (supports AdminRegistrationRow or nested entity shapes)
             const normalized = raw.map((row) => {
                 const nestedRacerId =
                     row?.racer?.id ?? row?.racer?.racerId ?? row?.racer?.racerID;
@@ -146,17 +143,42 @@ const RegistrationsManagement = () => {
                 const nestedRaceId =
                     row?.race?.id ?? row?.race?.raceId ?? row?.race?.raceID;
 
+                // ✅ IMPORTANT: AdminRegistrationRow uses registrationId (NOT id)
+                const regId =
+                    row?.registrationId ??
+                    row?.id ?? // fallback if backend returns entity directly
+                    row?.registration_id ??
+                    null;
+
                 return {
-                    id: row?.id,
-                    racerId: row?.racerId ?? row?.racerID ?? nestedRacerId ?? row?.racer_id ?? "",
-                    raceId: row?.raceId ?? row?.raceID ?? nestedRaceId ?? row?.race_id ?? "",
-                    status: row?.status ?? null,
+                    // ✅ always store the registration primary key here
+                    id: regId,
+
+                    racerId:
+                        row?.racerId ??
+                        row?.racerID ??
+                        nestedRacerId ??
+                        row?.racer_id ??
+                        "",
+
+                    raceId:
+                        row?.raceId ??
+                        row?.raceID ??
+                        nestedRaceId ??
+                        row?.race_id ??
+                        "",
+
                     parentEmail: row?.parentEmail ?? row?.parent_email ?? null,
 
-                    // optional fields if backend already sends them
+                    // Optional fields if backend sends them
                     racerName: row?.racerName ?? null,
-                    division: row?.division ?? null,
+                    division: row?.racerDivision ?? row?.division ?? null,
                     carNumber: row?.carNumber ?? null,
+
+                    // Extra optional (sometimes in your DTO)
+                    racerAge: row?.racerAge ?? null,
+                    racerFirstName: row?.racerFirstName ?? null,
+                    racerLastName: row?.racerLastName ?? null,
                 };
             });
 
@@ -174,14 +196,20 @@ const RegistrationsManagement = () => {
     }, []);
 
     // ---------------------------
-    // Build hydrated rows
+    // Hydrate rows with racer/race lookup
     // ---------------------------
     const hydratedRows = useMemo(() => {
         return (registrations || []).map((reg) => {
             const racer = racersById.get(Number(reg.racerId));
             const race = racesById.get(Number(reg.raceId));
 
-            const racerName = reg.racerName || getRacerName(racer);
+            // If DTO already has first/last, use them:
+            const dtoName =
+                reg.racerFirstName || reg.racerLastName
+                    ? `${reg.racerFirstName || ""} ${reg.racerLastName || ""}`.trim()
+                    : null;
+
+            const racerName = reg.racerName || dtoName || getRacerName(racer);
 
             const carNumber =
                 reg.carNumber ??
@@ -189,7 +217,10 @@ const RegistrationsManagement = () => {
                 racer?.car_number ??
                 "";
 
-            const division = reg.division || getRacerDivision(racer);
+            const division =
+                reg.division ||
+                (reg.racerAge ? divisionFromAge(reg.racerAge) : null) ||
+                getRacerDivision(racer);
 
             const parentEmail = getParentEmail(racer, reg);
 
@@ -211,7 +242,7 @@ const RegistrationsManagement = () => {
     }, [registrations, racersById, racesById]);
 
     // ---------------------------
-    // Group by race
+    // Group by raceId
     // ---------------------------
     const regsByRace = useMemo(() => {
         const m = new Map();
@@ -261,14 +292,19 @@ const RegistrationsManagement = () => {
     }, [regsByRace, racesById, showPastEvents]);
 
     // ---------------------------
-    // Delete
+    // Delete (Deregister)
     // ---------------------------
-    const handleDelete = async (id) => {
+    const handleDelete = async (registrationId) => {
+        if (!registrationId) {
+            alert("❌ Missing registration id (cannot delete).");
+            return;
+        }
+
         if (!window.confirm("Delete this registration?")) return;
 
         try {
-            await apiClient.delete(`/admin/registrations/${id}`);
-            setRegistrations((prev) => prev.filter((r) => r.id !== id));
+            await apiClient.delete(`/admin/registrations/${registrationId}`);
+            setRegistrations((prev) => prev.filter((r) => r.id !== registrationId));
         } catch (err) {
             console.error("Error deleting registration:", err);
             alert("❌ Failed to delete registration.");
@@ -454,13 +490,18 @@ const RegistrationsManagement = () => {
                                         </tr>
                                     ) : (
                                         rows.map((row) => (
-                                            <tr key={row.id}>
+                                            <tr key={row.id ?? `${row.racerId}|${row.raceId}`}>
                                                 <td>{row.racerName || "-"}</td>
                                                 <td>{row.carNumber ? `#${String(row.carNumber).replace(/^#/, "")}` : "-"}</td>
                                                 <td>{row.division || "-"}</td>
                                                 <td>{row.parentEmail || "-"}</td>
                                                 <td style={{ textAlign: "right" }}>
-                                                    <button className="delete-btn" onClick={() => handleDelete(row.id)}>
+                                                    <button
+                                                        className="delete-btn"
+                                                        onClick={() => handleDelete(row.id)}
+                                                        disabled={!row.id}
+                                                        title={!row.id ? "Missing registration id" : "Delete registration"}
+                                                    >
                                                         Delete
                                                     </button>
                                                 </td>

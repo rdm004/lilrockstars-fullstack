@@ -76,7 +76,7 @@ const AdminRacesManagement = () => {
         if (!window.confirm("Delete this event?")) return;
 
         try {
-            await apiClient.delete(`/admin/races/${id}`);
+            await apiClient.delete(`/races/${id}`);
             setRaces((prev) => prev.filter((x) => x.id !== id));
         } catch (e) {
             console.error("Error deleting race:", e);
