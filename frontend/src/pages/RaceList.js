@@ -1,4 +1,3 @@
-// frontend/src/pages/RaceList.js
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/RaceList.css";
@@ -26,6 +25,8 @@ const RaceList = () => {
                     date: race.raceDate,
                     location: race.location,
                     description: race.description,
+                    // ✅ NEW: default true if backend hasn't populated yet
+                    requiresRegistration: race.requiresRegistration ?? true,
                 }));
 
                 setAllRaces(mapped);
@@ -64,7 +65,7 @@ const RaceList = () => {
         // Upcoming: soonest first
         upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        // Mark the next event
+        // Mark the next event (first upcoming item)
         const upcomingWithFlag = upcoming.map((r, idx) => ({
             ...r,
             isNextEvent: idx === 0,
@@ -100,9 +101,15 @@ const RaceList = () => {
                     <div className="card-divider"></div>
 
                     <div className="race-footer">
-                        <button className="register-btn" onClick={handleRegisterClick}>
-                            Register
-                        </button>
+                        {race.requiresRegistration ? (
+                            <button className="register-btn" onClick={handleRegisterClick}>
+                                Register
+                            </button>
+                        ) : (
+                            <div className="info-only-badge">
+                                Info Only • No Registration Required
+                            </div>
+                        )}
                     </div>
                 </div>
             ))}
@@ -111,7 +118,7 @@ const RaceList = () => {
 
     return (
         <div className="races-container">
-            <h1>🏎️ Races 🏎️</h1>
+            <h1>🏎️ Races & Events 🏎️</h1>
             <p className="races-intro">Check out our upcoming events and past races.</p>
 
             {loading ? (
@@ -119,9 +126,9 @@ const RaceList = () => {
             ) : (
                 <>
                     {/* ✅ UPCOMING */}
-                    <h2 className="races-section-title">Upcoming Races</h2>
+                    <h2 className="races-section-title">Upcoming Events</h2>
                     {upcomingRaces.length === 0 ? (
-                        <p>No upcoming races found.</p>
+                        <p>No upcoming events found.</p>
                     ) : (
                         renderRaceGrid(upcomingRaces)
                     )}
@@ -129,7 +136,7 @@ const RaceList = () => {
                     {/* ✅ PAST with TOGGLE */}
                     <div className="past-races-header">
                         <h2 className="races-section-title" style={{ margin: 0 }}>
-                            Past Races
+                            Past Events
                         </h2>
 
                         <button
@@ -137,14 +144,16 @@ const RaceList = () => {
                             className="past-toggle-btn"
                             onClick={() => setShowPastRaces((prev) => !prev)}
                         >
-                            {showPastRaces ? "Hide Past Races ▲" : `Show Past Races (${pastRaces.length}) ▼`}
+                            {showPastRaces
+                                ? "Hide Past Events ▲"
+                                : `Show Past Events (${pastRaces.length}) ▼`}
                         </button>
                     </div>
 
                     {showPastRaces && (
                         <>
                             {pastRaces.length === 0 ? (
-                                <p>No past races found.</p>
+                                <p>No past events found.</p>
                             ) : (
                                 renderRaceGrid(pastRaces)
                             )}
