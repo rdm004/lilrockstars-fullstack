@@ -18,7 +18,7 @@ public class Parent {
     @Column(unique = true, nullable = false)
     private String email;
 
-    private String password; // We'll hash this later when we add authentication
+    private String password;
 
     @ManyToMany
     @JoinTable(
@@ -35,6 +35,15 @@ public class Parent {
         this.lastName = lastName;
         this.email = email;
         this.password = password;
+    }
+
+    // ✅ Keep email normalized no matter who saves/updates this entity
+    @PrePersist
+    @PreUpdate
+    private void normalizeEmail() {
+        if (this.email != null) {
+            this.email = this.email.trim().toLowerCase();
+        }
     }
 
     // Getters & Setters
