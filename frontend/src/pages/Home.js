@@ -9,6 +9,19 @@ import galleryPhotos from "../data/GalleryData";
 import { buildStandingsFromFlatResults, DIVISIONS} from "../utils/standingUtils";
 
 const Home = () => {
+
+    // Featured Sponsors
+    const FEATURED_TIERS = [
+        "Victory Lane Partner",
+        "Pole Position Partner",
+        "Green Flag Partner",
+        "Pre-Race Tech Partner",
+    ];
+
+    const featuredSponsors = (sponsorsData || []).filter((s) =>
+        FEATURED_TIERS.includes(s.tier)
+    );
+
     // 🏁 Upcoming races
     const [upcomingRaces, setUpcomingRaces] = useState([]);
     const [loadingRaces, setLoadingRaces] = useState(true);
@@ -196,19 +209,36 @@ const Home = () => {
                     <p>No sponsors yet. Interested in sponsoring? Contact us!</p>
                 ) : (
                     <div className="sponsor-grid">
-                        {sponsorsData.map((s) => (
-                            <div key={s.id} className="sponsor-item">
-                                <div className="sponsor-logo-box">
-                                    <img
-                                        src={s.logoUrl}
-                                        alt={s.name}
-                                        className="sponsor-logo"
-                                        loading="lazy"
-                                    />
+                        {FEATURED_TIERS.map((tier) => {
+                            const sponsor = featuredSponsors.find((s) => s.tier === tier);
+
+                            return sponsor ? (
+                                <div key={sponsor.id} className="sponsor-item">
+                                    <div className="sponsor-logo-box">
+                                        {sponsor.logoUrl ? (
+                                            <img
+                                                src={sponsor.logoUrl}
+                                                alt={sponsor.name}
+                                                className="sponsor-logo"
+                                                loading="lazy"
+                                            />
+                                        ) : (
+                                            <div className="sponsor-logo placeholder">
+                                                {sponsor.name?.[0] || "S"}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="sponsor-name">{sponsor.name}</div>
                                 </div>
-                                <div className="sponsor-name">{s.name}</div>
-                            </div>
-                        ))}
+                            ) : (
+                                <div key={tier} className="sponsor-item">
+                                    <div className="sponsor-logo-box">
+                                        <div className="sponsor-logo placeholder">S</div>
+                                    </div>
+                                    <div className="sponsor-name">{tier}</div>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
 

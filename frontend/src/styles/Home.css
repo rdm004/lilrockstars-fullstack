@@ -207,7 +207,7 @@
 
 .sponsor-item {
     width: 100%;
-    max-width: 220px;
+    max-width: 320px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -215,7 +215,8 @@
 
 /* Fixed logo frame (THIS fixes uneven sizing) */
 .sponsor-logo-box {
-    width: 220px;
+    width: 100%;
+    max-width: 320px;
     height: 140px;
     background: #ffffff;
     border-radius: 18px;
