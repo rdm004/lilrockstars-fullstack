@@ -30,7 +30,7 @@ const AdminDashboard = () => {
     const [stats, setStats] = useState({
         totalRacers: 0,
         totalRegistrations: 0,
-        upcomingRaces: 0,
+        upcomingEvents: 0,
     });
 
     const [divisionCounts, setDivisionCounts] = useState({
