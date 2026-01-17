@@ -76,12 +76,15 @@ const ResultsManagement = () => {
     const [raceRegistrations, setRaceRegistrations] = useState([]);
     const [regsLoading, setRegsLoading] = useState(false);
 
+    // ✅ NEW: used to build dropdown list (only show events w/ registrations)
+    const [allAdminRegistrations, setAllAdminRegistrations] = useState([]);
+
     // Bulk entry rows (auto-populated per division)
     // row shape: { racerId: "", place: "" }
     const [bulkRows, setBulkRows] = useState([]);
 
     // ---------------------------
-    // Load base data (races, racers, results)
+    // Load base data (races, racers, results, ALL registrations once)
     // ---------------------------
     useEffect(() => {
         const load = async () => {
@@ -98,6 +101,8 @@ const ResultsManagement = () => {
                     raceDate: r.raceDate,
                     location: r.location,
                     description: r.description,
+                    // ✅ NEW: needed to hide info-only events from results mgmt
+                    requiresRegistration: r.requiresRegistration ?? true,
                 }));
 
                 mappedRaces.sort((a, b) => new Date(a.raceDate || 0) - new Date(b.raceDate || 0));
@@ -111,7 +116,16 @@ const ResultsManagement = () => {
                 const resultsData = await tryGet("/admin/results", "/results");
                 setResults(resultsData);
 
-                // Default selected race: next upcoming, else first
+                // ✅ NEW: load ALL registrations once (admin)
+                try {
+                    const regsAllRes = await apiClient.get("/admin/registrations");
+                    setAllAdminRegistrations(regsAllRes.data || []);
+                } catch (e) {
+                    console.warn("Could not load /admin/registrations for dropdown filtering.", e);
+                    setAllAdminRegistrations([]);
+                }
+
+                // Default selected race: next upcoming, else first (will be overridden after filtering)
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 const upcoming = mappedRaces.find((x) => x.raceDate && new Date(x.raceDate) >= today);
@@ -137,6 +151,49 @@ const ResultsManagement = () => {
         return m;
     }, [racers]);
 
+    // ✅ Normalize ALL registrations so we can reliably extract raceId
+    const normalizedAllRegistrations = useMemo(() => {
+        return (allAdminRegistrations || []).map((row) => {
+            const raceId = Number(row.raceId ?? row.race_id ?? 0) || null;
+            return { ...row, _raceId: raceId };
+        });
+    }, [allAdminRegistrations]);
+
+    // ✅ Set of raceIds that have at least 1 registration
+    const raceIdsWithRegistrations = useMemo(() => {
+        const set = new Set();
+        (normalizedAllRegistrations || []).forEach((row) => {
+            if (row._raceId) set.add(Number(row._raceId));
+        });
+        return set;
+    }, [normalizedAllRegistrations]);
+
+    // ✅ Only show events that:
+    // - require registration
+    // - have at least 1 registration
+    const selectableRaces = useMemo(() => {
+        return (races || []).filter((r) => {
+            const requiresReg = r.requiresRegistration ?? true;
+            if (!requiresReg) return false; // hide info-only events
+            return raceIdsWithRegistrations.has(Number(r.id)); // hide races with 0 registrations
+        });
+    }, [races, raceIdsWithRegistrations]);
+
+    // ✅ If selectedRaceId is not selectable anymore, auto-fix it
+    useEffect(() => {
+        if (loading) return;
+
+        if (!selectedRaceId) {
+            if (selectableRaces.length > 0) setSelectedRaceId(String(selectableRaces[0].id));
+            return;
+        }
+
+        const isStillValid = selectableRaces.some((r) => String(r.id) === String(selectedRaceId));
+        if (!isStillValid) {
+            setSelectedRaceId(selectableRaces.length > 0 ? String(selectableRaces[0].id) : "");
+        }
+    }, [loading, selectedRaceId, selectableRaces]);
+
     const selectedRace = useMemo(() => {
         const id = Number(selectedRaceId);
         return races.find((r) => Number(r.id) === id) || null;
@@ -160,9 +217,8 @@ const ResultsManagement = () => {
                     const res = await apiClient.get(`/admin/registrations/by-race/${selectedRaceId}`);
                     data = res.data || [];
                 } catch (e) {
-                    // Fallback: GET all and filter client-side
-                    const all = await apiClient.get("/admin/registrations");
-                    const raw = all.data || [];
+                    // Fallback: use already loaded ALL registrations and filter locally
+                    const raw = allAdminRegistrations || [];
                     data = raw.filter((row) => Number(row.raceId) === Number(selectedRaceId));
                 }
 
@@ -176,17 +232,16 @@ const ResultsManagement = () => {
         };
 
         void loadRaceRegs();
-    }, [selectedRaceId]);
+    }, [selectedRaceId, allAdminRegistrations]);
 
     // ---------------------------
-    // Normalize registrations (CRITICAL FIX)
+    // Normalize registrations (for this selected race)
     // ---------------------------
     const normalizedRaceRegistrations = useMemo(() => {
         return (raceRegistrations || []).map((row) => {
             const racerId = Number(row.racerId ?? row.racer_id ?? 0) || null;
             const age = row.racerAge ?? row.age ?? null;
 
-            // Your backend often sends racerDivision = null, so compute from age:
             const division =
                 row.racerDivision ||
                 row.division ||
@@ -292,7 +347,7 @@ const ResultsManagement = () => {
     }, [racers, activeDivision]);
 
     // ---------------------------
-    // Registered IDs for selected event + active division (FIXED)
+    // Registered IDs for selected event + active division
     // ---------------------------
     const registeredRacerIdsForDivision = useMemo(() => {
         const ids = new Set();
@@ -324,7 +379,6 @@ const ResultsManagement = () => {
                 place: prevByRacerId.get(String(r.racerId))?.place || "",
             }));
 
-            // Always give 3 blank rows for walk-ups
             rows.push({ racerId: "", place: "" }, { racerId: "", place: "" }, { racerId: "", place: "" });
             return rows;
         });
@@ -399,7 +453,7 @@ const ResultsManagement = () => {
                     raceId: raceIdNum,
                     racerId: Number(row.racerId),
                     division,
-                    placement: row.place, // backend expects "placement"
+                    placement: row.place,
                 };
 
                 await tryPost("/admin/results", "/results", payload);
@@ -448,6 +502,10 @@ const ResultsManagement = () => {
                     <p className="loading">Loading…</p>
                 ) : error ? (
                     <p className="error">{error}</p>
+                ) : selectableRaces.length === 0 ? (
+                    <p className="muted">
+                        No registration-based events found yet. (Info-only events and events with 0 registrations are hidden.)
+                    </p>
                 ) : (
                     <>
                         {/* Event selector */}
@@ -456,7 +514,7 @@ const ResultsManagement = () => {
                                 <span>Event</span>
                                 <select value={selectedRaceId} onChange={(e) => setSelectedRaceId(e.target.value)}>
                                     <option value="">-- Select Event --</option>
-                                    {races.map((r) => (
+                                    {selectableRaces.map((r) => (
                                         <option key={r.id} value={r.id}>
                                             {r.raceName || r.name} {r.raceDate ? `(${formatRaceDate(r.raceDate)})` : ""}
                                         </option>
@@ -516,7 +574,10 @@ const ResultsManagement = () => {
                                     {(bulkRows || []).map((row, idx) => (
                                         <tr key={idx} className={placeClass(row.place)}>
                                             <td>
-                                                <select value={row.racerId} onChange={(e) => setBulkCell(idx, "racerId", e.target.value)}>
+                                                <select
+                                                    value={row.racerId}
+                                                    onChange={(e) => setBulkCell(idx, "racerId", e.target.value)}
+                                                >
                                                     <option value="">-- Select Racer --</option>
 
                                                     {/* Registered racers first */}
@@ -599,7 +660,9 @@ const ResultsManagement = () => {
                                                             <tr key={r.id} className={placeClass(r.place)}>
                                                                 <td className="col-small">{r.place || "-"}</td>
                                                                 <td>{r.racerName || "-"}</td>
-                                                                <td className="col-small">{car ? `#${String(car).replace(/^#/, "")}` : "-"}</td>
+                                                                <td className="col-small">
+                                                                    {car ? `#${String(car).replace(/^#/, "")}` : "-"}
+                                                                </td>
                                                                 <td className="col-small">
                                                                     <button className="btn-danger" onClick={() => deleteResult(r.id)}>
                                                                         Delete

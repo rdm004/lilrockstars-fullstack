@@ -23,6 +23,10 @@ public class RaceController {
 
     @PostMapping
     public Race addRace(@RequestBody Race race) {
+        // ✅ Default: events require registration unless explicitly set false
+        if (race.getRequiresRegistration() == null) {
+            race.setRequiresRegistration(true);
+        }
         return raceRepository.save(race);
     }
 }

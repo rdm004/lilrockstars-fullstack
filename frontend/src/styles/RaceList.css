@@ -221,11 +221,14 @@
     transform: translateY(-1px);
 }
 
+/* === Info-only badge (no registration required) === */
 .info-only-badge {
     display: inline-block;
-    padding: 0.45rem 0.75rem;
+    padding: 0.55rem 0.85rem;
     border-radius: 10px;
     font-weight: 800;
+    font-size: 0.9rem;
     background: rgba(30, 99, 255, 0.12);
     color: #1e63ff;
+    border: 1px solid rgba(30, 99, 255, 0.35);
 }
