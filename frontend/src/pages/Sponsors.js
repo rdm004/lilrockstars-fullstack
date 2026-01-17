@@ -80,7 +80,7 @@ const Sponsors = () => {
             <div className="sponsors-header">
                 <h1>🤝 Sponsors 🤝</h1>
                 <p className="sponsors-intro">
-                    Thanks to our partners who make Lil Rockstars Racing possible!!!
+                    Thanks to our Sponsors who make Lil Rockstars Racing possible!!!
                 </p>
             </div>
 
@@ -90,7 +90,7 @@ const Sponsors = () => {
                 <>
                     {/* Featured row */}
                     <section className="sponsors-section">
-                        <h2 className="sponsors-section-title">Featured Partners</h2>
+                        <h2 className="sponsors-section-title">Featured Sponsors</h2>
 
                         <div className="featured-grid">
                             {FEATURED_TIERS.map((tier, idx) => {
@@ -142,10 +142,10 @@ const Sponsors = () => {
 
                     {/* Series grid */}
                     <section className="sponsors-section">
-                        <h2 className="sponsors-section-title">Series Partners</h2>
+                        <h2 className="sponsors-section-title">Series Sponsors</h2>
 
                         {seriesSponsors.length === 0 ? (
-                            <p className="muted">No series partners listed yet.</p>
+                            <p className="muted">No series Sponsors listed yet.</p>
                         ) : (
                             <div className="series-grid">
                                 {seriesSponsors.map((s) => (

@@ -204,6 +204,7 @@ const Home = () => {
             {/* === SPONSORS (STATIC) === */}
             <section className="home-section sponsors-preview">
                 <h2>🤝 Thank You to Our Sponsors 🤝</h2>
+                <h3>Featured Sponsors</h3>
 
                 {!sponsorsData || sponsorsData.length === 0 ? (
                     <p>No sponsors yet. Interested in sponsoring? Contact us!</p>
