@@ -42,9 +42,8 @@ public class JwtUtil {
     public String generateToken(String email, String role) {
         return Jwts.builder()
                 .setSubject(email)
-                .claim("role", role) // <-- store role
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                // 10 hours (your comment said 7 days, but your code was 10 hours)
+                .claim("role", role)
+                .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 10))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
