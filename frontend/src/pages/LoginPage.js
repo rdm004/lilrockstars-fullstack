@@ -6,10 +6,12 @@ import "../styles/LoginPage.css";
 function LoginPage() {
     const navigate = useNavigate();
 
-    // ✅ If already logged in, go straight to dashboard
     useEffect(() => {
         const token = localStorage.getItem("token");
-        if (token) navigate("/dashboard");
+        const role = (localStorage.getItem("role") || "USER").toUpperCase();
+        if (token) {
+            navigate(role === "ADMIN" ? "/admin" : "/dashboard");
+        }
     }, [navigate]);
 
     // 🔔 Show a one-time notice if we were redirected due to 401
@@ -37,12 +39,19 @@ function LoginPage() {
 
         try {
             const response = await apiClient.post("/auth/login", form);
-            const { token, firstName } = response.data;
+
+            const { token, firstName, role } = response.data; // ✅ role added
 
             localStorage.setItem("token", token);
-            localStorage.setItem("firstName", firstName);
+            localStorage.setItem("firstName", firstName || "");
+            localStorage.setItem("role", role || "USER");     // ✅ store role
 
-            navigate("/dashboard");
+            // ✅ Optional: send admins straight to admin dashboard
+            if ((role || "").toUpperCase() === "ADMIN") {
+                navigate("/admin");
+            } else {
+                navigate("/dashboard");
+            }
         } catch (err) {
             console.error(err);
             setError("Invalid email or password");

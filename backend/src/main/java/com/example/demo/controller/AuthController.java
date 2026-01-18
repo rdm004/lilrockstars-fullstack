@@ -8,7 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -30,7 +32,6 @@ public class AuthController {
         return email == null ? null : email.trim().toLowerCase();
     }
 
-    // 🧾 REGISTER new parent account
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Parent parent) {
         try {
@@ -47,12 +48,10 @@ public class AuthController {
 
             parent.setEmail(email);
 
-            // ✅ Default role
-            if (parent.getRole() == null) {
-                parent.setRole(Parent.Role.USER);
-            }
+            // ✅ default role USER (don’t allow client to set ADMIN)
+            parent.setRole(Parent.Role.USER);
 
-            // ✅ Encode password ONCE
+            // ✅ encode ONCE
             parent.setPassword(passwordEncoder.encode(password));
             parentRepository.save(parent);
 
@@ -67,7 +66,6 @@ public class AuthController {
         }
     }
 
-    // 🔑 LOGIN and return JWT token
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Parent loginRequest) {
         try {
@@ -91,16 +89,16 @@ public class AuthController {
 
             String role = (parent.getRole() == null) ? "USER" : parent.getRole().name();
 
-            // ✅ Token includes role claim now
+            // ✅ token carries role
             String token = jwtUtil.generateToken(parent.getEmail(), role);
 
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Login successful!");
             response.put("token", token);
+            response.put("role", role); // ✅ helpful for frontend
             response.put("email", parent.getEmail());
             response.put("firstName", parent.getFirstName());
             response.put("lastName", parent.getLastName());
-            response.put("role", role); // ✅ frontend can use this for UX
 
             return ResponseEntity.ok(response);
 
@@ -108,45 +106,6 @@ public class AuthController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Login failed", "details", e.getMessage()));
-        }
-    }
-
-    // 🧍 CURRENT USER (from JWT token)
-    @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        try {
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "Missing or invalid token"));
-            }
-
-            String token = authHeader.substring(7);
-            String email = jwtUtil.extractUsername(token);
-
-            if (email == null || email.isBlank()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "Invalid or expired token"));
-            }
-
-            Optional<Parent> parentOpt = parentRepository.findByEmailIgnoreCase(email);
-            if (parentOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("message", "User not found"));
-            }
-
-            Parent parent = parentOpt.get();
-
-            return ResponseEntity.ok(Map.of(
-                    "firstName", parent.getFirstName(),
-                    "lastName", parent.getLastName(),
-                    "email", parent.getEmail(),
-                    "role", parent.getRole() == null ? "USER" : parent.getRole().name()
-            ));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid or expired token"));
         }
     }
 }

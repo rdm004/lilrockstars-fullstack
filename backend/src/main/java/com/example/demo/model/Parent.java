@@ -25,8 +25,7 @@ public class Parent {
 
     private String password;
 
-    // ✅ Role for admin lock-down
-    // NOTE: If you already have parent rows, you must set role for existing rows in DB (see SQL below)
+    // ✅ maps to your DB "role" column (your screenshot shows it exists)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role = Role.USER;
@@ -46,19 +45,20 @@ public class Parent {
         this.lastName = lastName;
         this.email = email;
         this.password = password;
-        this.role = Role.USER;
     }
 
-    // ✅ Keep email normalized no matter who saves/updates this entity
     @PrePersist
     @PreUpdate
     private void normalizeEmail() {
         if (this.email != null) {
             this.email = this.email.trim().toLowerCase();
         }
+        // ✅ safety: never allow null role
+        if (this.role == null) {
+            this.role = Role.USER;
+        }
     }
 
-    // Getters & Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

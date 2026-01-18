@@ -5,21 +5,16 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.springframework.stereotype.Component;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
 
-/**
- * JWT filter:
- * - If no/invalid token => continue as unauthenticated (public endpoints keep working)
- * - If valid token      => set Authentication with username (email) + ROLE_* authority
- */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -46,20 +41,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             String email = jwtUtil.extractUsername(token);
-            String role = jwtUtil.extractRole(token); // "ADMIN" or "USER" (or null)
+            String role = jwtUtil.extractRole(token); // "USER" or "ADMIN"
 
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                String safeRole = (role == null || role.isBlank()) ? "USER" : role.trim().toUpperCase();
-                var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + safeRole));
+                // ✅ IMPORTANT: Spring expects "ROLE_ADMIN"/"ROLE_USER"
+                String springRole = (role == null || role.isBlank()) ? "ROLE_USER" : "ROLE_" + role;
 
                 UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(email, null, authorities);
+                        new UsernamePasswordAuthenticationToken(
+                                email,
+                                null,
+                                List.of(new SimpleGrantedAuthority(springRole))
+                        );
 
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
         } catch (Exception ignored) {
-            // Invalid/expired token -> ignore and continue unauthenticated
+            // invalid token -> continue unauthenticated
         }
 
         chain.doFilter(request, response);

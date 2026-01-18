@@ -47,8 +47,8 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
 
-                        // ✅ Auth endpoints (public)
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // ✅ Auth endpoints (ADMIN ONLY)
+                        .requestMatchers("/api/auth/**").hasRole("ADMIN")
 
                         // ✅ Public GET endpoints for your public site
                         .requestMatchers(HttpMethod.GET,
