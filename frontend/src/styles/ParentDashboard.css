@@ -434,6 +434,7 @@
 
 .coparent-inline p {
     color: #1e63ff !important;
+    margin-top: 0.75rem;
 }
 
 .coparent-inline h3 {
