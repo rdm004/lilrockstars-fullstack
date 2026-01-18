@@ -7,9 +7,9 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import java.util.Map;
 import java.util.function.Function;
 
 @Component
@@ -19,13 +19,18 @@ public class JwtUtil {
     private static final String SECRET_KEY = "H0NSnc77SmHQ6yhop5FyA3V+NKhFAYOaX7DlpOnElZI=";
 
     private Key getSignKey() {
-        // decode Base64 key safely (this will not throw Illegal base64 character errors)
         byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY.trim());
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    public String extractRole(String token) {
+        Claims claims = extractAllClaims(token);
+        Object role = claims.get("role");
+        return role == null ? null : String.valueOf(role);
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -41,13 +46,21 @@ public class JwtUtil {
                 .getBody();
     }
 
-    public String generateToken(String email) {
+    // ✅ NEW: include role claim in token
+    public String generateToken(String email, String role) {
+        long now = System.currentTimeMillis();
         return Jwts.builder()
                 .setSubject(email)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 10)) // 7 Days
+                .addClaims(Map.of("role", role == null ? "USER" : role))
+                .setIssuedAt(new Date(now))
+                .setExpiration(new Date(now + 1000L * 60 * 60 * 24)) // ✅ 24 hours
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    // ✅ Keep your old signature if other code calls it
+    public String generateToken(String email) {
+        return generateToken(email, "USER");
     }
 
     public Boolean validateToken(String token, String email) {

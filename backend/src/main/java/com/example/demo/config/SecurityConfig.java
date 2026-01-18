@@ -55,8 +55,8 @@ public class SecurityConfig {
                                 "/api/races/**",
                                 "/api/results/**",
                                 "/api/sponsors/**",
-                                "/api/photos/**",     // if you still have photos endpoint live
-                                "/api/gallery/**"     // keep only if you truly use this route
+                                "/api/photos/**",
+                                "/api/gallery/**"
                         ).permitAll()
 
                         // ✅ Public POST endpoints
@@ -65,19 +65,19 @@ public class SecurityConfig {
                                 "/api/public/**"
                         ).permitAll()
 
-                        // ✅ Registrations must be authenticated (fixes “admin registrations” access control)
+                        // ✅ Admin endpoints (LOCKED DOWN)
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        // ✅ Registrations must be authenticated
                         .requestMatchers("/api/registrations/**").authenticated()
 
                         // ✅ Parent endpoints
                         .requestMatchers("/api/parent/**").authenticated()
 
-                        // ✅ Admin endpoints
-                        .requestMatchers("/api/admin/**").authenticated()
-
                         // ✅ Everything else under /api requires auth by default
                         .requestMatchers("/api/**").authenticated()
 
-                        // (Optional) non-API routes can remain open (React app)
+                        // React app / static routes
                         .anyRequest().permitAll()
                 );
 

@@ -47,6 +47,11 @@ public class AuthController {
 
             parent.setEmail(email);
 
+            // ✅ Default role
+            if (parent.getRole() == null) {
+                parent.setRole(Parent.Role.USER);
+            }
+
             // ✅ Encode password ONCE
             parent.setPassword(passwordEncoder.encode(password));
             parentRepository.save(parent);
@@ -84,7 +89,10 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid credentials."));
             }
 
-            String token = jwtUtil.generateToken(parent.getEmail());
+            String role = (parent.getRole() == null) ? "USER" : parent.getRole().name();
+
+            // ✅ Token includes role claim now
+            String token = jwtUtil.generateToken(parent.getEmail(), role);
 
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Login successful!");
@@ -92,6 +100,7 @@ public class AuthController {
             response.put("email", parent.getEmail());
             response.put("firstName", parent.getFirstName());
             response.put("lastName", parent.getLastName());
+            response.put("role", role); // ✅ frontend can use this for UX
 
             return ResponseEntity.ok(response);
 
@@ -131,7 +140,8 @@ public class AuthController {
             return ResponseEntity.ok(Map.of(
                     "firstName", parent.getFirstName(),
                     "lastName", parent.getLastName(),
-                    "email", parent.getEmail()
+                    "email", parent.getEmail(),
+                    "role", parent.getRole() == null ? "USER" : parent.getRole().name()
             ));
         } catch (Exception e) {
             e.printStackTrace();

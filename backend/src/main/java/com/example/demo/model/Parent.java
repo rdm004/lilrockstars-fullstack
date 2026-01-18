@@ -8,6 +8,11 @@ import java.util.Set;
 @Table(name = "parent")
 public class Parent {
 
+    public enum Role {
+        USER,
+        ADMIN
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -19,6 +24,12 @@ public class Parent {
     private String email;
 
     private String password;
+
+    // ✅ Role for admin lock-down
+    // NOTE: If you already have parent rows, you must set role for existing rows in DB (see SQL below)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.USER;
 
     @ManyToMany
     @JoinTable(
@@ -35,6 +46,7 @@ public class Parent {
         this.lastName = lastName;
         this.email = email;
         this.password = password;
+        this.role = Role.USER;
     }
 
     // ✅ Keep email normalized no matter who saves/updates this entity
@@ -61,6 +73,9 @@ public class Parent {
 
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
+
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
 
     public Set<Racer> getRacers() { return racers; }
     public void setRacers(Set<Racer> racers) { this.racers = racers; }
