@@ -314,7 +314,7 @@ function ParentDashboard() {
                                 {inviteLoading ? "Sending..." : "Send Invite"}
                             </button>
                         </form>
-                        <h4> Co-parent must be registered to receive invite.</h4>
+                        <h7> Co-parent must be registered to receive invite.</h7>
                         {inviteStatus && <p className="coparent-status">{inviteStatus}</p>}
                     </div>
 
