@@ -433,7 +433,7 @@
 }
 
 .coparent-inline p {
-    color: #1e63ff;
+    color: #1e63ff !important;
 }
 
 .coparent-inline h3 {
