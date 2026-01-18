@@ -88,8 +88,46 @@ public class AuthController {
 
             String roleName = (parent.getRole() == null ? "USER" : parent.getRole().name());
 
-            // ✅ token includes role claim
-            String token = jwtUtil.generateToken(parent.getEmail(), roleName);
+            @PostMapping("/login")
+            public ResponseEntity<?> login(@RequestBody Parent loginRequest) {
+                try {
+                    String email = normalizeEmail(loginRequest.getEmail());
+                    String password = loginRequest.getPassword();
+
+                    if (email == null || email.isBlank() || password == null || password.isBlank()) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "Email and password are required."));
+                    }
+
+                    Optional<Parent> parentOpt = parentRepository.findByEmailIgnoreCase(email);
+                    if (parentOpt.isEmpty()) {
+                        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid credentials."));
+                    }
+
+                    Parent parent = parentOpt.get();
+
+                    if (!passwordEncoder.matches(password, parent.getPassword())) {
+                        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid credentials."));
+                    }
+
+                    String roleName = (parent.getRole() == null ? "USER" : parent.getRole().name());
+
+                    // ✅ use roleName (null-safe)
+                    String token = jwtUtil.generateToken(parent.getEmail(), roleName);
+
+                    return ResponseEntity.ok(Map.of(
+                            "message", "Login successful!",
+                            "token", token,
+                            "email", parent.getEmail(),
+                            "firstName", parent.getFirstName(),
+                            "lastName", parent.getLastName(),
+                            "role", roleName
+                    ));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body(Map.of("message", "Login failed", "details", e.getMessage()));
+                }
+            }
 
             return ResponseEntity.ok(Map.of(
                     "message", "Login successful!",

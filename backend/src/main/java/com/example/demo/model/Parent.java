@@ -20,9 +20,10 @@ public class Parent {
 
     private String password;
 
+    // ✅ New role column (defaults to USER)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role = Role.USER; // ✅ default
+    private Role role = Role.USER;
 
     @ManyToMany
     @JoinTable(
@@ -39,9 +40,9 @@ public class Parent {
         this.lastName = lastName;
         this.email = email;
         this.password = password;
+        this.role = Role.USER;
     }
 
-    // ✅ Keep email normalized no matter who saves/updates this entity
     @PrePersist
     @PreUpdate
     private void normalizeEmail() {

@@ -6,6 +6,9 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import HeroSection from "./components/HeroSection";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
+
+import "./styles/main.css";
 
 // Public pages
 import Home from "./pages/Home";
@@ -31,24 +34,11 @@ import ResultsManagement from "./pages/ResultsManagement";
 import AdminSettings from "./pages/AdminSettings";
 import AdminRacesManagement from "./pages/AdminRacesManagement";
 
-// (Leaving these imports out if you truly removed them from sidebar/flow;
-// you can add them back later if needed.)
-// import SponsorsManagement from "./pages/SponsorsManagement";
-// import GalleryManagement from "./pages/GalleryManagement";
-
-import "./styles/main.css";
-
 function AppContent() {
     const location = useLocation();
 
     // 🚫 Hide hero on auth + dashboards + admin pages
-    const hideHeroRoutes = [
-        "/login",
-        "/register",
-        "/accountregister",
-        "/dashboard",
-        "/admin",
-    ];
+    const hideHeroRoutes = ["/login", "/register", "/accountregister", "/dashboard", "/admin"];
 
     const shouldShowHero = !hideHeroRoutes.some((route) =>
         location.pathname.startsWith(route)
@@ -83,58 +73,58 @@ function AppContent() {
                     }
                 />
 
-                {/* ===== Protected admin routes ===== */}
+                {/* ===== Protected admin routes (ADMIN ONLY) ===== */}
                 <Route
                     path="/admin"
                     element={
-                        <ProtectedRoute>
+                        <AdminRoute>
                             <AdminDashboard />
-                        </ProtectedRoute>
+                        </AdminRoute>
                     }
                 />
 
                 <Route
                     path="/admin/races/manage"
                     element={
-                        <ProtectedRoute>
+                        <AdminRoute>
                             <AdminRacesManagement />
-                        </ProtectedRoute>
+                        </AdminRoute>
                     }
                 />
 
                 <Route
                     path="/admin/racers/manage"
                     element={
-                        <ProtectedRoute>
+                        <AdminRoute>
                             <RacersManagement />
-                        </ProtectedRoute>
+                        </AdminRoute>
                     }
                 />
 
                 <Route
                     path="/admin/results/manage"
                     element={
-                        <ProtectedRoute>
+                        <AdminRoute>
                             <ResultsManagement />
-                        </ProtectedRoute>
+                        </AdminRoute>
                     }
                 />
 
                 <Route
                     path="/admin/registrations/manage"
                     element={
-                        <ProtectedRoute>
+                        <AdminRoute>
                             <RegistrationsManagement />
-                        </ProtectedRoute>
+                        </AdminRoute>
                     }
                 />
 
                 <Route
                     path="/admin/settings"
                     element={
-                        <ProtectedRoute>
+                        <AdminRoute>
                             <AdminSettings />
-                        </ProtectedRoute>
+                        </AdminRoute>
                     }
                 />
 

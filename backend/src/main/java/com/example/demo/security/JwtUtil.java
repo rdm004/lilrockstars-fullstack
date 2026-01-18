@@ -9,13 +9,11 @@ import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
-import java.util.Map;
 import java.util.function.Function;
 
 @Component
 public class JwtUtil {
 
-    // ✅ must be base64 string (yours is fine)
     private static final String SECRET_KEY = "H0NSnc77SmHQ6yhop5FyA3V+NKhFAYOaX7DlpOnElZI=";
 
     private Key getSignKey() {
@@ -40,29 +38,15 @@ public class JwtUtil {
                 .getBody();
     }
 
-    // ✅ include role claim in token
-    public String generateToken(String email, String roleName) {
-        long now = System.currentTimeMillis();
-
+    // ✅ New: role stored as claim
+    public String generateToken(String email, String role) {
         return Jwts.builder()
                 .setSubject(email)
-                .addClaims(Map.of("role", roleName))
-                .setIssuedAt(new Date(now))
-                .setExpiration(new Date(now + 1000L * 60 * 60 * 10)) // 10 hours (adjust if you want)
+                .claim("role", role) // <-- store role
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                // 10 hours (your comment said 7 days, but your code was 10 hours)
+                .setExpiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 10))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
-    }
-
-    public Boolean validateToken(String token, String email) {
-        final String username = extractUsername(token);
-        return (username.equals(email) && !isTokenExpired(token));
-    }
-
-    private Boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
-    }
-
-    private Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
     }
 }
