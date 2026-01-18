@@ -15,6 +15,7 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
+    // ✅ must be base64 string (yours is fine)
     private static final String SECRET_KEY = "H0NSnc77SmHQ6yhop5FyA3V+NKhFAYOaX7DlpOnElZI=";
 
     private Key getSignKey() {
@@ -24,12 +25,6 @@ public class JwtUtil {
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
-    }
-
-    public String extractRole(String token) {
-        Claims claims = extractAllClaims(token);
-        Object role = claims.get("role");
-        return role == null ? null : String.valueOf(role);
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -45,13 +40,15 @@ public class JwtUtil {
                 .getBody();
     }
 
-    // ✅ include role claim
-    public String generateToken(String email, String role) {
+    // ✅ include role claim in token
+    public String generateToken(String email, String roleName) {
+        long now = System.currentTimeMillis();
+
         return Jwts.builder()
                 .setSubject(email)
-                .claim("role", role)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 10))
+                .addClaims(Map.of("role", roleName))
+                .setIssuedAt(new Date(now))
+                .setExpiration(new Date(now + 1000L * 60 * 60 * 10)) // 10 hours (adjust if you want)
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
     }

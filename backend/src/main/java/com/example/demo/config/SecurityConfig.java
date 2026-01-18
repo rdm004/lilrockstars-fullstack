@@ -40,6 +40,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    CorsConfigurationSource corsConfigurationSource) throws Exception {
+
         http
                 .cors(c -> c.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.disable())
@@ -47,10 +48,10 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
 
-                        // ✅ Auth endpoints (ADMIN ONLY)
-                        .requestMatchers("/api/auth/**").hasRole("ADMIN")
+                        // ✅ Auth endpoints public
+                        .requestMatchers("/api/auth/**").permitAll()
 
-                        // ✅ Public GET endpoints for your public site
+                        // ✅ Public GET for site
                         .requestMatchers(HttpMethod.GET,
                                 "/api/races/**",
                                 "/api/results/**",
@@ -59,25 +60,25 @@ public class SecurityConfig {
                                 "/api/gallery/**"
                         ).permitAll()
 
-                        // ✅ Public POST endpoints
+                        // ✅ Public POST (if you have these)
                         .requestMatchers(HttpMethod.POST,
                                 "/api/contact/**",
                                 "/api/public/**"
                         ).permitAll()
 
-                        // ✅ Admin endpoints (LOCKED DOWN)
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-
-                        // ✅ Registrations must be authenticated
+                        // ✅ Parent endpoints require login
                         .requestMatchers("/api/registrations/**").authenticated()
-
-                        // ✅ Parent endpoints
+                        .requestMatchers("/api/racers/**").authenticated()
+                        .requestMatchers("/api/parents/**").authenticated()
                         .requestMatchers("/api/parent/**").authenticated()
 
-                        // ✅ Everything else under /api requires auth by default
+                        // ✅ Admin endpoints require ADMIN role ONLY
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        // ✅ Anything else under /api requires login
                         .requestMatchers("/api/**").authenticated()
 
-                        // React app / static routes
+                        // allow React routes
                         .anyRequest().permitAll()
                 );
 

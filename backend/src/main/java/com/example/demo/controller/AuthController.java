@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.Parent;
+import com.example.demo.model.Role;
 import com.example.demo.repository.ParentRepository;
 import com.example.demo.security.JwtUtil;
 import org.springframework.http.HttpStatus;
@@ -8,9 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -48,10 +47,10 @@ public class AuthController {
 
             parent.setEmail(email);
 
-            // ✅ default role USER (don’t allow client to set ADMIN)
-            parent.setRole(Parent.Role.USER);
+            // ✅ default role
+            if (parent.getRole() == null) parent.setRole(Role.USER);
 
-            // ✅ encode ONCE
+            // ✅ Encode password ONCE (keep this)
             parent.setPassword(passwordEncoder.encode(password));
             parentRepository.save(parent);
 
@@ -87,24 +86,62 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid credentials."));
             }
 
-            String role = (parent.getRole() == null) ? "USER" : parent.getRole().name();
+            String roleName = (parent.getRole() == null ? "USER" : parent.getRole().name());
 
-            // ✅ token carries role
-            String token = jwtUtil.generateToken(parent.getEmail(), parent.getRole());
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Login successful!");
-            response.put("token", token);
-            response.put("role", role); // ✅ helpful for frontend
-            response.put("email", parent.getEmail());
-            response.put("firstName", parent.getFirstName());
-            response.put("lastName", parent.getLastName());
+            // ✅ token includes role claim
+            String token = jwtUtil.generateToken(parent.getEmail(), roleName);
 
-            return ResponseEntity.ok(response);
-
+            return ResponseEntity.ok(Map.of(
+                    "message", "Login successful!",
+                    "token", token,
+                    "email", parent.getEmail(),
+                    "firstName", parent.getFirstName(),
+                    "lastName", parent.getLastName(),
+                    "role", roleName
+            ));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Login failed", "details", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Missing or invalid token"));
+            }
+
+            String token = authHeader.substring(7);
+            String email = jwtUtil.extractUsername(token);
+
+            if (email == null || email.isBlank()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Invalid or expired token"));
+            }
+
+            Optional<Parent> parentOpt = parentRepository.findByEmailIgnoreCase(email);
+            if (parentOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "User not found"));
+            }
+
+            Parent parent = parentOpt.get();
+            String roleName = (parent.getRole() == null ? "USER" : parent.getRole().name());
+
+            return ResponseEntity.ok(Map.of(
+                    "firstName", parent.getFirstName(),
+                    "lastName", parent.getLastName(),
+                    "email", parent.getEmail(),
+                    "role", roleName
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid or expired token"));
         }
     }
 }

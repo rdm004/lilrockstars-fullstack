@@ -8,11 +8,6 @@ import java.util.Set;
 @Table(name = "parent")
 public class Parent {
 
-    public enum Role {
-        USER,
-        ADMIN
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -25,10 +20,9 @@ public class Parent {
 
     private String password;
 
-    // ✅ maps to your DB "role" column (your screenshot shows it exists)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role = Role.USER;
+    private Role role = Role.USER; // ✅ default
 
     @ManyToMany
     @JoinTable(
@@ -47,13 +41,13 @@ public class Parent {
         this.password = password;
     }
 
+    // ✅ Keep email normalized no matter who saves/updates this entity
     @PrePersist
     @PreUpdate
     private void normalizeEmail() {
         if (this.email != null) {
             this.email = this.email.trim().toLowerCase();
         }
-        // ✅ safety: never allow null role
         if (this.role == null) {
             this.role = Role.USER;
         }
