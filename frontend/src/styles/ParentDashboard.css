@@ -429,6 +429,11 @@
 .coparent-inline {
     text-align: center;
     min-width: 260px;
+    font-size: 0.7rem;
+}
+
+.coparent-inline p {
+    color: #1e63ff;
 }
 
 .coparent-inline h3 {
