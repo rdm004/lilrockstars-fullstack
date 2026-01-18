@@ -362,10 +362,6 @@
         margin-bottom: 0.5rem;
     }
 
-    .coparent-section h3 {
-        text-align: center;
-    }
-
     .coparent-text {
         font-size: 0.95rem;
         margin-bottom: 0.75rem;
@@ -438,6 +434,7 @@
 .coparent-inline h3 {
     font-size: 1.1rem;
     margin-bottom: 0.5rem;
+    text-align: center;
 }
 
 .coparent-form-inline {
