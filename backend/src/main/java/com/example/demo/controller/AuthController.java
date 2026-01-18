@@ -8,9 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -28,34 +26,14 @@ public class AuthController {
         this.jwtUtil = jwtUtil;
     }
 
-    // -----------------------------
-    // Helpers
-    // -----------------------------
     private String normalizeEmail(String email) {
         return email == null ? null : email.trim().toLowerCase();
-    }
-
-    private String validatePasswordStrength(String password) {
-        // Return null if OK, otherwise return message string
-        if (password == null) return "Password is required.";
-
-        String p = password.trim();
-        if (p.length() < 8) return "Password must be at least 8 characters.";
-        if (!p.matches(".*[A-Z].*")) return "Password must contain at least one uppercase letter.";
-        if (!p.matches(".*[a-z].*")) return "Password must contain at least one lowercase letter.";
-        if (!p.matches(".*\\d.*")) return "Password must contain at least one number.";
-        if (!p.matches(".*[^A-Za-z0-9].*")) return "Password must contain at least one special character.";
-        return null;
     }
 
     // 🧾 REGISTER new parent account
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Parent parent) {
         try {
-            if (parent == null) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Invalid request."));
-            }
-
             String email = normalizeEmail(parent.getEmail());
             String password = parent.getPassword();
 
@@ -63,22 +41,14 @@ public class AuthController {
                 return ResponseEntity.badRequest().body(Map.of("message", "Email and password are required."));
             }
 
-            // ✅ Password strength validation
-            String pwErr = validatePasswordStrength(password);
-            if (pwErr != null) {
-                return ResponseEntity.badRequest().body(Map.of("message", pwErr));
-            }
-
-            // ✅ Duplicate email check (case-insensitive)
             if (parentRepository.existsByEmailIgnoreCase(email)) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("message", "Email already registered."));
+                return ResponseEntity.badRequest().body(Map.of("message", "Email already registered."));
             }
 
-            // ✅ Normalize + encode ONCE
             parent.setEmail(email);
-            parent.setPassword(passwordEncoder.encode(password));
 
+            // ✅ Encode password ONCE
+            parent.setPassword(passwordEncoder.encode(password));
             parentRepository.save(parent);
 
             return ResponseEntity.ok(Map.of(
@@ -96,10 +66,6 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Parent loginRequest) {
         try {
-            if (loginRequest == null) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Invalid request."));
-            }
-
             String email = normalizeEmail(loginRequest.getEmail());
             String password = loginRequest.getPassword();
 
@@ -107,21 +73,17 @@ public class AuthController {
                 return ResponseEntity.badRequest().body(Map.of("message", "Email and password are required."));
             }
 
-            // ✅ Case-insensitive lookup
             Optional<Parent> parentOpt = parentRepository.findByEmailIgnoreCase(email);
-
             if (parentOpt.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid credentials."));
             }
 
             Parent parent = parentOpt.get();
 
-            // ✅ matches() is correct
             if (!passwordEncoder.matches(password, parent.getPassword())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid credentials."));
             }
 
-            // ✅ Generate JWT token
             String token = jwtUtil.generateToken(parent.getEmail());
 
             Map<String, Object> response = new HashMap<>();
@@ -151,7 +113,7 @@ public class AuthController {
             }
 
             String token = authHeader.substring(7);
-            String email = normalizeEmail(jwtUtil.extractUsername(token));
+            String email = jwtUtil.extractUsername(token);
 
             if (email == null || email.isBlank()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -171,7 +133,6 @@ public class AuthController {
                     "lastName", parent.getLastName(),
                     "email", parent.getEmail()
             ));
-
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
