@@ -90,8 +90,7 @@ public class AuthController {
             String role = (parent.getRole() == null) ? "USER" : parent.getRole().name();
 
             // ✅ token carries role
-            String token = jwtUtil.generateToken(parent.getEmail(), role);
-
+            String token = jwtUtil.generateToken(parent.getEmail(), parent.getRole());
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Login successful!");
             response.put("token", token);

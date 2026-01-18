@@ -48,10 +48,10 @@ public class JwtUtil {
     // ✅ include role claim
     public String generateToken(String email, String role) {
         return Jwts.builder()
-                .setClaims(Map.of("role", role))
                 .setSubject(email)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 10)) // 10 hours
+                .claim("role", role)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 10))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
