@@ -151,7 +151,7 @@ function LoginPage() {
                             cursor: "pointer",
                             color: "#1e63ff",
                             fontWeight: 800,
-                            fontSize: "1.2rem",
+                            fontSize: ".8rem",
                         }}
                     >
                         Forgot password?
