@@ -1,42 +1,41 @@
 // frontend/src/components/Navbar.js
-import React, { useMemo } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import "../styles/Navbar.css";
 
 export default function Navbar() {
-    // ✅ Logged in?
-    const isLoggedIn = useMemo(() => {
+    const location = useLocation();
+
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [role, setRole] = useState("USER");
+
+    // Re-evaluate auth state on navigation (login/logout)
+    useEffect(() => {
         const token = localStorage.getItem("token");
-        return !!token;
-    }, []);
+        const storedRole = (localStorage.getItem("role") || "USER").toUpperCase();
 
-    // ✅ Role (set during login)
-    const role = useMemo(() => {
-        return localStorage.getItem("role"); // "USER" or "ADMIN"
-    }, []);
+        setIsLoggedIn(!!token);
+        setRole(storedRole);
+    }, [location.pathname]);
 
-    const parentButtonText = isLoggedIn ? "Parent Dashboard" : "Login";
-    const parentButtonLink = isLoggedIn ? "/dashboard" : "/login";
+    const isAdmin = isLoggedIn && role === "ADMIN";
 
     return (
         <nav className="navbar">
-            {/* LEFT: Facebook */}
+            {/* LEFT */}
             <div className="navbar-left">
                 <a
                     href="https://www.facebook.com/profile.php?id=100091910351052"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="nav-button facebook-btn"
-                    aria-label="Visit Lil Rockstars Racing on Facebook"
                 >
-          <span className="facebook-icon" aria-hidden="true">
-            f
-          </span>
+                    <span className="facebook-icon">f</span>
                     Facebook
                 </a>
             </div>
 
-            {/* CENTER: Main Nav Links */}
+            {/* CENTER */}
             <div className="navbar-center">
                 <Link to="/" className="nav-link">Home</Link>
                 <Link to="/about" className="nav-link">About</Link>
@@ -47,15 +46,24 @@ export default function Navbar() {
                 <Link to="/contact" className="nav-link">Contact</Link>
             </div>
 
-            {/* RIGHT: Auth Buttons */}
+            {/* RIGHT */}
             <div className="navbar-right">
-                {/* ✅ Login becomes Parent Dashboard when logged in */}
-                <Link to={parentButtonLink} className="nav-button">
-                    {parentButtonText}
-                </Link>
+                {/* Not logged in → Login */}
+                {!isLoggedIn && (
+                    <Link to="/login" className="nav-button">
+                        Login
+                    </Link>
+                )}
 
-                {/* ✅ Admin button ONLY shows for admins */}
-                {isLoggedIn && role === "ADMIN" && (
+                {/* Logged in → Parent Dashboard */}
+                {isLoggedIn && (
+                    <Link to="/dashboard" className="nav-button">
+                        Parent Dashboard
+                    </Link>
+                )}
+
+                {/* Logged in ADMIN only → Admin Dashboard */}
+                {isAdmin && (
                     <Link to="/admin" className="nav-button">
                         Admin Dashboard
                     </Link>
