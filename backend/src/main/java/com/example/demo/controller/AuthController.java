@@ -3,13 +3,15 @@ package com.example.demo.controller;
 import com.example.demo.model.Parent;
 import com.example.demo.repository.ParentRepository;
 import com.example.demo.security.JwtUtil;
+import com.example.demo.service.PasswordResetService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -18,13 +20,18 @@ public class AuthController {
     private final ParentRepository parentRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final PasswordResetService passwordResetService;
 
-    public AuthController(ParentRepository parentRepository,
-                          PasswordEncoder passwordEncoder,
-                          JwtUtil jwtUtil) {
+    public AuthController(
+            ParentRepository parentRepository,
+            PasswordEncoder passwordEncoder,
+            JwtUtil jwtUtil,
+            PasswordResetService passwordResetService
+    ) {
         this.parentRepository = parentRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.passwordResetService = passwordResetService;
     }
 
     // ----------------------------------
@@ -54,9 +61,11 @@ public class AuthController {
             }
 
             parent.setEmail(email);
+
+            // ✅ Encode password ONCE
             parent.setPassword(passwordEncoder.encode(password));
 
-            // default role if missing
+            // ✅ Default role if missing
             if (parent.getRole() == null) {
                 parent.setRole(Parent.Role.USER);
             }
@@ -102,10 +111,9 @@ public class AuthController {
                         .body(Map.of("message", "Invalid credentials."));
             }
 
-            String roleName = parent.getRole() == null
-                    ? "USER"
-                    : parent.getRole().name();
+            String roleName = (parent.getRole() == null) ? "USER" : parent.getRole().name();
 
+            // ✅ JWT includes role claim (your JwtUtil must support this signature)
             String token = jwtUtil.generateToken(parent.getEmail(), roleName);
 
             return ResponseEntity.ok(Map.of(
@@ -147,16 +155,52 @@ public class AuthController {
 
             Parent parent = parentOpt.get();
 
+            String roleName = (parent.getRole() == null) ? "USER" : parent.getRole().name();
+
             return ResponseEntity.ok(Map.of(
                     "email", parent.getEmail(),
                     "firstName", parent.getFirstName(),
                     "lastName", parent.getLastName(),
-                    "role", parent.getRole().name()
+                    "role", roleName
             ));
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Invalid or expired token"));
         }
+    }
+
+    // ----------------------------------
+    // PASSWORD RESET
+    // ----------------------------------
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        passwordResetService.requestReset(email);
+
+        // ✅ Always the same response (prevents email enumeration)
+        return ResponseEntity.ok(Map.of(
+                "message", "If that email exists, we sent a password reset link."
+        ));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body) {
+        String token = body.get("token");
+        String newPassword = body.get("newPassword");
+
+        if (newPassword == null || newPassword.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "New password is required."));
+        }
+
+        boolean ok = passwordResetService.resetPassword(token, newPassword);
+        if (!ok) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Invalid or expired reset token."));
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Password reset successful. You can now log in."
+        ));
     }
 }

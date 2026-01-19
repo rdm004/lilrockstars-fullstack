@@ -21,6 +21,9 @@ dependencies {
 	// PostgreSQL database driver
 	implementation 'org.postgresql:postgresql'
 
+	//
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
 	// ✅ H2 in-memory database for local dev
 	runtimeOnly 'com.h2database:h2'
 
