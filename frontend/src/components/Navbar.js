@@ -4,10 +4,15 @@ import { Link } from "react-router-dom";
 import "../styles/Navbar.css";
 
 export default function Navbar() {
-    // ✅ If token exists, user is logged in (parent)
+    // ✅ Logged in?
     const isLoggedIn = useMemo(() => {
         const token = localStorage.getItem("token");
         return !!token;
+    }, []);
+
+    // ✅ Role (set during login)
+    const role = useMemo(() => {
+        return localStorage.getItem("role"); // "USER" or "ADMIN"
     }, []);
 
     const parentButtonText = isLoggedIn ? "Parent Dashboard" : "Login";
@@ -33,27 +38,13 @@ export default function Navbar() {
 
             {/* CENTER: Main Nav Links */}
             <div className="navbar-center">
-                <Link to="/" className="nav-link">
-                    Home
-                </Link>
-                <Link to="/about" className="nav-link">
-                    About
-                </Link>
-                <Link to="/races" className="nav-link">
-                    Races
-                </Link>
-                <Link to="/results" className="nav-link">
-                    Results
-                </Link>
-                <Link to="/gallery" className="nav-link">
-                    Gallery
-                </Link>
-                <Link to="/sponsors" className="nav-link">
-                    Sponsors
-                </Link>
-                <Link to="/contact" className="nav-link">
-                    Contact
-                </Link>
+                <Link to="/" className="nav-link">Home</Link>
+                <Link to="/about" className="nav-link">About</Link>
+                <Link to="/races" className="nav-link">Races</Link>
+                <Link to="/results" className="nav-link">Results</Link>
+                <Link to="/gallery" className="nav-link">Gallery</Link>
+                <Link to="/sponsors" className="nav-link">Sponsors</Link>
+                <Link to="/contact" className="nav-link">Contact</Link>
             </div>
 
             {/* RIGHT: Auth Buttons */}
@@ -63,10 +54,12 @@ export default function Navbar() {
                     {parentButtonText}
                 </Link>
 
-                {/* Admin stays */}
-                <Link to="/admin" className="nav-button">
-                    Admin
-                </Link>
+                {/* ✅ Admin button ONLY shows for admins */}
+                {isLoggedIn && role === "ADMIN" && (
+                    <Link to="/admin" className="nav-button">
+                        Admin Dashboard
+                    </Link>
+                )}
             </div>
         </nav>
     );

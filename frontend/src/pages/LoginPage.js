@@ -1,3 +1,4 @@
+// frontend/src/pages/LoginPage.js
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
@@ -6,15 +7,17 @@ import "../styles/LoginPage.css";
 function LoginPage() {
     const navigate = useNavigate();
 
+    // ✅ If already logged in, route based on role
     useEffect(() => {
         const token = localStorage.getItem("token");
         const role = (localStorage.getItem("role") || "USER").toUpperCase();
+
         if (token) {
             navigate(role === "ADMIN" ? "/admin" : "/dashboard");
         }
     }, [navigate]);
 
-    // 🔔 Show a one-time notice if we were redirected due to 401
+    // 🔔 Show a one-time notice if redirected due to 401
     const [notice, setNotice] = useState("");
     useEffect(() => {
         const msg = sessionStorage.getItem("authMessage");
@@ -29,7 +32,7 @@ function LoginPage() {
     const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+        setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
     const handleSubmit = async (e) => {
@@ -38,23 +41,36 @@ function LoginPage() {
         setLoading(true);
 
         try {
-            const response = await apiClient.post("/auth/login", form);
+            const response = await apiClient.post("/auth/login", {
+                email: form.email.trim(),
+                password: form.password,
+            });
 
-            const { token, firstName, role } = response.data; // ✅ role added
+            const token = response.data?.token;
+            const firstName = response.data?.firstName || "";
+            const role = (response.data?.role || "USER").toUpperCase(); // ✅ normalize
+
+            if (!token) {
+                setError("Login failed: missing token from server.");
+                setLoading(false);
+                return;
+            }
 
             localStorage.setItem("token", token);
-            localStorage.setItem("firstName", firstName || "");
-            localStorage.setItem("role", role || "USER");     // ✅ store role
+            localStorage.setItem("firstName", firstName);
+            localStorage.setItem("role", role);
 
-            // ✅ Optional: send admins straight to admin dashboard
-            if ((role || "").toUpperCase() === "ADMIN") {
-                navigate("/admin");
-            } else {
-                navigate("/dashboard");
-            }
+            navigate(role === "ADMIN" ? "/admin" : "/dashboard");
         } catch (err) {
             console.error(err);
-            setError("Invalid email or password");
+
+            // ✅ If backend sends a message, show it; otherwise generic
+            const msg =
+                err?.response?.data?.message ||
+                (typeof err?.response?.data === "string" ? err.response.data : null) ||
+                "Invalid email or password";
+
+            setError(msg);
         } finally {
             setLoading(false);
         }
@@ -89,7 +105,9 @@ function LoginPage() {
                         value={form.email}
                         onChange={handleChange}
                         required
+                        autoComplete="email"
                     />
+
                     <input
                         type="password"
                         name="password"
@@ -97,7 +115,9 @@ function LoginPage() {
                         value={form.password}
                         onChange={handleChange}
                         required
+                        autoComplete="current-password"
                     />
+
                     <button type="submit" disabled={loading}>
                         {loading ? "Logging in..." : "Login"}
                     </button>
