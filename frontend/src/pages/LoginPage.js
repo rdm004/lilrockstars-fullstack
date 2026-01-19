@@ -87,7 +87,7 @@ function LoginPage() {
         } catch (err) {
             console.error(err);
             // still show a generic message (prevents email enumeration)
-            setForgotMsg("If that email exists, we sent a password reset link.");
+            setForgotMsg("If that email exists, we sent a password reset link. Please check your inbox and your spam/junk folder.");
         } finally {
             setForgotLoading(false);
         }
