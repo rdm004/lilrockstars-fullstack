@@ -23,10 +23,10 @@ public class PasswordResetService {
     private final JavaMailSender mailSender;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${app.frontend.base-url}")
+    @Value("${app.frontend.url}")
     private String frontendBaseUrl;
 
-    @Value("${app.mail.from}")
+    @Value("${app.mail.from:no-reply@lilrockstarsracing.com}")
     private String mailFrom;
 
     @Value("${app.reset.expiry-minutes:30}")
