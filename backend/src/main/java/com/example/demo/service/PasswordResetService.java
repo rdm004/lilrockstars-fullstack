@@ -80,7 +80,14 @@ public class PasswordResetService {
                         "If you didn't request this, you can ignore this email."
         );
 
-        mailSender.send(msg);
+        try {
+            mailSender.send(msg);
+        } catch (Exception ex) {
+            // Don't crash the endpoint (prevents 500)
+            // Log it so Render logs show the real issue
+            System.err.println("Password reset email failed: " + ex.getMessage());
+            ex.printStackTrace();
+        }
     }
 
     public boolean resetPassword(String tokenRaw, String newPasswordRaw) {
