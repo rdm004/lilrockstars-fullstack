@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+// frontend/src/pages/LoginPage.js
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import "../styles/LoginPage.css";
@@ -6,14 +7,14 @@ import "../styles/LoginPage.css";
 function LoginPage() {
     const navigate = useNavigate();
 
-    // If already logged in, route based on role
+    // If already logged in, go to the correct dashboard
     useEffect(() => {
         const token = localStorage.getItem("token");
         const role = (localStorage.getItem("role") || "USER").toUpperCase();
         if (token) navigate(role === "ADMIN" ? "/admin" : "/dashboard");
     }, [navigate]);
 
-    // One-time notice if redirected due to auth
+    // one-time notice if redirected
     const [notice, setNotice] = useState("");
     useEffect(() => {
         const msg = sessionStorage.getItem("authMessage");
@@ -23,21 +24,18 @@ function LoginPage() {
         }
     }, []);
 
-    // Login form
     const [form, setForm] = useState({ email: "", password: "" });
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
-    // Forgot password UI
+    // Forgot password modal state
     const [showForgot, setShowForgot] = useState(false);
     const [forgotEmail, setForgotEmail] = useState("");
     const [forgotMsg, setForgotMsg] = useState("");
     const [forgotErr, setForgotErr] = useState("");
     const [forgotLoading, setForgotLoading] = useState(false);
 
-    const handleChange = (e) => {
-        setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
-    };
+    const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -45,11 +43,7 @@ function LoginPage() {
         setLoading(true);
 
         try {
-            const response = await apiClient.post("/auth/login", {
-                email: form.email,
-                password: form.password,
-            });
-
+            const response = await apiClient.post("/auth/login", form);
             const { token, firstName, role } = response.data;
 
             localStorage.setItem("token", token);
@@ -59,11 +53,8 @@ function LoginPage() {
             if ((role || "").toUpperCase() === "ADMIN") navigate("/admin");
             else navigate("/dashboard");
         } catch (err) {
-            const msg =
-                err?.response?.data?.message ||
-                err?.response?.data ||
-                "Invalid email or password";
-            setError(typeof msg === "string" ? msg : "Invalid email or password");
+            console.error(err);
+            setError(err?.response?.data?.message || "Invalid email or password");
         } finally {
             setLoading(false);
         }
@@ -78,30 +69,24 @@ function LoginPage() {
 
     const closeForgot = () => {
         setShowForgot(false);
-        setForgotEmail("");
         setForgotMsg("");
         setForgotErr("");
+        setForgotLoading(false);
     };
 
     const submitForgot = async (e) => {
         e.preventDefault();
         setForgotMsg("");
         setForgotErr("");
-
-        const email = (forgotEmail || "").trim();
-        if (!email) {
-            setForgotErr("Please enter your email.");
-            return;
-        }
-
         setForgotLoading(true);
+
         try {
-            // Your backend returns the same success message whether or not the email exists ✅
-            const res = await apiClient.post("/auth/forgot-password", { email });
-            const msg = res?.data?.message || "If that email exists, we sent a password reset link.";
-            setForgotMsg(msg);
+            // backend should always return the same message
+            const res = await apiClient.post("/auth/forgot-password", { email: forgotEmail });
+            setForgotMsg(res?.data?.message || "If that email exists, we sent a password reset link.");
         } catch (err) {
-            // Still show generic success to prevent email enumeration
+            console.error(err);
+            // still show a generic message (prevents email enumeration)
             setForgotMsg("If that email exists, we sent a password reset link.");
         } finally {
             setForgotLoading(false);
@@ -113,10 +98,6 @@ function LoginPage() {
             <div className="login-box">
                 <h1>Welcome Back!</h1>
                 <p>Log in to access your dashboard</p>
-
-                <div style={{ color: "red", fontWeight: 900, marginBottom: 10 }}>
-                    LOGIN PAGE UPDATED ✅
-                </div>
 
                 {notice && (
                     <div
@@ -152,7 +133,6 @@ function LoginPage() {
                         required
                         autoComplete="current-password"
                     />
-
                     <button type="submit" disabled={loading}>
                         {loading ? "Logging in..." : "Login"}
                     </button>
@@ -161,137 +141,114 @@ function LoginPage() {
                 {error && <p className="error-msg">{error}</p>}
 
                 {/* Forgot password link */}
-                <div style={{ marginTop: 10, textAlign: "center" }}>
+                <div style={{ marginTop: 12, textAlign: "center" }}>
                     <button
                         type="button"
                         onClick={openForgot}
                         style={{
                             background: "transparent",
                             border: "none",
-                            color: "#1e63ff",
-                            fontWeight: 700,
                             cursor: "pointer",
-                            padding: 0,
+                            color: "#1e63ff",
+                            fontWeight: 800,
+                            fontSize: "1.2rem",
                         }}
                     >
                         Forgot password?
                     </button>
                 </div>
 
-                <div className="register-redirect">
+                <div className="register-redirect" style={{ marginTop: 14 }}>
                     Don’t have an account? <Link to="/accountregister">Register here</Link>
                 </div>
+            </div>
 
-                {/* Simple modal */}
-                {showForgot && (
+            {/* Forgot Password Modal */}
+            {showForgot && (
+                <div
+                    onClick={closeForgot}
+                    style={{
+                        position: "fixed",
+                        inset: 0,
+                        background: "rgba(0,0,0,0.45)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 9999,
+                        padding: 16,
+                    }}
+                >
                     <div
-                        onClick={closeForgot}
+                        onClick={(e) => e.stopPropagation()}
                         style={{
-                            position: "fixed",
-                            inset: 0,
-                            background: "rgba(0,0,0,0.45)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            zIndex: 9999,
-                            padding: 16,
+                            width: "min(520px, 95vw)",
+                            background: "#fff",
+                            borderRadius: 12,
+                            padding: 18,
+                            boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
                         }}
                     >
-                        <div
-                            onClick={(e) => e.stopPropagation()}
-                            style={{
-                                width: "100%",
-                                maxWidth: 420,
-                                background: "#fff",
-                                borderRadius: 12,
-                                padding: 18,
-                                boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
-                                textAlign: "left",
-                            }}
-                        >
-                            <h3 style={{ marginTop: 0, marginBottom: 8 }}>Reset your password</h3>
-                            <p style={{ marginTop: 0, color: "#555" }}>
-                                Enter your email and we’ll send a reset link.
-                            </p>
+                        <h2 style={{ marginTop: 0 }}>Reset Password</h2>
+                        <p style={{ marginTop: 6, color: "#555" }}>
+                            Enter your email and we’ll send a reset link (if it exists in our system).
+                        </p>
 
-                            {forgotMsg && (
-                                <div
+                        <form onSubmit={submitForgot}>
+                            <input
+                                type="email"
+                                value={forgotEmail}
+                                onChange={(e) => setForgotEmail(e.target.value)}
+                                placeholder="Email"
+                                required
+                                style={{
+                                    width: "100%",
+                                    padding: "12px",
+                                    borderRadius: 8,
+                                    border: "1px solid #ddd",
+                                    marginTop: 8,
+                                    marginBottom: 10,
+                                }}
+                            />
+
+                            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                                <button
+                                    type="button"
+                                    onClick={closeForgot}
                                     style={{
-                                        background: "#e7f5ff",
-                                        border: "1px solid #b3e5ff",
-                                        color: "#034a6b",
-                                        padding: "10px",
+                                        padding: "10px 14px",
                                         borderRadius: 8,
-                                        marginBottom: 12,
+                                        border: "1px solid #bbb",
+                                        background: "#f3f3f3",
+                                        cursor: "pointer",
+                                        fontWeight: 700,
                                     }}
                                 >
-                                    {forgotMsg}
-                                </div>
-                            )}
+                                    Close
+                                </button>
 
-                            {forgotErr && (
-                                <div
+                                <button
+                                    type="submit"
+                                    disabled={forgotLoading}
                                     style={{
-                                        background: "#fdecea",
-                                        border: "1px solid #f5c6cb",
-                                        color: "#721c24",
-                                        padding: "10px",
+                                        padding: "10px 14px",
                                         borderRadius: 8,
-                                        marginBottom: 12,
+                                        border: "none",
+                                        background: "#f47c2a",
+                                        color: "white",
+                                        cursor: "pointer",
+                                        fontWeight: 800,
                                     }}
                                 >
-                                    {forgotErr}
-                                </div>
-                            )}
+                                    {forgotLoading ? "Sending..." : "Send Reset Link"}
+                                </button>
+                            </div>
+                        </form>
 
-                            <form onSubmit={submitForgot}>
-                                <input
-                                    type="email"
-                                    placeholder="Email"
-                                    value={forgotEmail}
-                                    onChange={(e) => setForgotEmail(e.target.value)}
-                                    required
-                                    autoComplete="email"
-                                    style={{ width: "100%", marginBottom: 10 }}
-                                />
-
-                                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-                                    <button
-                                        type="button"
-                                        onClick={closeForgot}
-                                        style={{
-                                            background: "#f3f3f3",
-                                            border: "1px solid #ddd",
-                                            padding: "10px 12px",
-                                            borderRadius: 8,
-                                            cursor: "pointer",
-                                            fontWeight: 700,
-                                        }}
-                                    >
-                                        Cancel
-                                    </button>
-
-                                    <button
-                                        type="submit"
-                                        disabled={forgotLoading}
-                                        style={{
-                                            background: "#f47c2a",
-                                            border: "none",
-                                            color: "#fff",
-                                            padding: "10px 12px",
-                                            borderRadius: 8,
-                                            cursor: "pointer",
-                                            fontWeight: 800,
-                                        }}
-                                    >
-                                        {forgotLoading ? "Sending..." : "Send reset link"}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                        {forgotErr && <p style={{ color: "#c00", marginTop: 10 }}>{forgotErr}</p>}
+                        {forgotMsg && <p style={{ color: "#1f7a1f", marginTop: 10 }}>{forgotMsg}</p>}
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }
