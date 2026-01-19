@@ -22,6 +22,7 @@ import Racers from "./pages/Racers";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import AccountRegister from "./pages/AccountRegister";
+import ResetPassword from "./pages/ResetPassword";
 
 // Parent dashboard
 import ParentDashboard from "./pages/ParentDashboard";
@@ -62,6 +63,7 @@ function AppContent() {
                 <Route path="/sponsors" element={<Sponsors />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
 
                 {/* ===== Protected parent route ===== */}
                 <Route
