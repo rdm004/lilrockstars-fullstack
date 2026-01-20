@@ -10,15 +10,20 @@ function ParentDashboard() {
     const [parent, setParent] = useState(null);
     const [racers, setRacers] = useState([]);
     const [races, setRaces] = useState([]);
+
     const [newRacer, setNewRacer] = useState({
         firstName: "",
         lastName: "",
+        nickname: "", // ✅ NEW
         age: "",
         carNumber: "",
     });
+
     const [editingRacer, setEditingRacer] = useState(null);
+
     const [statusMessage, setStatusMessage] = useState("");
     const [loading, setLoading] = useState(true);
+
     const [registrations, setRegistrations] = useState({});
     // key: `${racerId}|${raceId}` -> { id, racerId, raceId }
 
@@ -56,7 +61,6 @@ function ParentDashboard() {
                 const racersRes = await apiClient.get("/racers");
                 setRacers(racersRes.data || []);
 
-                // 3) Races
                 // 3) Races (only ones that require registration)
                 const racesRes = await apiClient.get("/races");
 
@@ -66,11 +70,13 @@ function ParentDashboard() {
                     date: race.raceDate,
                     location: race.location,
                     description: race.description,
-                    requiresRegistration: race.requiresRegistration ?? true, // ✅ NEW
+                    requiresRegistration: race.requiresRegistration ?? true,
                 }));
 
-// ✅ Option A: remove info-only events from parent dashboard
-                const registrationOnlyRaces = mappedRaces.filter((r) => r.requiresRegistration === true);
+                // ✅ Option A: remove info-only events from parent dashboard
+                const registrationOnlyRaces = mappedRaces.filter(
+                    (r) => r.requiresRegistration === true
+                );
 
                 setRaces(registrationOnlyRaces);
 
@@ -101,7 +107,7 @@ function ParentDashboard() {
             }
         };
 
-        loadDashboard();
+        void loadDashboard();
     }, [navigate]);
 
     // ✅ UX: Next upcoming race card
@@ -139,6 +145,7 @@ function ParentDashboard() {
     const handleLogout = () => {
         localStorage.removeItem("token");
         localStorage.removeItem("firstName");
+        localStorage.removeItem("role");
         navigate("/login");
     };
 
@@ -146,28 +153,55 @@ function ParentDashboard() {
     const handleAddRacer = (e) => {
         e.preventDefault();
 
+        const payload = {
+            firstName: (newRacer.firstName || "").trim(),
+            lastName: (newRacer.lastName || "").trim(),
+            nickname: (newRacer.nickname || "").trim(), // ✅ NEW
+            age: Number(newRacer.age),
+            carNumber: (newRacer.carNumber || "").trim(),
+        };
+
         apiClient
-            .post("/racers", newRacer)
+            .post("/racers", payload)
             .then((res) => {
                 setRacers([...racers, res.data]);
-                setNewRacer({ firstName: "", lastName: "", age: "", carNumber: "" });
+                setNewRacer({ firstName: "", lastName: "", nickname: "", age: "", carNumber: "" });
                 setStatusMessage("✅ Racer added successfully!");
                 setTimeout(() => setStatusMessage(""), 2500);
             })
             .catch((err) => {
                 console.error("Error adding racer:", err);
-                setStatusMessage("❌ Error adding racer.");
-                setTimeout(() => setStatusMessage(""), 2500);
+                const msg =
+                    err?.response?.data?.message ||
+                    err?.response?.data ||
+                    "❌ Error adding racer.";
+                setStatusMessage(typeof msg === "string" ? msg : "❌ Error adding racer.");
+                setTimeout(() => setStatusMessage(""), 3500);
             });
     };
 
     const startEdit = (racer) => {
-        setEditingRacer(racer);
+        // Ensure the edit state includes nickname so the input is controlled
+        setEditingRacer({
+            ...racer,
+            nickname: racer?.nickname || "",
+        });
     };
 
     const handleSaveEdit = () => {
+        if (!editingRacer?.id) return;
+
+        const payload = {
+            ...editingRacer,
+            firstName: (editingRacer.firstName || "").trim(),
+            lastName: (editingRacer.lastName || "").trim(),
+            nickname: (editingRacer.nickname || "").trim(), // ✅ NEW
+            age: Number(editingRacer.age),
+            carNumber: (editingRacer.carNumber || "").trim(),
+        };
+
         apiClient
-            .put(`/racers/${editingRacer.id}`, editingRacer)
+            .put(`/racers/${editingRacer.id}`, payload)
             .then((res) => {
                 const updated = racers.map((r) => (r.id === res.data.id ? res.data : r));
                 setRacers(updated);
@@ -177,8 +211,12 @@ function ParentDashboard() {
             })
             .catch((err) => {
                 console.error("Error saving racer:", err);
-                setStatusMessage("❌ Error updating racer.");
-                setTimeout(() => setStatusMessage(""), 2000);
+                const msg =
+                    err?.response?.data?.message ||
+                    err?.response?.data ||
+                    "❌ Error updating racer.";
+                setStatusMessage(typeof msg === "string" ? msg : "❌ Error updating racer.");
+                setTimeout(() => setStatusMessage(""), 3500);
             });
     };
 
@@ -314,7 +352,7 @@ function ParentDashboard() {
                                 {inviteLoading ? "Sending..." : "Send Invite"}
                             </button>
                         </form>
-                        <p> Co-parent must be registered to receive invite.</p>
+                        <p>Co-parent must be registered to receive invite.</p>
                         {inviteStatus && <p className="coparent-status">{inviteStatus}</p>}
                     </div>
 
@@ -324,7 +362,7 @@ function ParentDashboard() {
                 </div>
             </div>
 
-            {/* ✅ NEW: Next Race + Summary */}
+            {/* ✅ Next Race + Summary */}
             <div className="dashboard-top-row">
                 <div className="next-race-card">
                     <h2 className="next-race-title">🏁 Next Upcoming Race</h2>
@@ -355,6 +393,7 @@ function ParentDashboard() {
             {/* === Racer Section === */}
             <section className="racer-section">
                 <h2>Your Racers</h2>
+
                 <ul className="racer-list">
                     {racers.map((racer) => (
                         <li key={racer.id} className="racer-item">
@@ -362,24 +401,40 @@ function ParentDashboard() {
                                 <div className="edit-form">
                                     <input
                                         type="text"
-                                        value={editingRacer.firstName}
+                                        value={editingRacer.firstName || ""}
                                         onChange={(e) => setEditingRacer({ ...editingRacer, firstName: e.target.value })}
+                                        placeholder="First Name"
                                     />
+
                                     <input
                                         type="text"
-                                        value={editingRacer.lastName}
+                                        value={editingRacer.lastName || ""}
                                         onChange={(e) => setEditingRacer({ ...editingRacer, lastName: e.target.value })}
+                                        placeholder="Last Name"
                                     />
+
+                                    {/* ✅ NEW nickname field */}
+                                    <input
+                                        type="text"
+                                        value={editingRacer.nickname || ""}
+                                        onChange={(e) => setEditingRacer({ ...editingRacer, nickname: e.target.value })}
+                                        placeholder="Nickname (optional)"
+                                    />
+
                                     <input
                                         type="number"
-                                        value={editingRacer.age}
+                                        value={editingRacer.age || ""}
                                         onChange={(e) => setEditingRacer({ ...editingRacer, age: e.target.value })}
+                                        placeholder="Age"
                                     />
+
                                     <input
                                         type="text"
-                                        value={editingRacer.carNumber}
+                                        value={editingRacer.carNumber || ""}
                                         onChange={(e) => setEditingRacer({ ...editingRacer, carNumber: e.target.value })}
+                                        placeholder="Car Number"
                                     />
+
                                     <div className="edit-buttons">
                                         <button className="save-btn" onClick={handleSaveEdit}>
                                             Save
@@ -394,6 +449,7 @@ function ParentDashboard() {
                                     <div className="racer-info">
                                         <strong>
                                             {racer.firstName} {racer.lastName}
+                                            {racer.nickname ? ` (${racer.nickname})` : ""}
                                         </strong>{" "}
                                         — #{racer.carNumber} ({racer.age} yrs)
                                     </div>
@@ -423,6 +479,7 @@ function ParentDashboard() {
                         onChange={(e) => setNewRacer({ ...newRacer, firstName: e.target.value })}
                         required
                     />
+
                     <input
                         type="text"
                         placeholder="Last Name"
@@ -430,6 +487,15 @@ function ParentDashboard() {
                         onChange={(e) => setNewRacer({ ...newRacer, lastName: e.target.value })}
                         required
                     />
+
+                    {/* ✅ NEW nickname field */}
+                    <input
+                        type="text"
+                        placeholder="Nickname (optional)"
+                        value={newRacer.nickname}
+                        onChange={(e) => setNewRacer({ ...newRacer, nickname: e.target.value })}
+                    />
+
                     <input
                         type="number"
                         placeholder="Age"
@@ -437,6 +503,7 @@ function ParentDashboard() {
                         onChange={(e) => setNewRacer({ ...newRacer, age: e.target.value })}
                         required
                     />
+
                     <input
                         type="text"
                         placeholder="Car Number"
@@ -444,6 +511,7 @@ function ParentDashboard() {
                         onChange={(e) => setNewRacer({ ...newRacer, carNumber: e.target.value })}
                         required
                     />
+
                     <button type="submit">Add Racer</button>
                 </form>
             </section>
@@ -459,7 +527,8 @@ function ParentDashboard() {
                     racers.map((racer) => (
                         <div key={racer.id} className="racer-card">
                             <h3>
-                                {racer.firstName} {racer.lastName} — #{racer.carNumber}
+                                {racer.firstName} {racer.lastName}
+                                {racer.nickname ? ` (${racer.nickname})` : ""} — #{racer.carNumber}
                             </h3>
 
                             <div className="race-list">
@@ -473,7 +542,9 @@ function ParentDashboard() {
                                                 <input
                                                     type="checkbox"
                                                     checked={isRegistered}
-                                                    onChange={(e) => handleRaceRegistration(racer.id, race.id, e.target.checked)}
+                                                    onChange={(e) =>
+                                                        handleRaceRegistration(racer.id, race.id, e.target.checked)
+                                                    }
                                                 />
                                                 {`${race.name} — ${formatRaceDate(race.date)}`}
                                             </label>

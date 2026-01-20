@@ -12,8 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/racers")
@@ -42,19 +41,18 @@ public class RacerController {
         this.jwtUtil = jwtUtil;
     }
 
+    private String normalize(String s) {
+        return s == null ? "" : s.trim();
+    }
+
     private Parent getCurrentParent(String authHeader) {
         String token = authHeader.substring(7); // drop "Bearer "
         String email = jwtUtil.extractUsername(token);
 
-        return parentRepository.findByEmail(email)
+        return parentRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new RuntimeException("Parent not found for email " + email));
     }
 
-    /**
-     * A parent can manage a racer if:
-     *  - they are the primary parent on the Racer entity, OR
-     *  - there is a ParentRacerLink tying them to that racer.
-     */
     private boolean canManageRacer(Parent parent, Racer racer) {
         if (racer.getParent() != null && racer.getParent().getId().equals(parent.getId())) {
             return true;
@@ -67,37 +65,78 @@ public class RacerController {
     public ResponseEntity<?> getAllRacers(@RequestHeader("Authorization") String authHeader) {
         try {
             Parent parent = getCurrentParent(authHeader);
-            List<Racer> racers = racerRepository.findAllVisibleToParent(parent);
+            List<Racer> racers = racerRepository.findAllVisibleToParent(parent.getId());
             return ResponseEntity.ok(racers);
         } catch (Exception e) {
-            return ResponseEntity.status(401).body("Parent not found");
+            return ResponseEntity.status(401).body(Map.of("message", "Parent not found"));
         }
     }
 
-    // ➕ Add new racer (primary parent owns it)
+    // ➕ Add new racer (primary parent owns it) + ✅ Prevent duplicates
     @PostMapping
-    public ResponseEntity<?> addRacer(@RequestHeader("Authorization") String authHeader,
-                                      @RequestBody Racer racer) {
+    public ResponseEntity<?> addRacer(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody Racer racer
+    ) {
         try {
             Parent parent = getCurrentParent(authHeader);
-            racer.setParent(parent); // ✅ critical
+
+            String firstName = normalize(racer.getFirstName());
+            String lastName = normalize(racer.getLastName());
+            String nickname = normalize(racer.getNickname()); // optional
+            int age = racer.getAge();
+
+            if (firstName.isBlank() || lastName.isBlank() || age <= 0) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "message", "First name, last name, and age are required."
+                ));
+            }
+
+            // ✅ If nickname isn't provided, treat it as ""
+            if (nickname.isBlank()) nickname = "";
+
+            boolean dup = racerRepository.existsByParentIdAndFirstNameIgnoreCaseAndLastNameIgnoreCaseAndAgeAndNicknameIgnoreCase(
+                    parent.getId(),
+                    firstName,
+                    lastName,
+                    age,
+                    nickname
+            );
+
+            if (dup) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "message",
+                        "This racer already exists (same first name, last name, age, and nickname). " +
+                                "If this is a different child with the same name/age, add a nickname to distinguish them (e.g., Jr, II, Big, Little)."
+                ));
+            }
+
+            racer.setFirstName(firstName);
+            racer.setLastName(lastName);
+            racer.setNickname(nickname); // always "" or a trimmed value
+            racer.setParent(parent);
+
             Racer saved = racerRepository.save(racer);
             return ResponseEntity.ok(saved);
+
         } catch (Exception e) {
-            return ResponseEntity.status(401).body("Parent not found");
+            return ResponseEntity.status(401).body(Map.of("message", "Parent not found"));
         }
     }
 
-    // ✏️ Update racer (must be manageable by parent)
+    // ✏️ Update racer + ✅ Prevent duplicates
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateRacer(@PathVariable Long id,
-                                         @RequestHeader("Authorization") String authHeader,
-                                         @RequestBody Racer updatedRacer) {
+    public ResponseEntity<?> updateRacer(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody Racer updatedRacer
+    ) {
+
         Parent parent;
         try {
             parent = getCurrentParent(authHeader);
         } catch (Exception e) {
-            return ResponseEntity.status(401).body("Parent not found");
+            return ResponseEntity.status(401).body(Map.of("message", "Parent not found"));
         }
 
         Optional<Racer> existingOpt = racerRepository.findById(id);
@@ -106,13 +145,47 @@ public class RacerController {
         Racer existing = existingOpt.get();
 
         if (!canManageRacer(parent, existing)) {
-            return ResponseEntity.status(403).body("Unauthorized to edit this racer.");
+            return ResponseEntity.status(403).body(Map.of("message", "Unauthorized to edit this racer."));
         }
 
-        existing.setFirstName(updatedRacer.getFirstName());
-        existing.setLastName(updatedRacer.getLastName());
-        existing.setAge(updatedRacer.getAge());
+        String firstName = normalize(updatedRacer.getFirstName());
+        String lastName = normalize(updatedRacer.getLastName());
+        String nickname = normalize(updatedRacer.getNickname()); // optional
+        int age = updatedRacer.getAge();
+
+        if (firstName.isBlank() || lastName.isBlank() || age <= 0) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "message", "First name, last name, and age are required."
+            ));
+        }
+
+        if (nickname.isBlank()) nickname = "";
+
+        Long parentIdForCheck = (existing.getParent() != null ? existing.getParent().getId() : parent.getId());
+
+        boolean dup = racerRepository.existsByParentIdAndFirstNameIgnoreCaseAndLastNameIgnoreCaseAndAgeAndNicknameIgnoreCaseAndIdNot(
+                parentIdForCheck,
+                firstName,
+                lastName,
+                age,
+                nickname,
+                existing.getId()
+        );
+
+        if (dup) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "message",
+                    "Another racer already exists with the same first name, last name, age, and nickname. " +
+                            "Use a different nickname to distinguish them."
+            ));
+        }
+
+        existing.setFirstName(firstName);
+        existing.setLastName(lastName);
+        existing.setNickname(nickname);
+        existing.setAge(age);
         existing.setCarNumber(updatedRacer.getCarNumber());
+        existing.setDivision(updatedRacer.getDivision());
 
         Racer saved = racerRepository.save(existing);
         return ResponseEntity.ok(saved);
@@ -121,13 +194,16 @@ public class RacerController {
     // 🗑️ Delete racer (must delete dependent rows first)
     @DeleteMapping("/{id}")
     @Transactional
-    public ResponseEntity<?> deleteRacer(@PathVariable Long id,
-                                         @RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<?> deleteRacer(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String authHeader
+    ) {
+
         Parent parent;
         try {
             parent = getCurrentParent(authHeader);
         } catch (Exception e) {
-            return ResponseEntity.status(401).body("Parent not found");
+            return ResponseEntity.status(401).body(Map.of("message", "Parent not found"));
         }
 
         Optional<Racer> racerOpt = racerRepository.findById(id);
@@ -136,23 +212,20 @@ public class RacerController {
         Racer racer = racerOpt.get();
 
         if (!canManageRacer(parent, racer)) {
-            return ResponseEntity.status(403).body("Unauthorized to delete this racer.");
+            return ResponseEntity.status(403).body(Map.of("message", "Unauthorized to delete this racer."));
         }
 
-        // ✅ Delete dependents first (prevents FK constraint failures)
         try {
-            // Remove registrations, results, and co-parent links for this racer
             registrationRepository.deleteByRacerId(id);
             raceResultRepository.deleteByRacerId(id);
             parentRacerLinkRepository.deleteByRacerId(id);
 
-            // Now delete the racer
             racerRepository.deleteById(id);
 
-            return ResponseEntity.ok("Racer deleted successfully.");
+            return ResponseEntity.ok(Map.of("message", "Racer deleted successfully."));
         } catch (Exception ex) {
             ex.printStackTrace();
-            return ResponseEntity.status(500).body("Failed to delete racer.");
+            return ResponseEntity.status(500).body(Map.of("message", "Failed to delete racer."));
         }
     }
 }
