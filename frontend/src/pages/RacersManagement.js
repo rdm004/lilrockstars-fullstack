@@ -1,9 +1,10 @@
+// frontend/src/pages/RacersManagement.js
 import React, { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import Modal from "../components/Modal";
 import apiClient from "../utils/apiClient";
 import "../styles/RacersManagement.css";
-import DeleteRacerConfirmModal from "../components/DeleteRacerConfirmModal"; // ✅ NEW
+import DeleteRacerConfirmModal from "../components/DeleteRacerConfirmModal";
 
 const getDivisionFromAge = (ageRaw) => {
     const age = Number(ageRaw);
@@ -23,7 +24,7 @@ const RacersManagement = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editMode, setEditMode] = useState(false);
 
-    // ✅ Delete modal state
+    // Delete modal state
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [racerToDelete, setRacerToDelete] = useState(null);
 
@@ -31,6 +32,7 @@ const RacersManagement = () => {
         id: null,
         firstName: "",
         lastName: "",
+        nickname: "", // ✅ NEW
         age: "",
         carNumber: "",
     };
@@ -41,7 +43,7 @@ const RacersManagement = () => {
         try {
             setLoading(true);
             setError("");
-            const res = await apiClient.get("/racers"); // GET /api/racers
+            const res = await apiClient.get("/racers"); // GET /api/racers (admin role required via /api/admin/**? depending on your backend)
             setRacers(res.data || []);
         } catch (err) {
             console.error("Error loading racers:", err);
@@ -55,17 +57,16 @@ const RacersManagement = () => {
         void fetchRacers();
     }, []);
 
-    // ✅ NEW: open delete modal (no window.confirm)
+    // Open delete modal
     const openDeleteRacer = (racer) => {
         setRacerToDelete(racer);
         setDeleteModalOpen(true);
     };
 
-    // ✅ NEW: confirmed delete (checkbox checked)
+    // Confirmed delete
     const confirmDeleteRacer = async (racerId) => {
         try {
             await apiClient.delete(`/racers/${racerId}`);
-            // refresh list
             void fetchRacers();
         } catch (err) {
             console.error("Error deleting racer:", err);
@@ -88,6 +89,7 @@ const RacersManagement = () => {
             id: racer.id,
             firstName: racer.firstName || "",
             lastName: racer.lastName || "",
+            nickname: racer.nickname || "", // ✅ NEW
             age: racer.age ?? "",
             carNumber: racer.carNumber || "",
         });
@@ -96,10 +98,12 @@ const RacersManagement = () => {
 
     const handleSave = async () => {
         const payload = {
-            firstName: formData.firstName?.trim(),
-            lastName: formData.lastName?.trim(),
+            firstName: (formData.firstName || "").trim(),
+            lastName: (formData.lastName || "").trim(),
+            nickname: (formData.nickname || "").trim() || null, // ✅ NEW (null if blank)
             age: Number(formData.age),
-            carNumber: String(formData.carNumber).trim(),
+            carNumber: String(formData.carNumber || "").trim(),
+            // division is calculated on UI; backend can store or compute if you want
         };
 
         if (!payload.firstName || !payload.lastName || !payload.carNumber || !payload.age) {
@@ -119,7 +123,14 @@ const RacersManagement = () => {
             void fetchRacers();
         } catch (err) {
             console.error("Error saving racer:", err);
-            alert("❌ Failed to save racer.");
+
+            // If your backend sends { message: "..." }, show it
+            const msg =
+                err?.response?.data?.message ||
+                err?.response?.data ||
+                "❌ Failed to save racer.";
+
+            alert(msg);
         }
     };
 
@@ -129,7 +140,7 @@ const RacersManagement = () => {
 
     return (
         <Layout title="Racers Management">
-            {/* ✅ Delete confirmation modal */}
+            {/* Delete confirmation modal */}
             <DeleteRacerConfirmModal
                 isOpen={deleteModalOpen}
                 onClose={() => setDeleteModalOpen(false)}
@@ -158,6 +169,7 @@ const RacersManagement = () => {
                         <tr>
                             <th>#</th>
                             <th>Name</th>
+                            <th>Nickname</th> {/* ✅ NEW */}
                             <th>Age</th>
                             <th>Division</th>
                             <th>Car #</th>
@@ -171,20 +183,15 @@ const RacersManagement = () => {
                                 <td>
                                     {racer.firstName} {racer.lastName}
                                 </td>
+                                <td>{racer.nickname ? racer.nickname : "-"}</td> {/* ✅ NEW */}
                                 <td>{racer.age}</td>
                                 <td>{getDivisionFromAge(racer.age)}</td>
                                 <td>{racer.carNumber}</td>
                                 <td>
-                                    <button
-                                        className="edit-btn"
-                                        onClick={() => handleOpenEdit(racer)}
-                                    >
+                                    <button className="edit-btn" onClick={() => handleOpenEdit(racer)}>
                                         Edit
                                     </button>
-                                    <button
-                                        className="delete-btn"
-                                        onClick={() => openDeleteRacer(racer)} // ✅ UPDATED
-                                    >
+                                    <button className="delete-btn" onClick={() => openDeleteRacer(racer)}>
                                         Delete
                                     </button>
                                 </td>
@@ -207,9 +214,7 @@ const RacersManagement = () => {
                 <input
                     type="text"
                     value={formData.firstName}
-                    onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, firstName: e.target.value }))
-                    }
+                    onChange={(e) => setFormData((prev) => ({ ...prev, firstName: e.target.value }))}
                     required
                 />
 
@@ -217,10 +222,17 @@ const RacersManagement = () => {
                 <input
                     type="text"
                     value={formData.lastName}
-                    onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, lastName: e.target.value }))
-                    }
+                    onChange={(e) => setFormData((prev) => ({ ...prev, lastName: e.target.value }))}
                     required
+                />
+
+                {/* ✅ NEW */}
+                <label>Nickname (optional)</label>
+                <input
+                    type="text"
+                    value={formData.nickname}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, nickname: e.target.value }))}
+                    placeholder="Jr, II, Big Jay, etc."
                 />
 
                 <label>Age</label>
@@ -229,9 +241,7 @@ const RacersManagement = () => {
                     min="2"
                     max="7"
                     value={formData.age}
-                    onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, age: e.target.value }))
-                    }
+                    onChange={(e) => setFormData((prev) => ({ ...prev, age: e.target.value }))}
                     required
                 />
 
@@ -239,9 +249,7 @@ const RacersManagement = () => {
                 <input
                     type="text"
                     value={formData.carNumber}
-                    onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, carNumber: e.target.value }))
-                    }
+                    onChange={(e) => setFormData((prev) => ({ ...prev, carNumber: e.target.value }))}
                     required
                 />
 
