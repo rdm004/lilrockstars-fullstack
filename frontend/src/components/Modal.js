@@ -1,14 +1,6 @@
+// src/components/Modal.js
 import React, { useEffect, useMemo, useRef } from "react";
 import "../styles/Modal.css";
-
-const FOCUSABLE_SELECTOR = [
-    'a[href]',
-    'button:not([disabled])',
-    'textarea:not([disabled])',
-    'input:not([disabled])',
-    'select:not([disabled])',
-    '[tabindex]:not([tabindex="-1"])',
-].join(",");
 
 const Modal = ({
                    title,
@@ -20,126 +12,111 @@ const Modal = ({
                    submitDisabled = false, // preferred
                    disableSubmit = false,  // backwards-compatible
                }) => {
-    if (!isOpen) return null;
+    // ✅ Hooks must be called unconditionally (always at top-level)
+    const modalRef = useRef(null);
+    const closeBtnRef = useRef(null);
+    const lastActiveElementRef = useRef(null);
 
-    const isDisabled = submitDisabled || disableSubmit;
+    const isDisabled = useMemo(() => {
+        return Boolean(submitDisabled || disableSubmit);
+    }, [submitDisabled, disableSubmit]);
 
-    const overlayRef = useRef(null);
-    const contentRef = useRef(null);
-    const previouslyFocusedElRef = useRef(null);
-
-    const titleId = useMemo(() => {
-        const safe = String(title || "modal")
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/(^-|-$)/g, "");
-        return `modal-title-${safe}-${Math.random().toString(16).slice(2)}`;
-    }, [title]);
-
-    // Open: store previous focus, move focus into modal, prevent background scroll
+    // ✅ Manage focus when modal opens/closes
     useEffect(() => {
-        previouslyFocusedElRef.current = document.activeElement;
+        if (!isOpen) return;
 
-        // prevent background scroll
-        const prevOverflow = document.body.style.overflow;
+        // Store the element that was focused before opening
+        lastActiveElementRef.current = document.activeElement;
+
+        // Focus the close button first (or modal container)
+        const focusTarget = closeBtnRef.current || modalRef.current;
+        if (focusTarget) focusTarget.focus();
+
+        // Prevent background scroll
+        const originalOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
 
-        // focus first focusable element, else focus content container
-        const focusTimer = window.setTimeout(() => {
-            const root = contentRef.current;
-            if (!root) return;
-
-            const focusables = root.querySelectorAll(FOCUSABLE_SELECTOR);
-            if (focusables.length > 0) {
-                focusables[0].focus();
-            } else {
-                root.focus();
-            }
-        }, 0);
-
         return () => {
-            window.clearTimeout(focusTimer);
-            document.body.style.overflow = prevOverflow;
+            document.body.style.overflow = originalOverflow;
 
-            // restore focus
-            const prev = previouslyFocusedElRef.current;
+            // Restore focus to the element that opened the modal
+            const prev = lastActiveElementRef.current;
             if (prev && typeof prev.focus === "function") {
                 prev.focus();
             }
         };
     }, [isOpen]);
 
-    // ESC closes + focus trap
+    // ✅ ESC closes modal
     useEffect(() => {
+        if (!isOpen) return;
+
         const onKeyDown = (e) => {
             if (e.key === "Escape") {
-                e.stopPropagation();
-                onClose?.();
-                return;
-            }
-
-            if (e.key !== "Tab") return;
-
-            const root = contentRef.current;
-            if (!root) return;
-
-            const focusables = Array.from(root.querySelectorAll(FOCUSABLE_SELECTOR))
-                .filter((el) => !el.hasAttribute("disabled"));
-
-            if (focusables.length === 0) {
                 e.preventDefault();
-                root.focus();
-                return;
+                onClose?.();
             }
 
-            const first = focusables[0];
-            const last = focusables[focusables.length - 1];
-            const active = document.activeElement;
+            // Basic focus trap with Tab / Shift+Tab
+            if (e.key === "Tab" && modalRef.current) {
+                const focusable = modalRef.current.querySelectorAll(
+                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                );
 
-            if (e.shiftKey) {
-                // Shift+Tab
-                if (active === first || !root.contains(active)) {
-                    e.preventDefault();
-                    last.focus();
-                }
-            } else {
-                // Tab
-                if (active === last) {
-                    e.preventDefault();
-                    first.focus();
+                if (!focusable.length) return;
+
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+
+                if (e.shiftKey) {
+                    // Shift + Tab
+                    if (document.activeElement === first) {
+                        e.preventDefault();
+                        last.focus();
+                    }
+                } else {
+                    // Tab
+                    if (document.activeElement === last) {
+                        e.preventDefault();
+                        first.focus();
+                    }
                 }
             }
         };
 
-        document.addEventListener("keydown", onKeyDown, true);
-        return () => document.removeEventListener("keydown", onKeyDown, true);
-    }, [onClose]);
+        document.addEventListener("keydown", onKeyDown);
+        return () => document.removeEventListener("keydown", onKeyDown);
+    }, [isOpen, onClose]);
 
-    // Close when clicking overlay (but not when clicking inside content)
-    const handleOverlayMouseDown = (e) => {
-        if (e.target === overlayRef.current) {
-            onClose?.();
-        }
-    };
+    // ✅ If closed, render nothing (safe because hooks already ran above)
+    if (!isOpen) return null;
 
     return (
         <div
             className="modal-overlay"
-            ref={overlayRef}
-            onMouseDown={handleOverlayMouseDown}
-            aria-hidden="false"
+            role="presentation"
+            onMouseDown={(e) => {
+                // click outside closes
+                if (e.target === e.currentTarget) onClose?.();
+            }}
         >
             <div
                 className="modal-content"
-                ref={contentRef}
+                ref={modalRef}
                 role="dialog"
                 aria-modal="true"
-                aria-labelledby={titleId}
+                aria-label={title || "Dialog"}
                 tabIndex={-1}
             >
                 <div className="modal-header">
-                    <h2 id={titleId}>{title}</h2>
-                    <button className="close-btn" onClick={onClose} type="button" aria-label="Close dialog">
+                    <h2>{title}</h2>
+                    <button
+                        className="close-btn"
+                        onClick={onClose}
+                        type="button"
+                        ref={closeBtnRef}
+                        aria-label="Close dialog"
+                    >
                         ✖
                     </button>
                 </div>
@@ -161,6 +138,7 @@ const Modal = ({
                             type="submit"
                             className="save-btn"
                             disabled={isDisabled}
+                            aria-disabled={isDisabled}
                             style={isDisabled ? { opacity: 0.6, cursor: "not-allowed" } : undefined}
                         >
                             {submitLabel || "Save"}
