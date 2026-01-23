@@ -23,6 +23,11 @@ import Contact from "./pages/Contact";
 import AccountRegister from "./pages/AccountRegister";
 import ResetPassword from "./pages/ResetPassword";
 
+//ADA
+import Accessibility from "./pages/Accessibility";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+
 // Parent dashboard
 import ParentDashboard from "./pages/ParentDashboard";
 
@@ -73,6 +78,11 @@ function AppContent() {
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
+
+                    {/* ===== ADA ===== */}
+                    <Route path="/accessibility" element={<Accessibility />} />
+                    <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/terms" element={<Terms />} />
 
                     {/* ===== Protected parent route ===== */}
                     <Route
