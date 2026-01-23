@@ -46,7 +46,7 @@ export default function Privacy() {
                 </p>
 
                 <p>
-                    <strong>Email:</strong> support@lilrockstarsracing.com
+                    <strong>Email:</strong> webmaster@lilrockstarsracing.com
                 </p>
             </section>
         </Layout>
