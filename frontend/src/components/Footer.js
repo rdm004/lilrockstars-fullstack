@@ -1,57 +1,45 @@
 // frontend/src/components/Footer.js
 import React from "react";
 import { Link } from "react-router-dom";
+import "../styles/Footer.css";
 
 export default function Footer() {
     const year = new Date().getFullYear();
 
     return (
-        <footer
-            role="contentinfo"
-            style={{
-                background: "#333",
-                color: "white",
-                padding: "1rem",
-                textAlign: "center",
-            }}
-        >
-            <p style={{ margin: 0 }}>
-                © {year} Lil Rockstars Racing. Building Champions One Lap at a Time.
-            </p>
+        <footer className="site-footer" role="contentinfo">
+            <div className="footer-inner">
+                <p className="footer-copy">
+                    © {year} Lil Rockstars Racing. Building Champions One Lap at a Time.
+                </p>
 
-            {/* Recommended footer links for accessibility + trust */}
-            <nav
-                aria-label="Footer"
-                style={{
-                    marginTop: "0.6rem",
-                    display: "flex",
-                    gap: "14px",
-                    justifyContent: "center",
-                    flexWrap: "wrap",
-                    fontSize: "0.95rem",
-                }}
-            >
-                {/* If you don't have these pages yet, you can keep placeholders or remove until ready */}
-                <Link to="/contact" style={{ color: "white", textDecoration: "underline" }}>
-                    Contact
-                </Link>
+                <nav className="footer-nav" aria-label="Footer">
+                    <Link className="footer-link" to="/accessibility">
+                        Accessibility
+                    </Link>
 
-                {/* Strongly recommended to add an accessibility statement page later */}
-                <a
-                    href="/accessibility"
-                    style={{ color: "white", textDecoration: "underline" }}
-                >
-                    Accessibility
-                </a>
+                    <span className="footer-sep" aria-hidden="true">
+                        |
+                    </span>
 
-                {/* Optional, but common for public sites */}
-                <a href="/privacy" style={{ color: "white", textDecoration: "underline" }}>
-                    Privacy
-                </a>
-                <a href="/terms" style={{ color: "white", textDecoration: "underline" }}>
-                    Terms
-                </a>
-            </nav>
+                    <Link className="footer-link" to="/privacy">
+                        Privacy
+                    </Link>
+
+                    <span className="footer-sep" aria-hidden="true">
+                        |
+                    </span>
+
+                    <Link className="footer-link" to="/terms">
+                        Terms
+                    </Link>
+
+                    {/*
+                    <span className="footer-sep" aria-hidden="true">|</span>
+                    <Link className="footer-link" to="/contact">Contact</Link>
+                    */}
+                </nav>
+            </div>
         </footer>
     );
 }

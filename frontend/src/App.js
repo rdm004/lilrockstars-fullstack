@@ -23,7 +23,7 @@ import Contact from "./pages/Contact";
 import AccountRegister from "./pages/AccountRegister";
 import ResetPassword from "./pages/ResetPassword";
 
-//ADA
+// ADA pages
 import Accessibility from "./pages/Accessibility";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -47,22 +47,15 @@ function AppContent() {
 
     return (
         <>
-            {/* ✅ Accessibility: Skip link */}
-            <button
-                type="button"
-                className="skip-link"
-                onClick={() => {
-                    const el = document.getElementById("main-content");
-                    if (el) el.focus();
-                }}
-            >
+            {/* ✅ Public-site skip link (anchor, not button) */}
+            <a href="#main-content" className="skip-link">
                 Skip to main content
-            </button>
+            </a>
 
             {shouldShowHero && <HeroSection />}
             <Navbar />
 
-            {/* ✅ Accessibility: main landmark (and focus target) */}
+            {/* ✅ Public-site main landmark + focus target */}
             <main id="main-content" tabIndex={-1}>
                 <Routes>
                     {/* ===== Public routes ===== */}
@@ -79,7 +72,7 @@ function AppContent() {
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
 
-                    {/* ===== ADA ===== */}
+                    {/* ===== ADA routes ===== */}
                     <Route path="/accessibility" element={<Accessibility />} />
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/terms" element={<Terms />} />
