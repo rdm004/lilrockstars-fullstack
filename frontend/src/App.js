@@ -1,4 +1,3 @@
-// App.js
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 
@@ -38,101 +37,112 @@ import AdminRacesManagement from "./pages/AdminRacesManagement";
 function AppContent() {
     const location = useLocation();
 
-    // 🚫 Hide hero on auth + dashboards + admin pages
     const hideHeroRoutes = ["/login", "/register", "/accountregister", "/dashboard", "/admin"];
-
-    const shouldShowHero = !hideHeroRoutes.some((route) =>
-        location.pathname.startsWith(route)
-    );
+    const shouldShowHero = !hideHeroRoutes.some((route) => location.pathname.startsWith(route));
 
     return (
         <>
+            {/* ✅ Accessibility: Skip link */}
+            <button
+                type="button"
+                className="skip-link"
+                onClick={() => {
+                    const el = document.getElementById("main-content");
+                    if (el) el.focus();
+                }}
+            >
+                Skip to main content
+            </button>
+
             {shouldShowHero && <HeroSection />}
             <Navbar />
 
-            <Routes>
-                {/* ===== Public routes ===== */}
-                <Route path="/" element={<Home />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterRacers />} />
-                <Route path="/accountregister" element={<AccountRegister />} />
-                <Route path="/races" element={<RaceList />} />
-                <Route path="/racers" element={<Racers />} />
-                <Route path="/results" element={<Results />} />
-                <Route path="/gallery" element={<Gallery />} />
-                <Route path="/sponsors" element={<Sponsors />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
+            {/* ✅ Accessibility: main landmark (and focus target) */}
+            <main id="main-content" tabIndex={-1}>
+                <Routes>
+                    {/* ===== Public routes ===== */}
+                    <Route path="/" element={<Home />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterRacers />} />
+                    <Route path="/accountregister" element={<AccountRegister />} />
+                    <Route path="/races" element={<RaceList />} />
+                    <Route path="/racers" element={<Racers />} />
+                    <Route path="/results" element={<Results />} />
+                    <Route path="/gallery" element={<Gallery />} />
+                    <Route path="/sponsors" element={<Sponsors />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
 
-                {/* ===== Protected parent route ===== */}
-                <Route
-                    path="/dashboard"
-                    element={
-                        <ProtectedRoute>
-                            <ParentDashboard />
-                        </ProtectedRoute>
-                    }
-                />
+                    {/* ===== Protected parent route ===== */}
+                    <Route
+                        path="/dashboard"
+                        element={
+                            <ProtectedRoute>
+                                <ParentDashboard />
+                            </ProtectedRoute>
+                        }
+                    />
 
-                {/* ===== Protected admin routes (ADMIN ONLY) ===== */}
-                <Route
-                    path="/admin"
-                    element={
-                        <AdminRoute>
-                            <AdminDashboard />
-                        </AdminRoute>
-                    }
-                />
+                    {/* ===== Protected admin routes (ADMIN ONLY) ===== */}
+                    <Route
+                        path="/admin"
+                        element={
+                            <AdminRoute>
+                                <AdminDashboard />
+                            </AdminRoute>
+                        }
+                    />
 
-                <Route
-                    path="/admin/races/manage"
-                    element={
-                        <AdminRoute>
-                            <AdminRacesManagement />
-                        </AdminRoute>
-                    }
-                />
+                    <Route
+                        path="/admin/races/manage"
+                        element={
+                            <AdminRoute>
+                                <AdminRacesManagement />
+                            </AdminRoute>
+                        }
+                    />
 
-                <Route
-                    path="/admin/racers/manage"
-                    element={
-                        <AdminRoute>
-                            <RacersManagement />
-                        </AdminRoute>
-                    }
-                />
+                    <Route
+                        path="/admin/racers/manage"
+                        element={
+                            <AdminRoute>
+                                <RacersManagement />
+                            </AdminRoute>
+                        }
+                    />
 
-                <Route
-                    path="/admin/results/manage"
-                    element={
-                        <AdminRoute>
-                            <ResultsManagement />
-                        </AdminRoute>
-                    }
-                />
+                    <Route
+                        path="/admin/results/manage"
+                        element={
+                            <AdminRoute>
+                                <ResultsManagement />
+                            </AdminRoute>
+                        }
+                    />
 
-                <Route
-                    path="/admin/registrations/manage"
-                    element={
-                        <AdminRoute>
-                            <RegistrationsManagement />
-                        </AdminRoute>
-                    }
-                />
+                    <Route
+                        path="/admin/registrations/manage"
+                        element={
+                            <AdminRoute>
+                                <RegistrationsManagement />
+                            </AdminRoute>
+                        }
+                    />
 
-                <Route
-                    path="/admin/settings"
-                    element={
-                        <AdminRoute>
-                            <AdminSettings />
-                        </AdminRoute>
-                    }
-                />
+                    <Route
+                        path="/admin/settings"
+                        element={
+                            <AdminRoute>
+                                <AdminSettings />
+                            </AdminRoute>
+                        }
+                    />
 
-                {/* ===== Fallback ===== */}
-                <Route path="*" element={<LoginPage />} />
-            </Routes>
+                    {/* ===== Fallback ===== */}
+                    <Route path="*" element={<LoginPage />} />
+                </Routes>
+            </main>
 
             <Footer />
         </>

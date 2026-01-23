@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Modal from "./Modal";
 
 const DeleteRacerConfirmModal = ({
@@ -22,12 +22,17 @@ const DeleteRacerConfirmModal = ({
     const linksText =
         counts?.links != null ? `${counts.links} linked parent relationship(s)` : "All linked parent relationships";
 
+    const checkboxId = useMemo(
+        () => `delete-racer-confirm-${String(racerId ?? "x")}`,
+        [racerId]
+    );
+
     return (
         <Modal
-            title="⚠️ Delete Racer - Permanent Action"
+            title="Delete Racer - Permanent Action"
             isOpen={isOpen}
             onClose={onClose}
-            onSubmit={() => checked && onConfirm(racerId)}
+            onSubmit={() => checked && onConfirm?.(racerId)}
             submitLabel="Delete Racer"
             disableSubmit={!checked}
         >
@@ -49,9 +54,15 @@ const DeleteRacerConfirmModal = ({
                         This will permanently remove:
                     </p>
                     <ul style={{ margin: 0, paddingLeft: "18px" }}>
-                        <li><b>{registrationsText}</b> for this racer (they will no longer appear in sign-in sheets)</li>
-                        <li><b>{resultsText}</b> for this racer (standings/leaderboards may change)</li>
-                        <li><b>{linksText}</b> (co-parent/linked accounts will lose access)</li>
+                        <li>
+                            <b>{registrationsText}</b> for this racer (they will no longer appear in sign-in sheets)
+                        </li>
+                        <li>
+                            <b>{resultsText}</b> for this racer (standings/leaderboards may change)
+                        </li>
+                        <li>
+                            <b>{linksText}</b> (co-parent/linked accounts will lose access)
+                        </li>
                     </ul>
 
                     <p style={{ margin: "10px 0 0", fontSize: "0.9rem", color: "#7c2d12" }}>
@@ -59,17 +70,18 @@ const DeleteRacerConfirmModal = ({
                     </p>
                 </div>
 
-                <label style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
                     <input
+                        id={checkboxId}
                         type="checkbox"
                         checked={checked}
                         onChange={(e) => setChecked(e.target.checked)}
                         style={{ marginTop: "4px" }}
                     />
-                    <span>
-            I understand deleting this racer will remove registrations, results, and linked access.
-          </span>
-                </label>
+                    <label htmlFor={checkboxId}>
+                        I understand deleting this racer will remove registrations, results, and linked access.
+                    </label>
+                </div>
             </div>
         </Modal>
     );

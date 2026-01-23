@@ -7,3 +7,32 @@ body {
 a {
     text-decoration: none;
 }
+
+/* =========================================
+   Accessibility: focus + skip link
+========================================= */
+:focus-visible {
+    outline: 3px solid #1e63ff;
+    outline-offset: 3px;
+}
+
+/* If any file globally disables outlines, this prevents that issue */
+:focus {
+    outline-color: #1e63ff;
+}
+
+.skip-link {
+    position: absolute;
+    left: -999px;
+    top: 8px;
+    background: #fff;
+    color: #000;
+    padding: 10px 12px;
+    border: 2px solid #000;
+    border-radius: 6px;
+    z-index: 9999;
+}
+
+.skip-link:focus {
+    left: 8px;
+}
