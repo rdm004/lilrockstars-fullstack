@@ -11,6 +11,7 @@
     flex: 1;
     padding: 0;
     overflow-x: hidden;
+    min-width: 0; /* prevents overflow pushing content off-screen */
 }
 
 /* Optional: inner padding for page content */
@@ -18,6 +19,7 @@
     padding: 1.5rem 2rem;
 }
 
+/* Skip link */
 .skip-link {
     position: absolute;
     top: -40px;
@@ -27,7 +29,7 @@
     color: #111111;
     border: 2px solid #111111;
     border-radius: 8px;
-    z-index: 9999;
+    z-index: 2000;
     text-decoration: none;
     font-weight: 600;
 }
@@ -35,4 +37,53 @@
 .skip-link:focus {
     top: 12px;
     outline: none;
+}
+
+/* Mobile-only top bar for menu button */
+.admin-topbar {
+    display: none;
+    padding: 12px 12px 0;
+}
+
+.sidebar-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #ccc;
+    background: #fff;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+/* Overlay when sidebar is open (mobile) */
+.sidebar-overlay {
+    display: none;
+}
+
+/* ------------------------------ */
+/* Mobile behavior */
+/* ------------------------------ */
+@media (max-width: 768px) {
+    .layout-container {
+        display: block;
+    }
+
+    .admin-topbar {
+        display: block;
+    }
+
+    .page-content {
+        padding: 1rem 1rem;
+    }
+
+    .sidebar-overlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        z-index: 1500;
+        border: none;
+        padding: 0;
+    }
 }
