@@ -472,6 +472,8 @@ const RegistrationsManagement = () => {
                                     </button>
                                 </div>
 
+                                <div className="table-scroll" role="region" aria-label="Registrations table" tabIndex={0}>
+
                                 <table className="registrations-table">
                                     <thead>
                                     <tr>
@@ -510,6 +512,7 @@ const RegistrationsManagement = () => {
                                     )}
                                     </tbody>
                                 </table>
+                                </div>
                             </div>
                         );
                     })

@@ -146,3 +146,26 @@
         transform: translateY(-1px);
     }
 }
+
+.table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 10px;
+}
+
+.table-scroll:focus-visible {
+    outline: 3px solid #1e63ff;
+    outline-offset: 3px;
+    border-radius: 10px;
+}
+
+/* If your table collapses too hard on mobile */
+.registrations-table {
+    min-width: 760px;
+}
+
+.registrations-table th,
+.registrations-table td {
+    white-space: nowrap;
+}

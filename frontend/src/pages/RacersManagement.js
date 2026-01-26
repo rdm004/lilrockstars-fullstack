@@ -8,7 +8,6 @@ import DeleteRacerConfirmModal from "../components/DeleteRacerConfirmModal";
 
 const getDivisionFromAge = (ageRaw) => {
     const age = Number(ageRaw);
-
     if (age === 2 || age === 3) return "3 Year Old Division";
     if (age === 4) return "4 Year Old Division";
     if (age === 5) return "5 Year Old Division";
@@ -43,7 +42,7 @@ const RacersManagement = () => {
         try {
             setLoading(true);
             setError("");
-            const res = await apiClient.get("/racers"); // GET /api/racers (admin role required via /api/admin/**? depending on your backend)
+            const res = await apiClient.get("/racers");
             setRacers(res.data || []);
         } catch (err) {
             console.error("Error loading racers:", err);
@@ -57,13 +56,11 @@ const RacersManagement = () => {
         void fetchRacers();
     }, []);
 
-    // Open delete modal
     const openDeleteRacer = (racer) => {
         setRacerToDelete(racer);
         setDeleteModalOpen(true);
     };
 
-    // Confirmed delete
     const confirmDeleteRacer = async (racerId) => {
         try {
             await apiClient.delete(`/racers/${racerId}`);
@@ -100,13 +97,13 @@ const RacersManagement = () => {
         const payload = {
             firstName: (formData.firstName || "").trim(),
             lastName: (formData.lastName || "").trim(),
-            nickname: (formData.nickname || "").trim() || null, // ✅ NEW (null if blank)
+            nickname: (formData.nickname || "").trim(), // ✅ NEW
             age: Number(formData.age),
             carNumber: String(formData.carNumber || "").trim(),
-            // division is calculated on UI; backend can store or compute if you want
+            division: getDivisionFromAge(formData.age || 0), // keep consistent
         };
 
-        if (!payload.firstName || !payload.lastName || !payload.carNumber || !payload.age) {
+        if (!payload.firstName || !payload.lastName || !payload.age || !payload.carNumber) {
             alert("Please fill out First Name, Last Name, Age, and Car Number.");
             return;
         }
@@ -123,14 +120,8 @@ const RacersManagement = () => {
             void fetchRacers();
         } catch (err) {
             console.error("Error saving racer:", err);
-
-            // If your backend sends { message: "..." }, show it
-            const msg =
-                err?.response?.data?.message ||
-                err?.response?.data ||
-                "❌ Failed to save racer.";
-
-            alert(msg);
+            const msg = err?.response?.data?.message || "❌ Failed to save racer.";
+            alert(typeof msg === "string" ? msg : "❌ Failed to save racer.");
         }
     };
 
@@ -140,7 +131,6 @@ const RacersManagement = () => {
 
     return (
         <Layout title="Racers Management">
-            {/* Delete confirmation modal */}
             <DeleteRacerConfirmModal
                 isOpen={deleteModalOpen}
                 onClose={() => setDeleteModalOpen(false)}
@@ -164,45 +154,52 @@ const RacersManagement = () => {
                 ) : racers.length === 0 ? (
                     <p>No racers found.</p>
                 ) : (
-                    <table className="racers-table">
-                        <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Name</th>
-                            <th>Nickname</th> {/* ✅ NEW */}
-                            <th>Age</th>
-                            <th>Division</th>
-                            <th>Car #</th>
-                            <th>Actions</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {racers.map((racer, index) => (
-                            <tr key={racer.id}>
-                                <td>{index + 1}</td>
-                                <td>
-                                    {racer.firstName} {racer.lastName}
-                                </td>
-                                <td>{racer.nickname ? racer.nickname : "-"}</td> {/* ✅ NEW */}
-                                <td>{racer.age}</td>
-                                <td>{getDivisionFromAge(racer.age)}</td>
-                                <td>{racer.carNumber}</td>
-                                <td>
-                                    <button className="edit-btn" onClick={() => handleOpenEdit(racer)}>
-                                        Edit
-                                    </button>
-                                    <button className="delete-btn" onClick={() => openDeleteRacer(racer)}>
-                                        Delete
-                                    </button>
-                                </td>
+                    // ✅ IMPORTANT: wrapper fixes mobile horizontal clipping
+                    <div
+                        className="table-scroll"
+                        role="region"
+                        aria-label="Racers table"
+                        tabIndex={0}
+                    >
+                        <table className="racers-table">
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Nickname</th>
+                                <th>Age</th>
+                                <th>Division</th>
+                                <th>Car #</th>
+                                <th style={{ minWidth: 160 }}>Actions</th>
                             </tr>
-                        ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                            {racers.map((racer, index) => (
+                                <tr key={racer.id}>
+                                    <td>{index + 1}</td>
+                                    <td>
+                                        {racer.firstName} {racer.lastName}
+                                    </td>
+                                    <td>{racer.nickname || "-"}</td>
+                                    <td>{racer.age}</td>
+                                    <td>{getDivisionFromAge(racer.age)}</td>
+                                    <td>{racer.carNumber}</td>
+                                    <td>
+                                        <button className="edit-btn" onClick={() => handleOpenEdit(racer)}>
+                                            Edit
+                                        </button>
+                                        <button className="delete-btn" onClick={() => openDeleteRacer(racer)}>
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
 
-            {/* Add/Edit Modal */}
             <Modal
                 title={editMode ? "Edit Racer" : "Add Racer"}
                 isOpen={isModalOpen}
@@ -210,16 +207,18 @@ const RacersManagement = () => {
                 onSubmit={handleSave}
                 submitLabel={editMode ? "Update Racer" : "Add Racer"}
             >
-                <label>First Name</label>
+                <label htmlFor="firstName">First Name</label>
                 <input
+                    id="firstName"
                     type="text"
                     value={formData.firstName}
                     onChange={(e) => setFormData((prev) => ({ ...prev, firstName: e.target.value }))}
                     required
                 />
 
-                <label>Last Name</label>
+                <label htmlFor="lastName">Last Name</label>
                 <input
+                    id="lastName"
                     type="text"
                     value={formData.lastName}
                     onChange={(e) => setFormData((prev) => ({ ...prev, lastName: e.target.value }))}
@@ -227,16 +226,18 @@ const RacersManagement = () => {
                 />
 
                 {/* ✅ NEW */}
-                <label>Nickname (optional)</label>
+                <label htmlFor="nickname">Nickname (optional)</label>
                 <input
+                    id="nickname"
                     type="text"
                     value={formData.nickname}
                     onChange={(e) => setFormData((prev) => ({ ...prev, nickname: e.target.value }))}
-                    placeholder="Jr, II, Big Jay, etc."
+                    placeholder="Optional"
                 />
 
-                <label>Age</label>
+                <label htmlFor="age">Age</label>
                 <input
+                    id="age"
                     type="number"
                     min="2"
                     max="7"
@@ -245,15 +246,16 @@ const RacersManagement = () => {
                     required
                 />
 
-                <label>Car Number</label>
+                <label htmlFor="carNumber">Car Number</label>
                 <input
+                    id="carNumber"
                     type="text"
                     value={formData.carNumber}
                     onChange={(e) => setFormData((prev) => ({ ...prev, carNumber: e.target.value }))}
                     required
                 />
 
-                <p style={{ marginTop: "10px", fontSize: "0.9rem", color: "#666" }}>
+                <p className="division-note">
                     Division will be calculated automatically:{" "}
                     <strong>{getDivisionFromAge(formData.age || 0)}</strong>
                 </p>
