@@ -6,15 +6,15 @@
     background: #fcfaf8;
 }
 
-/* Sidebar column is fixed width via .sidebar */
+/* Main column beside sidebar (desktop) */
 .main-content {
     flex: 1;
     padding: 0;
     overflow-x: hidden;
-    min-width: 0; /* prevents overflow pushing content off-screen */
+    min-width: 0; /* ✅ critical: prevents flex children from forcing horizontal scroll */
 }
 
-/* Optional: inner padding for page content */
+/* Inner padding for pages */
 .page-content {
     padding: 1.5rem 2rem;
 }
@@ -29,7 +29,7 @@
     color: #111111;
     border: 2px solid #111111;
     border-radius: 8px;
-    z-index: 2000;
+    z-index: 9999;
     text-decoration: none;
     font-weight: 600;
 }
@@ -39,51 +39,24 @@
     outline: none;
 }
 
-/* Mobile-only top bar for menu button */
-.admin-topbar {
-    display: none;
-    padding: 12px 12px 0;
-}
-
-.sidebar-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    border: 1px solid #ccc;
-    background: #fff;
-    padding: 10px 12px;
-    border-radius: 10px;
-    font-weight: 700;
-}
-
-/* Overlay when sidebar is open (mobile) */
-.sidebar-overlay {
-    display: none;
-}
-
 /* ------------------------------ */
-/* Mobile behavior */
+/* ✅ Mobile layout: stack + full-width content
+   and leave room for bottom nav sidebar
 /* ------------------------------ */
 @media (max-width: 768px) {
     .layout-container {
-        display: block;
+        flex-direction: column;
     }
 
-    .admin-topbar {
-        display: block;
+    .main-content {
+        width: 100%;
+        padding: 0;
     }
 
     .page-content {
         padding: 1rem 1rem;
-    }
 
-    .sidebar-overlay {
-        display: block;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.55);
-        z-index: 1500;
-        border: none;
-        padding: 0;
+        /* ✅ space for bottom nav (sidebar) so content isn't hidden */
+        padding-bottom: 90px;
     }
 }
