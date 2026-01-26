@@ -14,6 +14,10 @@
     position: sticky;
     top: 0;
     height: 100vh;
+
+    /* IMPORTANT: prevent shrinking that can hide labels */
+    flex: 0 0 240px;
+    overflow: hidden;
 }
 
 .sidebar-header {
@@ -44,7 +48,7 @@
 .sidebar-menu {
     list-style: none;
     padding: 0;
-    margin-top: 10px;
+    margin: 10px 0 0;
 }
 
 .sidebar-item {
@@ -55,11 +59,17 @@
     display: flex;
     align-items: center;
     gap: 10px;
+
+    /* Text color applies to label via inherit */
     color: #cfcfcf;
     text-decoration: none;
+
     padding: 10px 15px;
     border-radius: 6px;
     transition: all 0.2s ease-in-out;
+
+    /* ✅ Ensure full width so label has room */
+    width: 100%;
 }
 
 .sidebar-link:hover {
@@ -79,49 +89,85 @@
     font-weight: 600;
 }
 
+/* icon */
 .icon {
     font-size: 1.2rem;
     color: #ff9f1c;
     flex-shrink: 0;
 }
 
-/* text label next to icon */
+/* active icon */
+.sidebar-item.active .icon {
+    color: #1e1e1e;
+}
+
+/* text label */
 .label {
-    color: inherit;          /* ✅ IMPORTANT: inherit from .sidebar-link */
+    color: inherit; /* inherits from .sidebar-link */
     font-size: 0.95rem;
     white-space: nowrap;
+
+    /* ✅ Prevent label collapsing/disappearing */
+    display: inline-block;
+    flex: 1;
+    min-width: 0;
 }
 
 /* ------------------------------ */
-/* Mobile: off-canvas drawer */
+/* Mobile: bottom nav (simple + readable)
+   This avoids the "icons only" bug and keeps text visible.
+   If you prefer off-canvas drawer, tell me and I’ll switch it.
+*/
 /* ------------------------------ */
 @media (max-width: 768px) {
     .sidebar {
         position: fixed;
-        top: 0;
         left: 0;
+        bottom: 0;
+        top: auto;
 
-        height: 100vh;
-        z-index: 1600;
+        height: auto;
+        width: 100%;
+        max-width: none;
 
-        width: 86vw;
-        max-width: 320px;
-
-        transform: translateX(-110%);
-        transition: transform 180ms ease-in-out;
-
-        /* Keep it vertical on mobile */
-        flex-direction: column;
-        overflow-y: auto;
-    }
-
-    .sidebar.open {
-        transform: translateX(0);
-    }
-
-    .sidebar-close {
-        display: inline-flex;
+        padding: 10px 12px;
+        flex-direction: row;
         align-items: center;
-        justify-content: center;
+
+        z-index: 1600;
+        overflow-x: auto;
+        overflow-y: hidden;
+
+        /* ✅ Remove off-canvas transforms on mobile */
+        transform: none;
+        transition: none;
+    }
+
+    .sidebar-header {
+        display: none; /* hide logo on tight mobile */
+    }
+
+    .sidebar-menu {
+        display: flex;
+        gap: 10px;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+    }
+
+    .sidebar-item {
+        margin: 0;
+        flex: 0 0 auto;
+    }
+
+    .sidebar-link {
+        padding: 10px 12px;
+        border-radius: 10px;
+        white-space: nowrap;
+    }
+
+    /* ✅ Keep labels visible on mobile */
+    .label {
+        display: inline-block;
     }
 }

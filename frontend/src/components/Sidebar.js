@@ -1,3 +1,4 @@
+// frontend/src/components/Sidebar.js
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -9,7 +10,7 @@ import {
 } from "react-icons/fa";
 import "../styles/Sidebar.css";
 
-const Sidebar = ({ isOpen = true }) => {
+const Sidebar = () => {
     const location = useLocation();
 
     const menuItems = [
@@ -21,25 +22,32 @@ const Sidebar = ({ isOpen = true }) => {
     ];
 
     return (
-        <div className="sidebar">
+        <aside className="sidebar" aria-label="Admin Navigation">
             <div className="sidebar-header">
                 <div className="sidebar-logo">🏁 Lil Rockstars</div>
             </div>
 
             <ul className="sidebar-menu">
-                {menuItems.map((item) => (
-                    <li
-                        key={item.path}
-                        className={`sidebar-item ${location.pathname === item.path ? "active" : ""}`}
-                    >
-                        <Link to={item.path} className="sidebar-link">
-                            <span className="icon">{item.icon}</span>
-                            {isOpen && <span className="label">{item.label}</span>}
-                        </Link>
-                    </li>
-                ))}
+                {menuItems.map((item) => {
+                    const isActive =
+                        location.pathname === item.path ||
+                        (item.path !== "/admin" && location.pathname.startsWith(item.path));
+
+                    return (
+                        <li key={item.path} className={`sidebar-item ${isActive ? "active" : ""}`}>
+                            <Link to={item.path} className="sidebar-link">
+                <span className="icon" aria-hidden="true">
+                  {item.icon}
+                </span>
+
+                                {/* ✅ Always show label */}
+                                <span className="label">{item.label}</span>
+                            </Link>
+                        </li>
+                    );
+                })}
             </ul>
-        </div>
+        </aside>
     );
 };
 
