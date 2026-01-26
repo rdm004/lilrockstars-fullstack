@@ -23,7 +23,7 @@ import Contact from "./pages/Contact";
 import AccountRegister from "./pages/AccountRegister";
 import ResetPassword from "./pages/ResetPassword";
 
-// ADA pages
+// ADA
 import Accessibility from "./pages/Accessibility";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -36,7 +36,6 @@ import AdminDashboard from "./pages/AdminDashboard";
 import RacersManagement from "./pages/RacersManagement";
 import RegistrationsManagement from "./pages/RegistrationsManagement";
 import ResultsManagement from "./pages/ResultsManagement";
-import AdminSettings from "./pages/AdminSettings";
 import AdminRacesManagement from "./pages/AdminRacesManagement";
 
 function AppContent() {
@@ -47,18 +46,24 @@ function AppContent() {
 
     return (
         <>
-            {/* ✅ Public-site skip link (anchor, not button) */}
-            <a href="#main-content" className="skip-link">
+            {/* Skip link */}
+            <button
+                type="button"
+                className="skip-link"
+                onClick={() => {
+                    const el = document.getElementById("main-content");
+                    if (el) el.focus();
+                }}
+            >
                 Skip to main content
-            </a>
+            </button>
 
             {shouldShowHero && <HeroSection />}
             <Navbar />
 
-            {/* ✅ Public-site main landmark + focus target */}
             <main id="main-content" tabIndex={-1}>
                 <Routes>
-                    {/* ===== Public routes ===== */}
+                    {/* Public */}
                     <Route path="/" element={<Home />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterRacers />} />
@@ -72,12 +77,12 @@ function AppContent() {
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
 
-                    {/* ===== ADA routes ===== */}
+                    {/* ADA */}
                     <Route path="/accessibility" element={<Accessibility />} />
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/terms" element={<Terms />} />
 
-                    {/* ===== Protected parent route ===== */}
+                    {/* Parent */}
                     <Route
                         path="/dashboard"
                         element={
@@ -87,7 +92,7 @@ function AppContent() {
                         }
                     />
 
-                    {/* ===== Protected admin routes (ADMIN ONLY) ===== */}
+                    {/* Admin (ADMIN only) */}
                     <Route
                         path="/admin"
                         element={
@@ -133,16 +138,7 @@ function AppContent() {
                         }
                     />
 
-                    <Route
-                        path="/admin/settings"
-                        element={
-                            <AdminRoute>
-                                <AdminSettings />
-                            </AdminRoute>
-                        }
-                    />
-
-                    {/* ===== Fallback ===== */}
+                    {/* Fallback */}
                     <Route path="*" element={<LoginPage />} />
                 </Routes>
             </main>
