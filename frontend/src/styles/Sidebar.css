@@ -163,3 +163,12 @@
         display: inline-block;
     }
 }
+
+.table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.table-scroll table {
+    min-width: 700px; /* pick a sane minimum for your columns */
+}
