@@ -1,24 +1,34 @@
-/* frontend/src/styles/Sidebar.css */
+/* ============================= */
+/* Sidebar (Desktop Default)     */
+/* ============================= */
 
 .sidebar {
     width: 240px;
     background: #1e1e1e;
-    color: #fff;
-    min-height: 100vh;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 3px 0 8px rgba(0, 0, 0, 0.3);
+    color: #ffffff;
 
-    /* Desktop stays fixed on the left */
-    position: sticky;
-    top: 0;
+    min-height: 100vh;
     height: 100vh;
 
-    /* IMPORTANT: prevent shrinking that can hide labels */
+    padding: 20px;
+
+    display: flex;
+    flex-direction: column;
+
+    box-shadow: 3px 0 8px rgba(0, 0, 0, 0.3);
+
+    position: sticky;
+    top: 0;
+
+    /* Prevent flex shrinking that hides labels */
     flex: 0 0 240px;
     overflow: hidden;
+    box-sizing: border-box;
 }
+
+/* ============================= */
+/* Header / Logo                 */
+/* ============================= */
 
 .sidebar-header {
     display: flex;
@@ -34,17 +44,10 @@
     white-space: nowrap;
 }
 
-/* Mobile close button (hidden on desktop) */
-.sidebar-close {
-    display: none;
-    border: none;
-    background: transparent;
-    color: #fff;
-    font-size: 1.2rem;
-    cursor: pointer;
-}
+/* ============================= */
+/* Menu List                     */
+/* ============================= */
 
-/* menu */
 .sidebar-menu {
     list-style: none;
     padding: 0;
@@ -60,25 +63,24 @@
     align-items: center;
     gap: 10px;
 
-    /* Text color applies to label via inherit */
-    color: #cfcfcf;
-    text-decoration: none;
+    width: 100%;
 
     padding: 10px 15px;
     border-radius: 6px;
-    transition: all 0.2s ease-in-out;
 
-    /* ✅ Ensure full width so label has room */
-    width: 100%;
+    color: #cfcfcf;
+    text-decoration: none;
+
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
 .sidebar-link:hover {
     background: #2d2d2d;
-    color: #fff;
+    color: #ffffff;
 }
 
 .sidebar-link:focus-visible {
-    outline: 3px solid #fff;
+    outline: 3px solid #ffffff;
     outline-offset: 3px;
     border-radius: 8px;
 }
@@ -89,41 +91,52 @@
     font-weight: 600;
 }
 
-/* icon */
+/* ============================= */
+/* Icons + Labels                */
+/* ============================= */
+
 .icon {
     font-size: 1.2rem;
     color: #ff9f1c;
     flex-shrink: 0;
 }
 
-/* active icon */
 .sidebar-item.active .icon {
     color: #1e1e1e;
 }
 
-/* text label */
 .label {
-    color: inherit; /* inherits from .sidebar-link */
+    color: inherit;
     font-size: 0.95rem;
     white-space: nowrap;
 
-    /* ✅ Prevent label collapsing/disappearing */
     display: inline-block;
     flex: 1;
     min-width: 0;
 }
 
+/* ============================= */
+/* Mobile: Bottom Navigation     */
+/* ============================= */
+
 @media (max-width: 768px) {
     .sidebar {
         position: fixed;
         left: 0;
+        right: 0;
         bottom: 0;
         top: auto;
 
         width: 100%;
+        max-width: 100%;
+
+        /* 🔑 CRITICAL OVERRIDES */
         height: auto;
+        min-height: 0;
+        flex: none;
 
         padding: 10px 12px;
+
         flex-direction: row;
         align-items: center;
 
@@ -132,19 +145,22 @@
         overflow-x: auto;
         overflow-y: hidden;
 
-        /* ✅ keep it from causing horizontal page width */
         box-sizing: border-box;
     }
 
+    /* Hide logo/header on mobile */
     .sidebar-header {
         display: none;
     }
 
     .sidebar-menu {
         display: flex;
+        flex-direction: row;
         gap: 10px;
+
         margin: 0;
         padding: 0;
+
         width: 100%;
     }
 
@@ -154,6 +170,7 @@
     }
 
     .sidebar-link {
+        width: auto;
         padding: 10px 12px;
         border-radius: 10px;
         white-space: nowrap;
@@ -162,13 +179,4 @@
     .label {
         display: inline-block;
     }
-}
-
-.table-scroll {
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-.table-scroll table {
-    min-width: 700px; /* pick a sane minimum for your columns */
 }
