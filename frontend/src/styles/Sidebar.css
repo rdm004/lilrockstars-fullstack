@@ -79,10 +79,6 @@
     font-weight: 600;
 }
 
-.sidebar-item.active .icon {
-    color: #1e1e1e;
-}
-
 .icon {
     font-size: 1.2rem;
     color: #ff9f1c;
