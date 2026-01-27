@@ -312,31 +312,51 @@ const RegistrationsManagement = () => {
     };
 
     // ---------------------------
-    // Print
-    // ---------------------------
-
-
-    // ---------------------------
-// Print
+// Print (popup-free using hidden iframe)
 // ---------------------------
 
-// ✅ Parent display helper (prevents crashes + avoids exposing emails)
     const getParentDisplay = (row) => {
-        // Preferred: flat fields on the row
         if (row?.parentFirstName || row?.parentLastName) {
             return `${row.parentFirstName || ""} ${row.parentLastName || ""}`.trim();
         }
-
-        // Alternate: single flat field
         if (row?.parentName) return String(row.parentName).trim();
-
-        // Alternate: nested parent object
         if (row?.parent?.firstName || row?.parent?.lastName) {
             return `${row.parent.firstName || ""} ${row.parent.lastName || ""}`.trim();
         }
-
-        // Fallback: nothing (privacy-first)
         return "-";
+    };
+
+    const printHtmlViaIframe = (html) => {
+        // Remove any previous print frame
+        const existing = document.getElementById("print-frame");
+        if (existing) existing.remove();
+
+        const iframe = document.createElement("iframe");
+        iframe.id = "print-frame";
+        iframe.style.position = "fixed";
+        iframe.style.right = "0";
+        iframe.style.bottom = "0";
+        iframe.style.width = "0";
+        iframe.style.height = "0";
+        iframe.style.border = "0";
+        iframe.style.visibility = "hidden";
+
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentWindow?.document;
+        if (!doc) return;
+
+        doc.open();
+        doc.write(html);
+        doc.close();
+
+        // Wait a tick for layout, then print
+        setTimeout(() => {
+            iframe.contentWindow?.focus();
+            iframe.contentWindow?.print();
+            // Cleanup after print
+            setTimeout(() => iframe.remove(), 1000);
+        }, 250);
     };
 
     const printSignInSheet = (raceId) => {
@@ -345,10 +365,6 @@ const RegistrationsManagement = () => {
         const raceDateText = race?.raceDate ? formatRaceDate(race.raceDate) : "";
 
         const rows = (regsByRace.get(Number(raceId)) || []).slice();
-
-        // ✅ (Optional) inspect real shape of the data once if needed
-        // console.log("printSignInSheet sample row:", rows[0]);
-
         rows.sort((a, b) => {
             const d = divisionRank(a.division) - divisionRank(b.division);
             if (d !== 0) return d;
@@ -427,22 +443,7 @@ const RegistrationsManagement = () => {
 </html>
   `;
 
-        const win = window.open("", "_blank", "noopener,noreferrer");
-        if (!win) {
-            alert("Pop-up blocked. Please allow pop-ups to print.");
-            return;
-        }
-
-        win.document.open();
-        win.document.write(html);
-        win.document.close();
-
-        // wait for DOM to paint, then print
-        win.focus();
-        setTimeout(() => {
-            win.print();
-            win.close();
-        }, 200);
+        printHtmlViaIframe(html);
     };
 
     // ---------------------------
