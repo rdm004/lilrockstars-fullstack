@@ -31,7 +31,7 @@ function ParentDashboard() {
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [racerToDelete, setRacerToDelete] = useState(null);
 
-    // 👥 Co-parent invite state
+    // 👥 Co-parent / Guardian invite state
     const [coParentEmail, setCoParentEmail] = useState("");
     const [inviteStatus, setInviteStatus] = useState("");
     const [inviteLoading, setInviteLoading] = useState(false);
@@ -287,7 +287,7 @@ function ParentDashboard() {
         }
     };
 
-    // === Co-parent invite ===
+    // === Co-parent / Guardian invite ===
     const handleInviteSubmit = async (e) => {
         e.preventDefault();
         setInviteStatus("");
@@ -339,11 +339,11 @@ function ParentDashboard() {
 
                 <div className="header-right">
                     <div className="coparent-inline">
-                        <h3>👥 Invite a Co-Parent</h3>
+                        <h3>👥 Invite a Co-Parent / Guardian</h3>
                         <form className="coparent-form-inline" onSubmit={handleInviteSubmit}>
                             <input
                                 type="email"
-                                placeholder="Co-parent's email"
+                                placeholder="Co-parent / guardian email"
                                 value={coParentEmail}
                                 onChange={(e) => setCoParentEmail(e.target.value)}
                                 required
@@ -352,7 +352,7 @@ function ParentDashboard() {
                                 {inviteLoading ? "Sending..." : "Send Invite"}
                             </button>
                         </form>
-                        <p>Co-parent must be registered to receive invite.</p>
+                        <p>Co-parent / guardian must be registered to receive invite.</p>
                         {inviteStatus && <p className="coparent-status">{inviteStatus}</p>}
                     </div>
 

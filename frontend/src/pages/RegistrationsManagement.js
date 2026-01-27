@@ -365,7 +365,7 @@ const RegistrationsManagement = () => {
         <th>Racer</th>
         <th class="col-small">Car #</th>
         <th class="col-medium">Division</th>
-        <th>Parent</th>
+        <th>Parent / Guardian</th>
         <th class="col-small">Draw #</th>
         <th class="col-small">Paid</th>
       </tr>
@@ -381,7 +381,7 @@ const RegistrationsManagement = () => {
           <td>${row.racerName || "-"}</td>
           <td>${row.carNumber ? `#${String(row.carNumber).replace(/^#/, "")}` : "-"}</td>
           <td>${row.division || "-"}</td>
-          <td>${row.parentEmail || "-"}</td>
+          <td>${row.parent.firstName || row.parent.fullName || "-"}</td>
           <td></td>
           <td><span class="checkbox"></span></td>
         </tr>`
