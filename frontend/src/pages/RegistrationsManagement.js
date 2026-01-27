@@ -314,12 +314,41 @@ const RegistrationsManagement = () => {
     // ---------------------------
     // Print
     // ---------------------------
+
+
+    // ---------------------------
+// Print
+// ---------------------------
+
+// ✅ Parent display helper (prevents crashes + avoids exposing emails)
+    const getParentDisplay = (row) => {
+        // Preferred: flat fields on the row
+        if (row?.parentFirstName || row?.parentLastName) {
+            return `${row.parentFirstName || ""} ${row.parentLastName || ""}`.trim();
+        }
+
+        // Alternate: single flat field
+        if (row?.parentName) return String(row.parentName).trim();
+
+        // Alternate: nested parent object
+        if (row?.parent?.firstName || row?.parent?.lastName) {
+            return `${row.parent.firstName || ""} ${row.parent.lastName || ""}`.trim();
+        }
+
+        // Fallback: nothing (privacy-first)
+        return "-";
+    };
+
     const printSignInSheet = (raceId) => {
         const race = racesById.get(Number(raceId));
         const raceTitle = race?.raceName || race?.name || `Race #${raceId}`;
         const raceDateText = race?.raceDate ? formatRaceDate(race.raceDate) : "";
 
         const rows = (regsByRace.get(Number(raceId)) || []).slice();
+
+        // ✅ (Optional) inspect real shape of the data once if needed
+        // console.log("printSignInSheet sample row:", rows[0]);
+
         rows.sort((a, b) => {
             const d = divisionRank(a.division) - divisionRank(b.division);
             if (d !== 0) return d;
@@ -378,10 +407,14 @@ const RegistrationsManagement = () => {
                     .map(
                         (row) => `
         <tr>
-          <td>${row.racerName || "-"}</td>
-          <td>${row.carNumber ? `#${String(row.carNumber).replace(/^#/, "")}` : "-"}</td>
-          <td>${row.division || "-"}</td>
-          <td>${row.parent.firstName || row.parent.fullName || "-"}</td>
+          <td>${row?.racerName || "-"}</td>
+          <td>${
+                            row?.carNumber
+                                ? `#${String(row.carNumber).replace(/^#/, "")}`
+                                : "-"
+                        }</td>
+          <td>${row?.division || "-"}</td>
+          <td>${getParentDisplay(row)}</td>
           <td></td>
           <td><span class="checkbox"></span></td>
         </tr>`
@@ -392,16 +425,24 @@ const RegistrationsManagement = () => {
   </table>
 </body>
 </html>
-    `;
+  `;
 
-        const w = window.open("", "_blank", "width=1000,height=800");
-        if (!w) return;
+        const win = window.open("", "_blank", "noopener,noreferrer");
+        if (!win) {
+            alert("Pop-up blocked. Please allow pop-ups to print.");
+            return;
+        }
 
-        w.document.open();
-        w.document.write(html);
-        w.document.close();
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
 
-        setTimeout(() => w.print(), 250);
+        // wait for DOM to paint, then print
+        win.focus();
+        setTimeout(() => {
+            win.print();
+            win.close();
+        }, 200);
     };
 
     // ---------------------------
