@@ -11,7 +11,7 @@
     flex: 1;
     padding: 0;
     overflow-x: hidden;
-    min-width: 0; /* ✅ critical: prevents flex children from forcing horizontal scroll */
+    min-width: 0; /* ✅ prevents flex children from forcing horizontal scroll */
 }
 
 /* Inner padding for pages */
@@ -39,10 +39,7 @@
     outline: none;
 }
 
-/* ------------------------------ */
-/* ✅ Mobile layout: stack + full-width content
-   and leave room for bottom nav sidebar
-/* ------------------------------ */
+/* Mobile layout: stack + full-width content + leave room for bottom nav */
 @media (max-width: 768px) {
     .layout-container {
         flex-direction: column;
@@ -55,17 +52,17 @@
 
     .page-content {
         padding: 1rem 1rem;
-
-        /* ✅ space for bottom nav (sidebar) so content isn't hidden */
-        padding-bottom: 90px;
+        padding-bottom: 90px; /* ✅ space for bottom nav */
     }
 }
 
+/* Table scroll helper (use this wrapper in pages with tables) */
 .table-scroll {
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
+
 .table-scroll table {
-    min-width: 700px; /* pick a sane minimum for your columns */
+    min-width: 700px;
 }

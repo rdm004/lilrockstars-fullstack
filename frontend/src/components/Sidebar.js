@@ -1,4 +1,3 @@
-// frontend/src/components/Sidebar.js
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -22,7 +21,7 @@ const Sidebar = () => {
     ];
 
     return (
-        <aside className="sidebar" aria-label="Admin Navigation">
+        <nav className="sidebar" aria-label="Admin navigation">
             <div className="sidebar-header">
                 <div className="sidebar-logo">🏁 Lil Rockstars</div>
             </div>
@@ -35,19 +34,21 @@ const Sidebar = () => {
 
                     return (
                         <li key={item.path} className={`sidebar-item ${isActive ? "active" : ""}`}>
-                            <Link to={item.path} className="sidebar-link">
+                            <Link
+                                to={item.path}
+                                className="sidebar-link"
+                                aria-current={isActive ? "page" : undefined}
+                            >
                 <span className="icon" aria-hidden="true">
                   {item.icon}
                 </span>
-
-                                {/* ✅ Always show label */}
                                 <span className="label">{item.label}</span>
                             </Link>
                         </li>
                     );
                 })}
             </ul>
-        </aside>
+        </nav>
     );
 };
 
