@@ -113,3 +113,11 @@
         margin-right: 6px;
     }
 }
+
+/* Guardian Email */
+.guardian-email-cell {
+    max-width: 260px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

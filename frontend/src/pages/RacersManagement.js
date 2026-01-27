@@ -15,6 +15,17 @@ const getDivisionFromAge = (ageRaw) => {
     return "N/A";
 };
 
+// ✅ Guardian Email helper (safe fallbacks)
+const getGuardianEmail = (racer) => {
+    return (
+        racer?.guardianEmail ||     // if you add this later
+        racer?.parentEmail ||       // common flat property
+        racer?.parent?.email ||     // nested parent object
+        racer?.guardian?.email ||   // nested guardian object (future-proof)
+        "-"
+    );
+};
+
 const RacersManagement = () => {
     const [racers, setRacers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -31,7 +42,7 @@ const RacersManagement = () => {
         id: null,
         firstName: "",
         lastName: "",
-        nickname: "", // ✅ NEW
+        nickname: "",
         age: "",
         carNumber: "",
     };
@@ -86,7 +97,7 @@ const RacersManagement = () => {
             id: racer.id,
             firstName: racer.firstName || "",
             lastName: racer.lastName || "",
-            nickname: racer.nickname || "", // ✅ NEW
+            nickname: racer.nickname || "",
             age: racer.age ?? "",
             carNumber: racer.carNumber || "",
         });
@@ -97,10 +108,10 @@ const RacersManagement = () => {
         const payload = {
             firstName: (formData.firstName || "").trim(),
             lastName: (formData.lastName || "").trim(),
-            nickname: (formData.nickname || "").trim(), // ✅ NEW
+            nickname: (formData.nickname || "").trim() || null,
             age: Number(formData.age),
             carNumber: String(formData.carNumber || "").trim(),
-            division: getDivisionFromAge(formData.age || 0), // keep consistent
+            division: getDivisionFromAge(formData.age || 0),
         };
 
         if (!payload.firstName || !payload.lastName || !payload.age || !payload.carNumber) {
@@ -154,13 +165,7 @@ const RacersManagement = () => {
                 ) : racers.length === 0 ? (
                     <p>No racers found.</p>
                 ) : (
-                    // ✅ IMPORTANT: wrapper fixes mobile horizontal clipping
-                    <div
-                        className="table-scroll"
-                        role="region"
-                        aria-label="Racers table"
-                        tabIndex={0}
-                    >
+                    <div className="table-scroll" role="region" aria-label="Racers table" tabIndex={0}>
                         <table className="racers-table">
                             <thead>
                             <tr>
@@ -170,20 +175,34 @@ const RacersManagement = () => {
                                 <th>Age</th>
                                 <th>Division</th>
                                 <th>Car #</th>
+                                <th>Guardian Email</th>
                                 <th style={{ minWidth: 160 }}>Actions</th>
                             </tr>
                             </thead>
+
                             <tbody>
                             {racers.map((racer, index) => (
                                 <tr key={racer.id}>
                                     <td>{index + 1}</td>
+
                                     <td>
                                         {racer.firstName} {racer.lastName}
                                     </td>
+
                                     <td>{racer.nickname || "-"}</td>
+
                                     <td>{racer.age}</td>
+
                                     <td>{getDivisionFromAge(racer.age)}</td>
+
                                     <td>{racer.carNumber}</td>
+
+                                    {/* ✅ NEW: Guardian Email cell */}
+                                    <td className="guardian-email-cell" title={getGuardianEmail(racer)}>
+                                        {getGuardianEmail(racer)}
+                                    </td>
+
+                                    {/* ✅ Actions cell */}
                                     <td>
                                         <button className="edit-btn" onClick={() => handleOpenEdit(racer)}>
                                             Edit
@@ -225,7 +244,6 @@ const RacersManagement = () => {
                     required
                 />
 
-                {/* ✅ NEW */}
                 <label htmlFor="nickname">Nickname (optional)</label>
                 <input
                     id="nickname"
