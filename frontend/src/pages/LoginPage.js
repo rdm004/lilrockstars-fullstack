@@ -54,7 +54,13 @@ function LoginPage() {
             else navigate("/dashboard");
         } catch (err) {
             console.error(err);
-            setError(err?.response?.data?.message || "Invalid email or password");
+
+            const msg =
+                err?.response?.data?.message ||
+                err?.response?.data ||
+                "Invalid email or password";
+
+            setError(typeof msg === "string" ? msg : "Invalid email or password");
         } finally {
             setLoading(false);
         }

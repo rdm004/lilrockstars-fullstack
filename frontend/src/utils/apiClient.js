@@ -26,17 +26,35 @@ apiClient.interceptors.response.use(
     (res) => res,
     (err) => {
         const status = err?.response?.status;
+
+        // ✅ If the failing call is the login endpoint, DO NOT treat it as "session expired"
+        // Let LoginPage show "Invalid email or password"
+        const url = err?.config?.url || "";
+        const isLoginCall = url.includes("/auth/login");
+
+        if (isLoginCall && (status === 401 || status === 400)) {
+            return Promise.reject(err);
+        }
+
+        // ✅ For all other 401s: treat as expired/invalid token
         if (status === 401) {
-            // Optional: set a one-time message for the login page
             sessionStorage.setItem(
                 "authMessage",
                 "Your session expired. Please log in again."
             );
+
             localStorage.removeItem("token");
             localStorage.removeItem("firstName");
-            window.location.href = "/login";
-            return; // stop promise chain after redirect
+            localStorage.removeItem("role");
+
+            // Avoid looping if already on /login
+            if (!window.location.pathname.startsWith("/login")) {
+                window.location.href = "/login";
+            }
+
+            return Promise.reject(err);
         }
+
         return Promise.reject(err);
     }
 );
