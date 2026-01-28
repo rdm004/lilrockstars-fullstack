@@ -58,14 +58,14 @@ export default function Navbar() {
                 {/* Logged in → Parent Dashboard */}
                 {isLoggedIn && (
                     <Link to="/dashboard" className="nav-button">
-                        Guardian Dashboard
+                        Dashboard
                     </Link>
                 )}
 
                 {/* Logged in ADMIN only → Admin Dashboard */}
                 {isAdmin && (
                     <Link to="/admin" className="nav-button">
-                        Admin Dashboard
+                        Admin
                     </Link>
                 )}
             </div>
