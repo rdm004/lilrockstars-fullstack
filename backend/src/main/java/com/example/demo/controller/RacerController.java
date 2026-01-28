@@ -45,6 +45,13 @@ public class RacerController {
         return s == null ? "" : s.trim();
     }
 
+    // Keep it reasonable: required, 1-10 chars, allow #, letters, numbers, dash
+    private boolean isValidCarNumber(String carNumberRaw) {
+        String c = normalize(carNumberRaw);
+        if (c.isBlank()) return false;
+        return c.matches("^[A-Za-z0-9#-]{1,10}$");
+    }
+
     private Parent getCurrentParent(String authHeader) {
         String token = authHeader.substring(7); // drop "Bearer "
         String email = jwtUtil.extractUsername(token);
@@ -60,7 +67,7 @@ public class RacerController {
         return parentRacerLinkRepository.existsByParentAndRacer(parent, racer);
     }
 
-    // 🧍 Get all racers visible to logged-in parent (primary + co-parent links)
+    // 🧍 Get all racers visible to logged-in parent (primary + co-guardian links)
     @GetMapping
     public ResponseEntity<?> getAllRacers(@RequestHeader("Authorization") String authHeader) {
         try {
@@ -72,7 +79,7 @@ public class RacerController {
         }
     }
 
-    // ➕ Add new racer (primary parent owns it) + ✅ Prevent duplicates
+    // ➕ Add new racer (primary parent owns it) + ✅ Prevent duplicates + ✅ Validate car #
     @PostMapping
     public ResponseEntity<?> addRacer(
             @RequestHeader("Authorization") String authHeader,
@@ -82,8 +89,9 @@ public class RacerController {
             Parent parent = getCurrentParent(authHeader);
 
             String firstName = normalize(racer.getFirstName());
-            String lastName = normalize(racer.getLastName());
-            String nickname = normalize(racer.getNickname()); // optional
+            String lastName  = normalize(racer.getLastName());
+            String nickname  = normalize(racer.getNickname()); // optional
+            String carNumber = normalize(racer.getCarNumber());
             int age = racer.getAge();
 
             if (firstName.isBlank() || lastName.isBlank() || age <= 0) {
@@ -92,15 +100,21 @@ public class RacerController {
                 ));
             }
 
-            // ✅ If nickname isn't provided, treat it as ""
-            if (nickname.isBlank()) nickname = "";
+            if (!isValidCarNumber(carNumber)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "message", "Car number is required (1-10 chars). Example: 21, #21, 21A."
+                ));
+            }
+
+            // For duplicate checks, treat blank nickname as ""
+            String nicknameForCheck = nickname.isBlank() ? "" : nickname;
 
             boolean dup = racerRepository.existsByParentIdAndFirstNameIgnoreCaseAndLastNameIgnoreCaseAndAgeAndNicknameIgnoreCase(
                     parent.getId(),
                     firstName,
                     lastName,
                     age,
-                    nickname
+                    nicknameForCheck
             );
 
             if (dup) {
@@ -113,7 +127,8 @@ public class RacerController {
 
             racer.setFirstName(firstName);
             racer.setLastName(lastName);
-            racer.setNickname(nickname); // always "" or a trimmed value
+            racer.setNickname(nickname.isBlank() ? null : nickname); // ✅ store null when empty
+            racer.setCarNumber(carNumber);                           // ✅ enforce trimmed value
             racer.setParent(parent);
 
             Racer saved = racerRepository.save(racer);
@@ -124,7 +139,7 @@ public class RacerController {
         }
     }
 
-    // ✏️ Update racer + ✅ Prevent duplicates
+    // ✏️ Update racer + ✅ Prevent duplicates + ✅ Validate car #
     @PutMapping("/{id}")
     public ResponseEntity<?> updateRacer(
             @PathVariable Long id,
@@ -149,8 +164,9 @@ public class RacerController {
         }
 
         String firstName = normalize(updatedRacer.getFirstName());
-        String lastName = normalize(updatedRacer.getLastName());
-        String nickname = normalize(updatedRacer.getNickname()); // optional
+        String lastName  = normalize(updatedRacer.getLastName());
+        String nickname  = normalize(updatedRacer.getNickname());
+        String carNumber = normalize(updatedRacer.getCarNumber());
         int age = updatedRacer.getAge();
 
         if (firstName.isBlank() || lastName.isBlank() || age <= 0) {
@@ -159,7 +175,13 @@ public class RacerController {
             ));
         }
 
-        if (nickname.isBlank()) nickname = "";
+        if (!isValidCarNumber(carNumber)) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "message", "Car number is required (1-10 chars). Example: 21, #21, 21A."
+            ));
+        }
+
+        String nicknameForCheck = nickname.isBlank() ? "" : nickname;
 
         Long parentIdForCheck = (existing.getParent() != null ? existing.getParent().getId() : parent.getId());
 
@@ -168,7 +190,7 @@ public class RacerController {
                 firstName,
                 lastName,
                 age,
-                nickname,
+                nicknameForCheck,
                 existing.getId()
         );
 
@@ -182,9 +204,9 @@ public class RacerController {
 
         existing.setFirstName(firstName);
         existing.setLastName(lastName);
-        existing.setNickname(nickname);
+        existing.setNickname(nickname.isBlank() ? null : nickname); // ✅ null when empty
         existing.setAge(age);
-        existing.setCarNumber(updatedRacer.getCarNumber());
+        existing.setCarNumber(carNumber);                           // ✅ enforce trimmed value
         existing.setDivision(updatedRacer.getDivision());
 
         Racer saved = racerRepository.save(existing);
