@@ -6,6 +6,7 @@ import {
     FaClipboardList,
     FaChartBar,
     FaCalendarAlt,
+    FaShieldAlt,
 } from "react-icons/fa";
 import "../styles/Sidebar.css";
 
@@ -18,6 +19,7 @@ const Sidebar = () => {
         { path: "/admin/results/manage", label: "Results", icon: <FaChartBar /> },
         { path: "/admin/races/manage", label: "Events", icon: <FaCalendarAlt /> },
         { path: "/admin/registrations/manage", label: "Registrations", icon: <FaClipboardList /> },
+        { path: "/admin/audit", label: "Audit", icon: <FaShieldAlt /> },
     ];
 
     return (

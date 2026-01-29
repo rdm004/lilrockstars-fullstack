@@ -37,6 +37,7 @@ import RacersManagement from "./pages/RacersManagement";
 import RegistrationsManagement from "./pages/RegistrationsManagement";
 import ResultsManagement from "./pages/ResultsManagement";
 import AdminRacesManagement from "./pages/AdminRacesManagement";
+import AdminAuditLog from "./pages/AdminAuditLog";
 
 function AppContent() {
     const location = useLocation();
@@ -134,6 +135,15 @@ function AppContent() {
                         element={
                             <AdminRoute>
                                 <RegistrationsManagement />
+                            </AdminRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/admin/audit"
+                        element={
+                            <AdminRoute>
+                                <AdminAuditLog />
                             </AdminRoute>
                         }
                     />

@@ -1,5 +1,6 @@
 package com.example.demo.config;
 
+import com.example.demo.audit.AdminAuditFilter;
 import com.example.demo.security.JwtAuthenticationFilter;
 import com.example.demo.security.RestAuthEntryPoint;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,10 +27,15 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RestAuthEntryPoint restAuthEntryPoint;
 
+    // ✅ NEW: audit filter for /api/admin/**
+    private final AdminAuditFilter adminAuditFilter;
+
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-                          RestAuthEntryPoint restAuthEntryPoint) {
+                          RestAuthEntryPoint restAuthEntryPoint,
+                          AdminAuditFilter adminAuditFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.restAuthEntryPoint = restAuthEntryPoint;
+        this.adminAuditFilter = adminAuditFilter;
     }
 
     @Bean
@@ -82,7 +88,12 @@ public class SecurityConfig {
                         .anyRequest().permitAll()
                 );
 
+        // ✅ JWT auth filter
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        // ✅ NEW: Admin audit logging (runs after JWT filter so user identity is available)
+        http.addFilterAfter(adminAuditFilter, JwtAuthenticationFilter.class);
+
         return http.build();
     }
 
