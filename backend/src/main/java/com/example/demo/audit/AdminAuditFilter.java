@@ -1,89 +1,120 @@
 package com.example.demo.audit;
 
-import com.example.demo.model.Parent;
-import com.example.demo.repository.ParentRepository;
-import com.example.demo.security.JwtUtil;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
+import jakarta.persistence.*;
+import java.time.Instant;
 
-import java.io.IOException;
+@Entity
+@Table(name = "audit_event")
+public class AuditEvent {
 
-@Component
-public class AdminAuditFilter extends OncePerRequestFilter {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    private final AuditEventRepository auditRepo;
-    private final JwtUtil jwtUtil;
-    private final ParentRepository parentRepository;
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt = Instant.now();
 
-    public AdminAuditFilter(AuditEventRepository auditRepo, JwtUtil jwtUtil, ParentRepository parentRepository) {
-        this.auditRepo = auditRepo;
-        this.jwtUtil = jwtUtil;
-        this.parentRepository = parentRepository;
+    @Column(nullable = false)
+    private String actorEmail;
+
+    // ✅ NEW: role at time of action (ADMIN, etc.)
+    @Column(nullable = false)
+    private String actorRole = "ADMIN";
+
+    @Column(nullable = false)
+    private String method;
+
+    @Column(nullable = false, length = 500)
+    private String path;
+
+    @Column(nullable = false)
+    private int status;
+
+    @Column(length = 120)
+    private String ip;
+
+    @Column(length = 300)
+    private String userAgent;
+
+    // Optional human-readable note (future use)
+    @Column(length = 2000)
+    private String note;
+
+    public AuditEvent() {}
+
+    // --------------------
+    // Getters & Setters
+    // --------------------
+    public Long getId() {
+        return id;
     }
 
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getRequestURI();
-        // Only audit admin endpoints (adjust if you want to include more)
-        return path == null || !path.startsWith("/api/admin/");
+    public Instant getCreatedAt() {
+        return createdAt;
     }
 
-    @Override
-    protected void doFilterInternal(
-            HttpServletRequest req,
-            HttpServletResponse res,
-            FilterChain chain
-    ) throws ServletException, IOException {
-
-        String actorEmail = null;
-        String actorRole = null;
-
-        try {
-            // If token exists, extract identity (but NEVER log token)
-            String auth = req.getHeader("Authorization");
-            if (auth != null && auth.startsWith("Bearer ")) {
-                String token = auth.substring(7);
-                actorEmail = jwtUtil.extractUsername(token);
-
-                // If your token doesn't store role claims, we can lookup the Parent by email:
-                if (actorEmail != null && !actorEmail.isBlank()) {
-                    Parent p = parentRepository.findByEmailIgnoreCase(actorEmail).orElse(null);
-                    if (p != null && p.getRole() != null) actorRole = p.getRole().name();
-                }
-            }
-
-            chain.doFilter(req, res);
-
-        } finally {
-            AuditEvent ev = new AuditEvent();
-            ev.setActorEmail(actorEmail);
-            ev.setActorRole(actorRole);
-            ev.setMethod(req.getMethod());
-            ev.setPath(req.getRequestURI());
-            ev.setStatus(res.getStatus());
-            ev.setIp(getClientIp(req));
-            ev.setUserAgent(safeUserAgent(req.getHeader("User-Agent")));
-
-            // DO NOT LOG: Authorization header, request bodies, passwords, tokens, reset links, etc.
-            auditRepo.save(ev);
-        }
+    public String getActorEmail() {
+        return actorEmail;
     }
 
-    private String getClientIp(HttpServletRequest req) {
-        // Render / proxies typically send X-Forwarded-For
-        String xff = req.getHeader("X-Forwarded-For");
-        if (xff != null && !xff.isBlank()) return xff.split(",")[0].trim();
-        return req.getRemoteAddr();
+    public void setActorEmail(String actorEmail) {
+        this.actorEmail = actorEmail;
     }
 
-    private String safeUserAgent(String ua) {
-        if (ua == null) return null;
-        ua = ua.trim();
-        // keep it from being huge
-        return ua.length() > 300 ? ua.substring(0, 300) : ua;
+    public String getActorRole() {
+        return actorRole;
+    }
+
+    public void setActorRole(String actorRole) {
+        this.actorRole =
+                (actorRole == null || actorRole.isBlank()) ? "ADMIN" : actorRole;
+    }
+
+    public String getMethod() {
+        return method;
+    }
+
+    public void setMethod(String method) {
+        this.method = method;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
+    public String getIp() {
+        return ip;
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+
+    public String getUserAgent() {
+        return userAgent;
+    }
+
+    public void setUserAgent(String userAgent) {
+        this.userAgent = userAgent;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
     }
 }

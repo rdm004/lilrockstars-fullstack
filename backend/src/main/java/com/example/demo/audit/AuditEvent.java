@@ -17,6 +17,10 @@ public class AuditEvent {
     @Column(nullable = false)
     private String actorEmail;
 
+    // ✅ NEW
+    @Column(nullable = false)
+    private String actorRole = "ADMIN";
+
     @Column(nullable = false)
     private String method;
 
@@ -33,12 +37,13 @@ public class AuditEvent {
     private String userAgent;
 
     @Column(length = 2000)
-    private String note; // optional field (future use)
+    private String note;
 
     public AuditEvent() {}
 
-    public AuditEvent(String actorEmail, String method, String path, int status, String ip, String userAgent) {
+    public AuditEvent(String actorEmail, String actorRole, String method, String path, int status, String ip, String userAgent) {
         this.actorEmail = actorEmail;
+        this.actorRole = actorRole == null || actorRole.isBlank() ? "ADMIN" : actorRole;
         this.method = method;
         this.path = path;
         this.status = status;
@@ -48,18 +53,30 @@ public class AuditEvent {
 
     public Long getId() { return id; }
     public Instant getCreatedAt() { return createdAt; }
+
     public String getActorEmail() { return actorEmail; }
     public void setActorEmail(String actorEmail) { this.actorEmail = actorEmail; }
+
+    public String getActorRole() { return actorRole; }
+    public void setActorRole(String actorRole) {
+        this.actorRole = (actorRole == null || actorRole.isBlank()) ? "ADMIN" : actorRole;
+    }
+
     public String getMethod() { return method; }
     public void setMethod(String method) { this.method = method; }
+
     public String getPath() { return path; }
     public void setPath(String path) { this.path = path; }
+
     public int getStatus() { return status; }
     public void setStatus(int status) { this.status = status; }
+
     public String getIp() { return ip; }
     public void setIp(String ip) { this.ip = ip; }
+
     public String getUserAgent() { return userAgent; }
     public void setUserAgent(String userAgent) { this.userAgent = userAgent; }
+
     public String getNote() { return note; }
     public void setNote(String note) { this.note = note; }
 }
