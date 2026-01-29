@@ -1,23 +1,32 @@
 import React from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 export default function ProtectedRoute({ children, requireRole }) {
     const token = localStorage.getItem("token");
+    const location = useLocation();
 
+    // Not logged in
     if (!token) {
-        return <Navigate to="/login" replace />;
+        sessionStorage.setItem("authMessage", "Please log in to continue.");
+        return <Navigate to="/login" replace state={{ from: location }} />;
     }
 
-    // Optional: check roles embedded in your JWT if you add them
+    // Optional role check (only useful if your JWT actually contains roles)
     if (requireRole) {
         try {
             const payload = JSON.parse(atob(token.split(".")[1]));
             const roles = payload?.roles || payload?.authorities || [];
-            if (!roles.includes(requireRole)) {
-                return <Navigate to="/login" replace />;
+
+            if (!Array.isArray(roles) || !roles.includes(requireRole)) {
+                sessionStorage.setItem("authMessage", "You do not have access to that page.");
+                return <Navigate to="/login" replace state={{ from: location }} />;
             }
         } catch (_) {
-            return <Navigate to="/login" replace />;
+            sessionStorage.setItem("authMessage", "Your session expired. Please log in again.");
+            localStorage.removeItem("token");
+            localStorage.removeItem("firstName");
+            localStorage.removeItem("role");
+            return <Navigate to="/login" replace state={{ from: location }} />;
         }
     }
 

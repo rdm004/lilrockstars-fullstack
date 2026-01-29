@@ -312,22 +312,48 @@ const RegistrationsManagement = () => {
     };
 
     // ---------------------------
-// Print (popup-free using hidden iframe)
+// Print (popup-free using hidden iframe) — SAFE (no emails + escaped HTML)
 // ---------------------------
 
-    const getParentDisplay = (row) => {
-        if (row?.parentFirstName || row?.parentLastName) {
-            return `${row.parentFirstName || ""} ${row.parentLastName || ""}`.trim();
-        }
+// ✅ Escape values before injecting into HTML template
+    const escapeHtml = (value) => {
+        const s = String(value ?? "");
+        return s
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    };
+
+// ✅ Guardian display helper (privacy-safe — no email fallback)
+    const getGuardianDisplay = (row) => {
+        // 1) Preferred: flat fields if you add them later in DTO (optional)
+        const first =
+            row?.guardianFirstName ||
+            row?.parentFirstName ||
+            row?.parent?.firstName ||
+            "";
+
+        const last =
+            row?.guardianLastName ||
+            row?.parentLastName ||
+            row?.parent?.lastName ||
+            "";
+
+        const full = `${first} ${last}`.trim();
+        if (full) return full;
+
+        // 2) Alternate single-field names if backend ever provides them
+        if (row?.guardianName) return String(row.guardianName).trim();
         if (row?.parentName) return String(row.parentName).trim();
-        if (row?.parent?.firstName || row?.parent?.lastName) {
-            return `${row.parent.firstName || ""} ${row.parent.lastName || ""}`.trim();
-        }
+
+        // 3) Privacy-first fallback
         return "-";
     };
 
+// ✅ Iframe print helper (no popup blocker)
     const printHtmlViaIframe = (html) => {
-        // Remove any previous print frame
         const existing = document.getElementById("print-frame");
         if (existing) existing.remove();
 
@@ -350,12 +376,13 @@ const RegistrationsManagement = () => {
         doc.write(html);
         doc.close();
 
-        // Wait a tick for layout, then print
         setTimeout(() => {
-            iframe.contentWindow?.focus();
-            iframe.contentWindow?.print();
-            // Cleanup after print
-            setTimeout(() => iframe.remove(), 1000);
+            try {
+                iframe.contentWindow?.focus();
+                iframe.contentWindow?.print();
+            } finally {
+                setTimeout(() => iframe.remove(), 1000);
+            }
         }, 250);
     };
 
@@ -363,6 +390,7 @@ const RegistrationsManagement = () => {
         const race = racesById.get(Number(raceId));
         const raceTitle = race?.raceName || race?.name || `Race #${raceId}`;
         const raceDateText = race?.raceDate ? formatRaceDate(race.raceDate) : "";
+        const printedAt = new Date().toLocaleString();
 
         const rows = (regsByRace.get(Number(raceId)) || []).slice();
         rows.sort((a, b) => {
@@ -376,7 +404,7 @@ const RegistrationsManagement = () => {
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>${raceTitle} Sign-In Sheet</title>
+  <title>${escapeHtml(raceTitle)} Sign-In Sheet</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 18px; color: #111; }
     .header { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-bottom:16px; }
@@ -395,12 +423,12 @@ const RegistrationsManagement = () => {
 <body>
   <div class="header">
     <div>
-      <h1>${raceTitle}</h1>
+      <h1>${escapeHtml(raceTitle)}</h1>
       <div class="note">Sorted by Division, then Car #</div>
     </div>
     <div class="meta">
-      <div><b>Date:</b> ${raceDateText || "-"}</div>
-      <div><b>Printed:</b> ${new Date().toLocaleString()}</div>
+      <div><b>Date:</b> ${escapeHtml(raceDateText || "-")}</div>
+      <div><b>Printed:</b> ${escapeHtml(printedAt)}</div>
     </div>
   </div>
 
@@ -410,7 +438,7 @@ const RegistrationsManagement = () => {
         <th>Racer</th>
         <th class="col-small">Car #</th>
         <th class="col-medium">Division</th>
-        <th>Parent / Guardian</th>
+        <th>Guardian</th>
         <th class="col-small">Draw #</th>
         <th class="col-small">Paid</th>
       </tr>
@@ -420,28 +448,25 @@ const RegistrationsManagement = () => {
             rows.length === 0
                 ? `<tr><td colspan="6">No registrations found for this race.</td></tr>`
                 : rows
-                    .map(
-                        (row) => `
+                    .map((row) => {
+                        const car = row?.carNumber ? `#${String(row.carNumber).replace(/^#/, "")}` : "-";
+                        return `
         <tr>
-          <td>${row?.racerName || "-"}</td>
-          <td>${
-                            row?.carNumber
-                                ? `#${String(row.carNumber).replace(/^#/, "")}`
-                                : "-"
-                        }</td>
-          <td>${row?.division || "-"}</td>
-          <td>${getParentDisplay(row)}</td>
+          <td>${escapeHtml(row?.racerName || "-")}</td>
+          <td>${escapeHtml(car)}</td>
+          <td>${escapeHtml(row?.division || "-")}</td>
+          <td>${escapeHtml(getGuardianDisplay(row))}</td>
           <td></td>
           <td><span class="checkbox"></span></td>
-        </tr>`
-                    )
+        </tr>`;
+                    })
                     .join("")
         }
     </tbody>
   </table>
 </body>
 </html>
-  `;
+    `;
 
         printHtmlViaIframe(html);
     };

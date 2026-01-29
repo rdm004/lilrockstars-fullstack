@@ -7,13 +7,6 @@ import "../styles/LoginPage.css";
 function LoginPage() {
     const navigate = useNavigate();
 
-    // If already logged in, go to the correct dashboard
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        const role = (localStorage.getItem("role") || "USER").toUpperCase();
-        if (token) navigate(role === "ADMIN" ? "/admin" : "/dashboard");
-    }, [navigate]);
-
     // one-time notice if redirected
     const [notice, setNotice] = useState("");
     useEffect(() => {
@@ -23,6 +16,30 @@ function LoginPage() {
             sessionStorage.removeItem("authMessage");
         }
     }, []);
+
+    // If already logged in, go to the correct dashboard
+    // ✅ Improvement: verify token is actually valid before redirecting
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        const role = (localStorage.getItem("role") || "USER").toUpperCase();
+
+        if (!token) return;
+
+        const verify = async () => {
+            try {
+                // This will 401 if token is invalid/expired
+                await apiClient.get("/auth/me");
+                navigate(role === "ADMIN" ? "/admin" : "/dashboard");
+            } catch (e) {
+                // Invalid token: clear it and stay on login
+                localStorage.removeItem("token");
+                localStorage.removeItem("firstName");
+                localStorage.removeItem("role");
+            }
+        };
+
+        void verify();
+    }, [navigate]);
 
     const [form, setForm] = useState({ email: "", password: "" });
     const [error, setError] = useState("");
@@ -86,14 +103,17 @@ function LoginPage() {
         setForgotErr("");
         setForgotLoading(true);
 
+        const generic =
+            "If that email exists, we sent a password reset link. Please check your inbox and your spam/junk folder.";
+
         try {
-            // backend should always return the same message
             const res = await apiClient.post("/auth/forgot-password", { email: forgotEmail });
-            setForgotMsg(res?.data?.message || "If that email exists, we sent a password reset link.");
+            // ✅ Always show spam/junk hint even if backend returns something else
+            setForgotMsg(res?.data?.message ? `${res.data.message} Also check your spam/junk folder.` : generic);
         } catch (err) {
             console.error(err);
-            // still show a generic message (prevents email enumeration)
-            setForgotMsg("If that email exists, we sent a password reset link. Please check your inbox and your spam/junk folder.");
+            // ✅ Still generic (prevents email enumeration)
+            setForgotMsg(generic);
         } finally {
             setForgotLoading(false);
         }
