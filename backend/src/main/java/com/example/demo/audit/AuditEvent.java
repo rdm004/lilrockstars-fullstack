@@ -11,15 +11,17 @@ public class AuditEvent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Instant createdAt = Instant.now();
+    // Set via @PrePersist to avoid weird behavior if entity is constructed differently
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt;
 
+    // Always store a safe value, even if token missing/invalid
     @Column(nullable = false)
-    private String actorEmail;
+    private String actorEmail = "anonymous";
 
-    // ✅ NEW
+    // More accurate default than "ADMIN"
     @Column(nullable = false)
-    private String actorRole = "ADMIN";
+    private String actorRole = "UNKNOWN";
 
     @Column(nullable = false)
     private String method;
@@ -33,7 +35,7 @@ public class AuditEvent {
     @Column(length = 120)
     private String ip;
 
-    @Column(length = 500)
+    @Column(length = 300)
     private String userAgent;
 
     @Column(length = 2000)
@@ -41,25 +43,39 @@ public class AuditEvent {
 
     public AuditEvent() {}
 
-    public AuditEvent(String actorEmail, String actorRole, String method, String path, int status, String ip, String userAgent) {
-        this.actorEmail = actorEmail;
-        this.actorRole = actorRole == null || actorRole.isBlank() ? "ADMIN" : actorRole;
-        this.method = method;
-        this.path = path;
-        this.status = status;
-        this.ip = ip;
-        this.userAgent = userAgent;
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) createdAt = Instant.now();
+        if (actorEmail == null || actorEmail.isBlank()) actorEmail = "anonymous";
+        if (actorRole == null || actorRole.isBlank()) actorRole = "UNKNOWN";
+        if (method != null) method = method.trim().toUpperCase();
+        if (path != null) path = path.trim();
+        if (ip != null) ip = ip.trim();
+        if (userAgent != null) {
+            String ua = userAgent.trim();
+            userAgent = ua.length() > 300 ? ua.substring(0, 300) : ua;
+        }
     }
 
+    // --------------------
+    // Getters & Setters
+    // --------------------
     public Long getId() { return id; }
+
     public Instant getCreatedAt() { return createdAt; }
 
     public String getActorEmail() { return actorEmail; }
-    public void setActorEmail(String actorEmail) { this.actorEmail = actorEmail; }
+    public void setActorEmail(String actorEmail) {
+        this.actorEmail = (actorEmail == null || actorEmail.isBlank())
+                ? "anonymous"
+                : actorEmail.trim().toLowerCase();
+    }
 
     public String getActorRole() { return actorRole; }
     public void setActorRole(String actorRole) {
-        this.actorRole = (actorRole == null || actorRole.isBlank()) ? "ADMIN" : actorRole;
+        this.actorRole = (actorRole == null || actorRole.isBlank())
+                ? "UNKNOWN"
+                : actorRole.trim().toUpperCase();
     }
 
     public String getMethod() { return method; }

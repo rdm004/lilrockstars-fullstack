@@ -1,120 +1,120 @@
 package com.example.demo.audit;
 
-import jakarta.persistence.*;
-import java.time.Instant;
+import com.example.demo.model.Parent;
+import com.example.demo.repository.ParentRepository;
+import com.example.demo.security.JwtUtil;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
-@Entity
-@Table(name = "audit_event")
-public class AuditEvent {
+import java.io.IOException;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@Component
+public class AdminAuditFilter extends OncePerRequestFilter {
 
-    @Column(nullable = false, updatable = false)
-    private Instant createdAt = Instant.now();
+    private final AuditEventRepository auditRepo;
+    private final JwtUtil jwtUtil;
+    private final ParentRepository parentRepository;
 
-    @Column(nullable = false)
-    private String actorEmail;
-
-    // ✅ NEW: role at time of action (ADMIN, etc.)
-    @Column(nullable = false)
-    private String actorRole = "ADMIN";
-
-    @Column(nullable = false)
-    private String method;
-
-    @Column(nullable = false, length = 500)
-    private String path;
-
-    @Column(nullable = false)
-    private int status;
-
-    @Column(length = 120)
-    private String ip;
-
-    @Column(length = 300)
-    private String userAgent;
-
-    // Optional human-readable note (future use)
-    @Column(length = 2000)
-    private String note;
-
-    public AuditEvent() {}
-
-    // --------------------
-    // Getters & Setters
-    // --------------------
-    public Long getId() {
-        return id;
+    public AdminAuditFilter(AuditEventRepository auditRepo, JwtUtil jwtUtil, ParentRepository parentRepository) {
+        this.auditRepo = auditRepo;
+        this.jwtUtil = jwtUtil;
+        this.parentRepository = parentRepository;
     }
 
-    public Instant getCreatedAt() {
-        return createdAt;
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+
+        // Only audit admin endpoints
+        if (path == null || !path.startsWith("/api/admin/")) return true;
+
+        // Skip preflight to avoid noisy logs
+        return "OPTIONS".equalsIgnoreCase(request.getMethod());
     }
 
-    public String getActorEmail() {
-        return actorEmail;
+    @Override
+    protected void doFilterInternal(
+            HttpServletRequest req,
+            HttpServletResponse res,
+            FilterChain chain
+    ) throws ServletException, IOException {
+
+        String actorEmail = null;
+        String actorRole = null;
+
+        // Capture final status even on exceptions
+        int status = 500;
+        Exception thrown = null;
+
+        try {
+            // If token exists, extract identity (NEVER log token)
+            String auth = req.getHeader("Authorization");
+            if (auth != null && auth.startsWith("Bearer ")) {
+                String token = auth.substring(7);
+                actorEmail = jwtUtil.extractUsername(token);
+
+                // If token doesn't store role claims, look up user by email
+                if (actorEmail != null && !actorEmail.isBlank()) {
+                    Parent p = parentRepository.findByEmailIgnoreCase(actorEmail).orElse(null);
+                    if (p != null && p.getRole() != null) {
+                        actorRole = p.getRole().name();
+                    }
+                }
+            }
+
+            chain.doFilter(req, res);
+            status = res.getStatus();
+
+        } catch (Exception e) {
+            thrown = e;
+
+            // If Spring already set status, keep it; else default to 500
+            try {
+                status = res.getStatus() > 0 ? res.getStatus() : 500;
+            } catch (Exception ignored) {
+                status = 500;
+            }
+
+            // Re-throw so your normal error handling still works
+            if (e instanceof ServletException se) throw se;
+            if (e instanceof IOException ioe) throw ioe;
+            throw new ServletException(e);
+
+        } finally {
+            try {
+                AuditEvent ev = new AuditEvent();
+                ev.setActorEmail(actorEmail); // defaults to "anonymous" via setter
+                ev.setActorRole(actorRole);   // defaults to "UNKNOWN" via setter
+
+                ev.setMethod(req.getMethod());
+                ev.setPath(req.getRequestURI());
+                ev.setStatus(status);
+                ev.setIp(getClientIp(req));
+                ev.setUserAgent(req.getHeader("User-Agent"));
+
+                // Optional: short error note (no stack traces, no secrets)
+                if (thrown != null) {
+                    ev.setNote("Exception: " + thrown.getClass().getSimpleName());
+                }
+
+                // DO NOT LOG: Authorization header, request bodies, passwords, tokens, reset links
+                auditRepo.save(ev);
+
+            } catch (Exception auditEx) {
+                // Never block the request because audit logging failed
+                // (You can log this server-side if you want, but do not throw)
+            }
+        }
     }
 
-    public void setActorEmail(String actorEmail) {
-        this.actorEmail = actorEmail;
-    }
-
-    public String getActorRole() {
-        return actorRole;
-    }
-
-    public void setActorRole(String actorRole) {
-        this.actorRole =
-                (actorRole == null || actorRole.isBlank()) ? "ADMIN" : actorRole;
-    }
-
-    public String getMethod() {
-        return method;
-    }
-
-    public void setMethod(String method) {
-        this.method = method;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public int getStatus() {
-        return status;
-    }
-
-    public void setStatus(int status) {
-        this.status = status;
-    }
-
-    public String getIp() {
-        return ip;
-    }
-
-    public void setIp(String ip) {
-        this.ip = ip;
-    }
-
-    public String getUserAgent() {
-        return userAgent;
-    }
-
-    public void setUserAgent(String userAgent) {
-        this.userAgent = userAgent;
-    }
-
-    public String getNote() {
-        return note;
-    }
-
-    public void setNote(String note) {
-        this.note = note;
+    private String getClientIp(HttpServletRequest req) {
+        // Render / proxies typically send X-Forwarded-For
+        String xff = req.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) return xff.split(",")[0].trim();
+        return req.getRemoteAddr();
     }
 }
