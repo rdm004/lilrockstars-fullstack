@@ -95,9 +95,12 @@ function ParentDashboard() {
             } catch (err) {
                 console.error("Error loading dashboard:", err);
                 const status = err.response?.status;
+
                 if (status === 401 || status === 403) {
+                    sessionStorage.setItem("authMessage", "Your session expired. Please log in again.");
                     localStorage.removeItem("token");
                     localStorage.removeItem("firstName");
+                    localStorage.removeItem("role");
                     navigate("/login");
                 } else {
                     setStatusMessage("❌ Could not load dashboard. Please try again.");

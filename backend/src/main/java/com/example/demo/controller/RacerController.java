@@ -41,45 +41,66 @@ public class RacerController {
         this.jwtUtil = jwtUtil;
     }
 
+    /* ==============================
+       Helpers
+       ============================== */
+
     private String normalize(String s) {
         return s == null ? "" : s.trim();
     }
 
-    // Keep it reasonable: required, 1-10 chars, allow #, letters, numbers, dash
-    private boolean isValidCarNumber(String carNumberRaw) {
-        String c = normalize(carNumberRaw);
+    // 1–10 chars, letters, numbers, #, dash
+    private boolean isValidCarNumber(String raw) {
+        String c = normalize(raw);
         if (c.isBlank()) return false;
         return c.matches("^[A-Za-z0-9#-]{1,10}$");
     }
 
     private Parent getCurrentParent(String authHeader) {
-        String token = authHeader.substring(7); // drop "Bearer "
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("Missing or invalid Authorization header");
+        }
+
+        String token = authHeader.substring(7);
         String email = jwtUtil.extractUsername(token);
 
         return parentRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new RuntimeException("Parent not found for email " + email));
+                .orElseThrow(() -> new RuntimeException("Parent not found"));
     }
 
     private boolean canManageRacer(Parent parent, Racer racer) {
-        if (racer.getParent() != null && racer.getParent().getId().equals(parent.getId())) {
+        // Primary owner
+        if (racer.getParent() != null &&
+                racer.getParent().getId().equals(parent.getId())) {
             return true;
         }
+
+        // Co-guardian link
         return parentRacerLinkRepository.existsByParentAndRacer(parent, racer);
     }
 
-    // 🧍 Get all racers visible to logged-in parent (primary + co-guardian links)
+    /* ==============================
+       GET – visible racers
+       ============================== */
+
     @GetMapping
-    public ResponseEntity<?> getAllRacers(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<?> getAllRacers(
+            @RequestHeader("Authorization") String authHeader
+    ) {
         try {
             Parent parent = getCurrentParent(authHeader);
             List<Racer> racers = racerRepository.findAllVisibleToParent(parent.getId());
             return ResponseEntity.ok(racers);
         } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("message", "Parent not found"));
+            return ResponseEntity.status(401)
+                    .body(Map.of("message", "Unauthorized"));
         }
     }
 
-    // ➕ Add new racer (primary parent owns it) + ✅ Prevent duplicates + ✅ Validate car #
+    /* ==============================
+       POST – add racer
+       ============================== */
+
     @PostMapping
     public ResponseEntity<?> addRacer(
             @RequestHeader("Authorization") String authHeader,
@@ -90,164 +111,174 @@ public class RacerController {
 
             String firstName = normalize(racer.getFirstName());
             String lastName  = normalize(racer.getLastName());
-            String nickname  = normalize(racer.getNickname()); // optional
+            String nickname  = normalize(racer.getNickname());
             String carNumber = normalize(racer.getCarNumber());
             int age = racer.getAge();
 
             if (firstName.isBlank() || lastName.isBlank() || age <= 0) {
-                return ResponseEntity.badRequest().body(Map.of(
-                        "message", "First name, last name, and age are required."
-                ));
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message",
+                                "First name, last name, and age are required."));
             }
 
             if (!isValidCarNumber(carNumber)) {
-                return ResponseEntity.badRequest().body(Map.of(
-                        "message", "Car number is required (1-10 chars). Example: 21, #21, 21A."
-                ));
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message",
+                                "Car number must be 1–10 characters (letters, numbers, #, -)."));
             }
 
-            // For duplicate checks, treat blank nickname as ""
             String nicknameForCheck = nickname.isBlank() ? "" : nickname;
 
-            boolean dup = racerRepository.existsByParentIdAndFirstNameIgnoreCaseAndLastNameIgnoreCaseAndAgeAndNicknameIgnoreCase(
-                    parent.getId(),
-                    firstName,
-                    lastName,
-                    age,
-                    nicknameForCheck
-            );
+            boolean dup = racerRepository
+                    .existsByParentIdAndFirstNameIgnoreCaseAndLastNameIgnoreCaseAndAgeAndNicknameIgnoreCase(
+                            parent.getId(),
+                            firstName,
+                            lastName,
+                            age,
+                            nicknameForCheck
+                    );
 
             if (dup) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "message",
-                        "This racer already exists (same first name, last name, age, and nickname). " +
-                                "If this is a different child with the same name/age, add a nickname to distinguish them (e.g., Jr, II, Big, Little)."
+                        "This racer already exists. Use a nickname to distinguish duplicates."
                 ));
             }
 
             racer.setFirstName(firstName);
             racer.setLastName(lastName);
-            racer.setNickname(nickname.isBlank() ? null : nickname); // ✅ store null when empty
-            racer.setCarNumber(carNumber);                           // ✅ enforce trimmed value
+            racer.setNickname(nicknameForCheck);
+            racer.setAge(age);
+            racer.setCarNumber(carNumber);
             racer.setParent(parent);
 
             Racer saved = racerRepository.save(racer);
             return ResponseEntity.ok(saved);
 
         } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("message", "Parent not found"));
+            return ResponseEntity.status(401)
+                    .body(Map.of("message", "Unauthorized"));
         }
     }
 
-    // ✏️ Update racer + ✅ Prevent duplicates + ✅ Validate car #
+    /* ==============================
+       PUT – update racer
+       ============================== */
+
     @PutMapping("/{id}")
     public ResponseEntity<?> updateRacer(
             @PathVariable Long id,
             @RequestHeader("Authorization") String authHeader,
-            @RequestBody Racer updatedRacer
+            @RequestBody Racer updated
     ) {
-
         Parent parent;
         try {
             parent = getCurrentParent(authHeader);
         } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("message", "Parent not found"));
+            return ResponseEntity.status(401)
+                    .body(Map.of("message", "Unauthorized"));
         }
 
-        Optional<Racer> existingOpt = racerRepository.findById(id);
-        if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
+        Optional<Racer> opt = racerRepository.findById(id);
+        if (opt.isEmpty()) return ResponseEntity.notFound().build();
 
-        Racer existing = existingOpt.get();
+        Racer existing = opt.get();
 
         if (!canManageRacer(parent, existing)) {
-            return ResponseEntity.status(403).body(Map.of("message", "Unauthorized to edit this racer."));
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Unauthorized to edit this racer."));
         }
 
-        String firstName = normalize(updatedRacer.getFirstName());
-        String lastName  = normalize(updatedRacer.getLastName());
-        String nickname  = normalize(updatedRacer.getNickname());
-        String carNumber = normalize(updatedRacer.getCarNumber());
-        int age = updatedRacer.getAge();
+        String firstName = normalize(updated.getFirstName());
+        String lastName  = normalize(updated.getLastName());
+        String nickname  = normalize(updated.getNickname());
+        String carNumber = normalize(updated.getCarNumber());
+        int age = updated.getAge();
 
         if (firstName.isBlank() || lastName.isBlank() || age <= 0) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "message", "First name, last name, and age are required."
-            ));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message",
+                            "First name, last name, and age are required."));
         }
 
         if (!isValidCarNumber(carNumber)) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "message", "Car number is required (1-10 chars). Example: 21, #21, 21A."
-            ));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message",
+                            "Car number must be 1–10 characters."));
         }
 
         String nicknameForCheck = nickname.isBlank() ? "" : nickname;
 
-        Long parentIdForCheck = (existing.getParent() != null ? existing.getParent().getId() : parent.getId());
+        Long ownerId = existing.getParent() != null
+                ? existing.getParent().getId()
+                : parent.getId();
 
-        boolean dup = racerRepository.existsByParentIdAndFirstNameIgnoreCaseAndLastNameIgnoreCaseAndAgeAndNicknameIgnoreCaseAndIdNot(
-                parentIdForCheck,
-                firstName,
-                lastName,
-                age,
-                nicknameForCheck,
-                existing.getId()
-        );
+        boolean dup = racerRepository
+                .existsByParentIdAndFirstNameIgnoreCaseAndLastNameIgnoreCaseAndAgeAndNicknameIgnoreCaseAndIdNot(
+                        ownerId,
+                        firstName,
+                        lastName,
+                        age,
+                        nicknameForCheck,
+                        existing.getId()
+                );
 
         if (dup) {
             return ResponseEntity.badRequest().body(Map.of(
                     "message",
-                    "Another racer already exists with the same first name, last name, age, and nickname. " +
-                            "Use a different nickname to distinguish them."
+                    "Another racer already exists with these details."
             ));
         }
 
         existing.setFirstName(firstName);
         existing.setLastName(lastName);
-        existing.setNickname(nickname.isBlank() ? null : nickname); // ✅ null when empty
+        existing.setNickname(nicknameForCheck);
         existing.setAge(age);
-        existing.setCarNumber(carNumber);                           // ✅ enforce trimmed value
-        existing.setDivision(updatedRacer.getDivision());
+        existing.setCarNumber(carNumber);
+        existing.setDivision(updated.getDivision());
 
         Racer saved = racerRepository.save(existing);
         return ResponseEntity.ok(saved);
     }
 
-    // 🗑️ Delete racer (must delete dependent rows first)
+    /* ==============================
+       DELETE – racer
+       ============================== */
+
     @DeleteMapping("/{id}")
     @Transactional
     public ResponseEntity<?> deleteRacer(
             @PathVariable Long id,
             @RequestHeader("Authorization") String authHeader
     ) {
-
         Parent parent;
         try {
             parent = getCurrentParent(authHeader);
         } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("message", "Parent not found"));
+            return ResponseEntity.status(401)
+                    .body(Map.of("message", "Unauthorized"));
         }
 
-        Optional<Racer> racerOpt = racerRepository.findById(id);
-        if (racerOpt.isEmpty()) return ResponseEntity.notFound().build();
+        Optional<Racer> opt = racerRepository.findById(id);
+        if (opt.isEmpty()) return ResponseEntity.notFound().build();
 
-        Racer racer = racerOpt.get();
+        Racer racer = opt.get();
 
         if (!canManageRacer(parent, racer)) {
-            return ResponseEntity.status(403).body(Map.of("message", "Unauthorized to delete this racer."));
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Unauthorized to delete this racer."));
         }
 
         try {
             registrationRepository.deleteByRacerId(id);
             raceResultRepository.deleteByRacerId(id);
             parentRacerLinkRepository.deleteByRacerId(id);
-
             racerRepository.deleteById(id);
 
             return ResponseEntity.ok(Map.of("message", "Racer deleted successfully."));
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("message", "Failed to delete racer."));
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body(Map.of("message", "Failed to delete racer."));
         }
     }
 }
