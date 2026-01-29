@@ -1,6 +1,9 @@
 package com.example.demo.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -26,13 +29,26 @@ public class Parent {
     @Column(unique = true, nullable = false)
     private String email;
 
+    /**
+     * ✅ SECURITY CRITICAL
+     * Accept password in requests, but NEVER serialize it back in responses
+     * (even hashed passwords must not be exposed).
+     */
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role = Role.USER; // ✅ default role
+    private Role role = Role.USER;
 
+    /**
+     * ✅ Avoid recursive JSON / huge payloads:
+     * You don't want Parent -> racers -> parent -> racers...
+     *
+     * This is a JPA mapping but not needed in API responses.
+     */
+    @JsonIgnore
     @ManyToMany
     @JoinTable(
             name = "parent_racer_link",

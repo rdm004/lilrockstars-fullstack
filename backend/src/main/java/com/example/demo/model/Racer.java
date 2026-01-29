@@ -1,5 +1,6 @@
 package com.example.demo.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 @Entity
@@ -15,7 +16,7 @@ public class Racer {
 
     /**
      * Optional field to distinguish racers with the same first/last/age.
-     * We will store this as "" (empty string) when not provided to avoid null confusion.
+     * Stored as "" when not provided to avoid null vs "" confusion.
      */
     @Column(nullable = false)
     private String nickname = "";
@@ -24,8 +25,15 @@ public class Racer {
     private String division;
     private String carNumber;
 
+    /**
+     * ✅ Protect parent object in responses:
+     * - password never shown due to WRITE_ONLY (Parent.java)
+     * - but we ALSO explicitly ignore password/racers to prevent accidental exposure
+     *   and recursion / payload bloat
+     */
     @ManyToOne
     @JoinColumn(name = "parent_id")
+    @JsonIgnoreProperties({ "password", "racers" })
     private Parent parent;
 
     // --- Normalization (prevents whitespace duplicates) ---
