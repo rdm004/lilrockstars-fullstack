@@ -1,52 +1,35 @@
 package com.example.demo.audit;
 
+import com.example.demo.model.Parent;
+import com.example.demo.repository.ParentRepository;
+import com.example.demo.security.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Set;
 
 @Component
 public class AdminAuditFilter extends OncePerRequestFilter {
 
-    private static final Set<String> MUTATING_METHODS = Set.of("POST", "PUT", "PATCH", "DELETE");
-
     private final AuditEventRepository auditRepo;
+    private final JwtUtil jwtUtil;
+    private final ParentRepository parentRepository;
 
-    public AdminAuditFilter(AuditEventRepository auditRepo) {
+    public AdminAuditFilter(AuditEventRepository auditRepo, JwtUtil jwtUtil, ParentRepository parentRepository) {
         this.auditRepo = auditRepo;
+        this.jwtUtil = jwtUtil;
+        this.parentRepository = parentRepository;
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        String method = request.getMethod();
-
-        if (path == null) return true;
-
-        // only admin endpoints
-        if (!path.startsWith("/api/admin/")) return true;
-
-        // don't audit viewing audit logs
-        if (path.startsWith("/api/admin/audit")) return true;
-
-        // only mutations
-        if (!MUTATING_METHODS.contains(method)) return true;
-
-        // only these resources
-        boolean isTarget =
-                path.contains("/racers") ||
-                        path.contains("/races") ||
-                        path.contains("/registrations") ||
-                        path.contains("/results");
-
-        return !isTarget;
+        // Only audit admin endpoints (we will further restrict in controller/service later)
+        return path == null || !path.startsWith("/api/admin/");
     }
 
     @Override
@@ -60,23 +43,36 @@ public class AdminAuditFilter extends OncePerRequestFilter {
         String actorRole = null;
 
         try {
-            chain.doFilter(req, res);
-        } finally {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.isAuthenticated()) {
-                actorEmail = auth.getName();
-                actorRole = auth.getAuthorities() != null ? auth.getAuthorities().toString() : null;
+            // If token exists, extract identity (NEVER log token)
+            String auth = req.getHeader("Authorization");
+            if (auth != null && auth.startsWith("Bearer ")) {
+                String token = auth.substring(7);
+                actorEmail = jwtUtil.extractUsername(token);
+
+                if (actorEmail != null && !actorEmail.isBlank()) {
+                    Parent p = parentRepository.findByEmailIgnoreCase(actorEmail).orElse(null);
+                    if (p != null && p.getRole() != null) actorRole = p.getRole().name();
+                }
             }
 
+            chain.doFilter(req, res);
+
+        } finally {
             AuditEvent ev = new AuditEvent();
             ev.setActorEmail(actorEmail);
             ev.setActorRole(actorRole);
             ev.setMethod(req.getMethod());
             ev.setPath(req.getRequestURI());
             ev.setStatus(res.getStatus());
+            ev.setUserAgent(safeUserAgent(req.getHeader("User-Agent")));
 
-            // ✅ intentionally not storing IP or userAgent
             auditRepo.save(ev);
         }
+    }
+
+    private String safeUserAgent(String ua) {
+        if (ua == null) return null;
+        ua = ua.trim();
+        return ua.length() > 300 ? ua.substring(0, 300) : ua;
     }
 }

@@ -13,10 +13,11 @@ public interface AuditEventRepository extends JpaRepository<AuditEvent, Long> {
         from AuditEvent a
         where (:q is null or :q = '' or
                lower(a.actorEmail) like lower(concat('%', :q, '%')) or
+               lower(coalesce(a.actorRole, '')) like lower(concat('%', :q, '%')) or
                lower(a.path) like lower(concat('%', :q, '%')) or
                lower(a.method) like lower(concat('%', :q, '%')) or
                cast(a.status as string) like concat('%', :q, '%') or
-               lower(coalesce(a.ip, '')) like lower(concat('%', :q, '%'))
+               lower(coalesce(a.userAgent, '')) like lower(concat('%', :q, '%'))
         )
         order by a.createdAt desc
     """)

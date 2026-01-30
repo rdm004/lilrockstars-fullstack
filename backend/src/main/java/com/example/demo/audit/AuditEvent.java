@@ -29,12 +29,16 @@ public class AuditEvent {
     @Column(nullable = false)
     private int status;
 
+    @Column(length = 300)
+    private String userAgent;
+
     @Column(length = 2000)
     private String note;
 
     public AuditEvent() {}
 
     public Long getId() { return id; }
+
     public Instant getCreatedAt() { return createdAt; }
 
     public String getActorEmail() { return actorEmail; }
@@ -53,6 +57,9 @@ public class AuditEvent {
 
     public int getStatus() { return status; }
     public void setStatus(int status) { this.status = status; }
+
+    public String getUserAgent() { return userAgent; }
+    public void setUserAgent(String userAgent) { this.userAgent = userAgent; }
 
     public String getNote() { return note; }
     public void setNote(String note) { this.note = note; }
