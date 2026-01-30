@@ -11,9 +11,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Set;
 
 @Component
 public class AdminAuditFilter extends OncePerRequestFilter {
+
+    private static final Set<String> MUTATION_METHODS = Set.of("POST", "PUT", "PATCH", "DELETE");
 
     private final AuditEventRepository auditRepo;
     private final JwtUtil jwtUtil;
@@ -28,8 +31,21 @@ public class AdminAuditFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        // Only audit admin endpoints (we will further restrict in controller/service later)
-        return path == null || !path.startsWith("/api/admin/");
+        String method = request.getMethod();
+
+        if (path == null) return true;
+
+        // Only admin endpoints
+        if (!path.startsWith("/api/admin/")) return true;
+
+        // Only create/update/delete (no GET)
+        if (!MUTATION_METHODS.contains(method)) return true;
+
+        // Only the “sensitive” admin resources
+        return !(path.startsWith("/api/admin/racers")
+                || path.startsWith("/api/admin/races")
+                || path.startsWith("/api/admin/registrations")
+                || path.startsWith("/api/admin/results"));
     }
 
     @Override
@@ -43,7 +59,7 @@ public class AdminAuditFilter extends OncePerRequestFilter {
         String actorRole = null;
 
         try {
-            // If token exists, extract identity (NEVER log token)
+            // Identify actor (do NOT log token)
             String auth = req.getHeader("Authorization");
             if (auth != null && auth.startsWith("Bearer ")) {
                 String token = auth.substring(7);
@@ -66,6 +82,7 @@ public class AdminAuditFilter extends OncePerRequestFilter {
             ev.setStatus(res.getStatus());
             ev.setUserAgent(safeUserAgent(req.getHeader("User-Agent")));
 
+            // ✅ No IP stored/logged
             auditRepo.save(ev);
         }
     }
