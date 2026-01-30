@@ -18,10 +18,10 @@ const getDivisionFromAge = (ageRaw) => {
 // ✅ Guardian Email helper (safe fallbacks)
 const getGuardianEmail = (racer) => {
     return (
-        racer?.guardianEmail ||     // if you add this later
-        racer?.parentEmail ||       // common flat property
-        racer?.parent?.email ||     // nested parent object
-        racer?.guardian?.email ||   // nested guardian object (future-proof)
+        racer?.parentEmail ||      // AdminRacersController returns this
+        racer?.guardianEmail ||    // future-proof
+        racer?.parent?.email ||    // if you ever return nested parent
+        racer?.guardian?.email ||  // future-proof
         "-"
     );
 };
@@ -40,6 +40,7 @@ const RacersManagement = () => {
 
     const emptyForm = {
         id: null,
+        guardianEmail: "", // ✅ ADMIN ONLY (required on Add)
         firstName: "",
         lastName: "",
         nickname: "",
@@ -49,14 +50,17 @@ const RacersManagement = () => {
 
     const [formData, setFormData] = useState(emptyForm);
 
+    // ✅ ADMIN: load racers from admin endpoint
     const fetchRacers = async () => {
         try {
             setLoading(true);
             setError("");
-            const res = await apiClient.get("/racers");
+
+            // returns RacerSearchDto: { id, firstName, lastName, carNumber, age, parentEmail }
+            const res = await apiClient.get("/admin/racers");
             setRacers(res.data || []);
         } catch (err) {
-            console.error("Error loading racers:", err);
+            console.error("Error loading admin racers:", err);
             setError("Could not load racers. Please try again.");
         } finally {
             setLoading(false);
@@ -72,13 +76,15 @@ const RacersManagement = () => {
         setDeleteModalOpen(true);
     };
 
+    // ✅ ADMIN: delete via admin endpoint
     const confirmDeleteRacer = async (racerId) => {
         try {
-            await apiClient.delete(`/racers/${racerId}`);
+            await apiClient.delete(`/admin/racers/${racerId}`);
             void fetchRacers();
         } catch (err) {
             console.error("Error deleting racer:", err);
-            alert("❌ Failed to delete racer.");
+            const msg = err?.response?.data?.message || "❌ Failed to delete racer.";
+            alert(typeof msg === "string" ? msg : "❌ Failed to delete racer.");
         } finally {
             setDeleteModalOpen(false);
             setRacerToDelete(null);
@@ -95,6 +101,7 @@ const RacersManagement = () => {
         setEditMode(true);
         setFormData({
             id: racer.id,
+            guardianEmail: getGuardianEmail(racer) === "-" ? "" : getGuardianEmail(racer), // show but read-only
             firstName: racer.firstName || "",
             lastName: racer.lastName || "",
             nickname: racer.nickname || "",
@@ -105,25 +112,43 @@ const RacersManagement = () => {
     };
 
     const handleSave = async () => {
-        const payload = {
+        // For admin create:
+        // POST /api/admin/racers requires guardianEmail + normal fields
+        // For admin update:
+        // PUT /api/admin/racers/{id} should NOT change guardian; it updates racer fields only
+
+        const base = {
             firstName: (formData.firstName || "").trim(),
             lastName: (formData.lastName || "").trim(),
-            nickname: (formData.nickname || "").trim() || null,
+            nickname: (formData.nickname || "").trim(),
             age: Number(formData.age),
             carNumber: String(formData.carNumber || "").trim(),
-            division: getDivisionFromAge(formData.age || 0),
+            division: getDivisionFromAge(formData.age || 0), // optional (backend may ignore)
         };
 
-        if (!payload.firstName || !payload.lastName || !payload.age || !payload.carNumber) {
+        if (!base.firstName || !base.lastName || !base.age || !base.carNumber) {
             alert("Please fill out First Name, Last Name, Age, and Car Number.");
             return;
         }
 
         try {
             if (editMode && formData.id) {
-                await apiClient.put(`/racers/${formData.id}`, payload);
+                // ✅ ADMIN UPDATE
+                await apiClient.put(`/admin/racers/${formData.id}`, {
+                    ...base,
+                });
             } else {
-                await apiClient.post("/racers", payload);
+                // ✅ ADMIN CREATE (guardianEmail required)
+                const guardianEmail = (formData.guardianEmail || "").trim().toLowerCase();
+                if (!guardianEmail) {
+                    alert("Guardian Email is required when adding a racer as admin.");
+                    return;
+                }
+
+                await apiClient.post("/admin/racers", {
+                    guardianEmail,
+                    ...base,
+                });
             }
 
             setIsModalOpen(false);
@@ -131,7 +156,10 @@ const RacersManagement = () => {
             void fetchRacers();
         } catch (err) {
             console.error("Error saving racer:", err);
-            const msg = err?.response?.data?.message || "❌ Failed to save racer.";
+            const msg =
+                err?.response?.data?.message ||
+                err?.response?.data ||
+                "❌ Failed to save racer.";
             alert(typeof msg === "string" ? msg : "❌ Failed to save racer.");
         }
     };
@@ -171,7 +199,6 @@ const RacersManagement = () => {
                             <tr>
                                 <th>#</th>
                                 <th>Name</th>
-                                <th>Nickname</th>
                                 <th>Age</th>
                                 <th>Division</th>
                                 <th>Car #</th>
@@ -189,20 +216,16 @@ const RacersManagement = () => {
                                         {racer.firstName} {racer.lastName}
                                     </td>
 
-                                    <td>{racer.nickname || "-"}</td>
-
                                     <td>{racer.age}</td>
 
                                     <td>{getDivisionFromAge(racer.age)}</td>
 
                                     <td>{racer.carNumber}</td>
 
-                                    {/* ✅ NEW: Guardian Email cell */}
                                     <td className="guardian-email-cell" title={getGuardianEmail(racer)}>
                                         {getGuardianEmail(racer)}
                                     </td>
 
-                                    {/* ✅ Actions cell */}
                                     <td>
                                         <button className="edit-btn" onClick={() => handleOpenEdit(racer)}>
                                             Edit
@@ -226,6 +249,41 @@ const RacersManagement = () => {
                 onSubmit={handleSave}
                 submitLabel={editMode ? "Update Racer" : "Add Racer"}
             >
+                {/* ✅ Only show Guardian Email on ADD.
+                    On edit, show it read-only (optional), but don't allow changing ownership. */}
+                {!editMode ? (
+                    <>
+                        <label htmlFor="guardianEmail">Guardian Email</label>
+                        <input
+                            id="guardianEmail"
+                            type="email"
+                            value={formData.guardianEmail}
+                            onChange={(e) =>
+                                setFormData((prev) => ({ ...prev, guardianEmail: e.target.value }))
+                            }
+                            placeholder="guardian@example.com"
+                            required
+                        />
+                        <p className="help-note">
+                            Must match an existing registered account. This links the racer to that guardian.
+                        </p>
+                    </>
+                ) : (
+                    <>
+                        <label htmlFor="guardianEmail">Guardian Email</label>
+                        <input
+                            id="guardianEmail"
+                            type="email"
+                            value={formData.guardianEmail || ""}
+                            readOnly
+                            className="read-only"
+                        />
+                        <p className="help-note">
+                            Guardian ownership can’t be changed here.
+                        </p>
+                    </>
+                )}
+
                 <label htmlFor="firstName">First Name</label>
                 <input
                     id="firstName"

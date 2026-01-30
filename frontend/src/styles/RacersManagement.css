@@ -114,10 +114,31 @@
     }
 }
 
-/* Guardian Email */
+/* Keep wide tables usable on mobile */
+.table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Guardian email: prevent it from blowing up the table */
 .guardian-email-cell {
     max-width: 260px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* Small helper text inside modal */
+.help-note {
+    margin: -6px 0 12px;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+/* Read-only styling (edit mode guardian email) */
+.read-only {
+    background: #f3f3f3;
+    color: #555;
+    cursor: not-allowed;
 }
