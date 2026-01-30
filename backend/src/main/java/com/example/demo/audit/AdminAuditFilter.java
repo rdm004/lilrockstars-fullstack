@@ -112,9 +112,33 @@ public class AdminAuditFilter extends OncePerRequestFilter {
     }
 
     private String getClientIp(HttpServletRequest req) {
-        // Render / proxies typically send X-Forwarded-For
         String xff = req.getHeader("X-Forwarded-For");
-        if (xff != null && !xff.isBlank()) return xff.split(",")[0].trim();
-        return req.getRemoteAddr();
+        String ip = (xff != null && !xff.isBlank())
+                ? xff.split(",")[0].trim()
+                : req.getRemoteAddr();
+
+        return maskIp(ip);
+    }
+
+    private String maskIp(String ip) {
+        if (ip == null) return null;
+
+        // IPv4 masking
+        if (ip.contains(".")) {
+            String[] parts = ip.split("\\.");
+            if (parts.length == 4) {
+                return parts[0] + "." + parts[1] + "." + parts[2] + ".xxx";
+            }
+        }
+
+        // IPv6 masking
+        if (ip.contains(":")) {
+            int idx = ip.lastIndexOf(":");
+            if (idx > 0) {
+                return ip.substring(0, idx) + ":xxxx";
+            }
+        }
+
+        return "masked";
     }
 }
