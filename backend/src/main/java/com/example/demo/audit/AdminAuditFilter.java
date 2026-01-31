@@ -1,37 +1,103 @@
 package com.example.demo.audit;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import com.example.demo.model.Parent;
+import com.example.demo.repository.ParentRepository;
+import com.example.demo.security.JwtUtil;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.time.Instant;
-import java.util.Collection;
+import java.io.IOException;
+import java.util.Set;
 
-public interface AuditEventRepository extends JpaRepository<AuditEvent, Long> {
+@Component
+public class AdminAuditFilter extends OncePerRequestFilter {
 
-    @Query("""
-        select a
-        from AuditEvent a
-        where (:q is null or :q = '' or
-               lower(a.actorEmail) like lower(concat('%', :q, '%')) or
-               lower(coalesce(a.actorRole, '')) like lower(concat('%', :q, '%')) or
-               lower(a.path) like lower(concat('%', :q, '%')) or
-               lower(a.method) like lower(concat('%', :q, '%')) or
-               cast(a.status as string) like concat('%', :q, '%') or
-               lower(coalesce(a.userAgent, '')) like lower(concat('%', :q, '%'))
-        )
-        order by a.createdAt desc
-    """)
-    Page<AuditEvent> search(@Param("q") String q, Pageable pageable);
+    private static final Set<String> MUTATING_METHODS = Set.of("POST", "PUT", "PATCH", "DELETE");
 
-    @Modifying
-    @Query("delete from AuditEvent a where a.method in :methods")
-    int deleteByMethodIn(@Param("methods") Collection<String> methods);
+    // Only log these admin areas
+    private static final Set<String> SENSITIVE_PREFIXES = Set.of(
+            "/api/admin/racers",
+            "/api/admin/races",
+            "/api/admin/registrations",
+            "/api/admin/results"
+    );
 
-    @Modifying
-    @Query("delete from AuditEvent a where a.createdAt < :cutoff")
-    int deleteOlderThan(@Param("cutoff") Instant cutoff);
+    private final AuditEventRepository auditRepo;
+    private final JwtUtil jwtUtil;
+    private final ParentRepository parentRepository;
+
+    public AdminAuditFilter(AuditEventRepository auditRepo, JwtUtil jwtUtil, ParentRepository parentRepository) {
+        this.auditRepo = auditRepo;
+        this.jwtUtil = jwtUtil;
+        this.parentRepository = parentRepository;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        String method = request.getMethod();
+
+        // 1) Only mutating methods
+        if (!MUTATING_METHODS.contains(method)) return true;
+
+        // 2) Must be under /api/admin/*
+        if (path == null || !path.startsWith("/api/admin/")) return true;
+
+        // 3) Never audit audit endpoints
+        if (path.startsWith("/api/admin/audit")) return true;
+
+        // 4) Only log the sensitive resources listed above
+        for (String prefix : SENSITIVE_PREFIXES) {
+            if (path.startsWith(prefix)) return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    protected void doFilterInternal(
+            HttpServletRequest req,
+            HttpServletResponse res,
+            FilterChain chain
+    ) throws ServletException, IOException {
+
+        String actorEmail = null;
+        String actorRole = null;
+
+        try {
+            String auth = req.getHeader("Authorization");
+            if (auth != null && auth.startsWith("Bearer ")) {
+                String token = auth.substring(7);
+                actorEmail = jwtUtil.extractUsername(token);
+
+                if (actorEmail != null && !actorEmail.isBlank()) {
+                    Parent p = parentRepository.findByEmailIgnoreCase(actorEmail).orElse(null);
+                    if (p != null && p.getRole() != null) actorRole = p.getRole().name();
+                }
+            }
+
+            chain.doFilter(req, res);
+
+        } finally {
+            AuditEvent ev = new AuditEvent();
+            ev.setActorEmail(actorEmail);
+            ev.setActorRole(actorRole);
+            ev.setMethod(req.getMethod());
+            ev.setPath(req.getRequestURI());
+            ev.setStatus(res.getStatus());
+            ev.setUserAgent(safeUserAgent(req.getHeader("User-Agent")));
+
+            auditRepo.save(ev);
+        }
+    }
+
+    private String safeUserAgent(String ua) {
+        if (ua == null) return null;
+        ua = ua.trim();
+        return ua.length() > 300 ? ua.substring(0, 300) : ua;
+    }
 }

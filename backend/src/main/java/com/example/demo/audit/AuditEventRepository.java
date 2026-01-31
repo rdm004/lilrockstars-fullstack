@@ -8,11 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-
 public interface AuditEventRepository extends JpaRepository<AuditEvent, Long> {
 
-    // Search (NO IP referenced)
     @Query("""
         select a
         from AuditEvent a
@@ -28,24 +25,21 @@ public interface AuditEventRepository extends JpaRepository<AuditEvent, Long> {
     """)
     Page<AuditEvent> search(@Param("q") String q, Pageable pageable);
 
-    // Retention cleanup
-    @Modifying
-    @Transactional
-    @Query("delete from AuditEvent a where a.createdAt < :cutoff")
-    int deleteOlderThan(@Param("cutoff") Instant cutoff);
-
-    // Optional one-time cleanup if you want to remove old GET noise (no UI needed)
-    @Modifying
-    @Transactional
-    @Query("delete from AuditEvent a where upper(a.method) = 'GET'")
-    int deleteAllGets();
-
-    // Optional: keep only write methods (POST/PUT/PATCH/DELETE), delete everything else
+    // ✅ Deletes anything that is NOT a write method (keeps POST/PUT/PATCH/DELETE)
     @Modifying
     @Transactional
     @Query("""
         delete from AuditEvent a
-        where upper(a.method) not in ('POST','PUT','PATCH','DELETE')
+        where a.method not in ('POST','PUT','PATCH','DELETE')
     """)
     int deleteNonWriteMethods();
+
+    // ✅ Deletes GETs specifically (if you ever want this)
+    @Modifying
+    @Transactional
+    @Query("""
+        delete from AuditEvent a
+        where a.method = 'GET'
+    """)
+    int deleteAllGets();
 }
