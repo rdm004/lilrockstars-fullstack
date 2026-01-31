@@ -139,14 +139,14 @@ function AppContent() {
                         }
                     />
 
-                    <Route
-                        path="/admin/audit"
-                        element={
-                            <AdminRoute>
-                                <AdminAuditLog />
-                            </AdminRoute>
-                        }
-                    />
+                    {/*<Route*/}
+                    {/*    path="/admin/audit"*/}
+                    {/*    element={*/}
+                    {/*        <AdminRoute>*/}
+                    {/*            <AdminAuditLog />*/}
+                    {/*        </AdminRoute>*/}
+                    {/*    }*/}
+                    {/*/>*/}
 
                     {/* Fallback */}
                     <Route path="*" element={<LoginPage />} />
