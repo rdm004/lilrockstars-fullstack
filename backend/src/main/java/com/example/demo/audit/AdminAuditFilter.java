@@ -47,7 +47,7 @@ public class AdminAuditFilter extends OncePerRequestFilter {
         // 2) Must be under /api/admin/*
         if (path == null || !path.startsWith("/api/admin/")) return true;
 
-        // 3) Never audit audit endpoints
+        // 3) Never audit the audit endpoints themselves
         if (path.startsWith("/api/admin/audit")) return true;
 
         // 4) Only log the sensitive resources listed above
@@ -90,6 +90,13 @@ public class AdminAuditFilter extends OncePerRequestFilter {
             ev.setPath(req.getRequestURI());
             ev.setStatus(res.getStatus());
             ev.setUserAgent(safeUserAgent(req.getHeader("User-Agent")));
+
+            // ✅ NEW: attach controller-provided details (safe, no tokens, no passwords)
+            Object noteObj = req.getAttribute("auditNote");
+            if (noteObj instanceof String s) {
+                String note = s.trim();
+                if (!note.isBlank()) ev.setNote(note);
+            }
 
             auditRepo.save(ev);
         }

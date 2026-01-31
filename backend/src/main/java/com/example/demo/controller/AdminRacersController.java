@@ -297,26 +297,25 @@ public class AdminRacersController {
     // ------------------------------------------------------------------
     @DeleteMapping("/{id}")
     @Transactional
-    public ResponseEntity<?> adminDelete(@PathVariable Long id, HttpServletRequest httpReq) {
+    public ResponseEntity<?> adminDelete(@PathVariable Long id, HttpServletRequest request) {
 
-        Optional<Racer> racerOpt = racerRepository.findById(id);
-        if (racerOpt.isEmpty()) {
-            auditService.logAdminWrite(httpReq, 404, "Delete racer failed: id=" + id + " not found");
-            return ResponseEntity.notFound().build();
-        }
+        Optional<Racer> existingOpt = racerRepository.findById(id);
+        if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
 
-        Racer racer = racerOpt.get();
-        String note = "Deleted racer: " + racerSummary(racer);
+        Racer r = existingOpt.get();
+        String racerName = ((r.getFirstName() == null ? "" : r.getFirstName()) + " " + (r.getLastName() == null ? "" : r.getLastName())).trim();
+        String car = r.getCarNumber() == null ? "" : r.getCarNumber();
+        String guardianEmail = (r.getParent() != null && r.getParent().getEmail() != null) ? r.getParent().getEmail() : "";
 
-        // ✅ delete dependent rows first (matches your parent delete logic)
-        registrationRepository.deleteByRacerId(id);
-        raceResultRepository.deleteByRacerId(id);
-        parentRacerLinkRepository.deleteByRacerId(id);
+        request.setAttribute(
+                "auditNote",
+                "Deleted racer #" + id +
+                        (racerName.isBlank() ? "" : " (" + racerName + ")") +
+                        (car.isBlank() ? "" : " car=" + car) +
+                        (guardianEmail.isBlank() ? "" : " guardian=" + guardianEmail)
+        );
 
         racerRepository.deleteById(id);
-
-        auditService.logAdminWrite(httpReq, 200, note);
-
         return ResponseEntity.ok(Map.of("message", "Racer deleted successfully."));
     }
 }

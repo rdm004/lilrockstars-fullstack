@@ -57,6 +57,8 @@ export default function AdminAuditLog() {
     const onSubmitSearch = (e) => {
         e.preventDefault();
         setPage(0); // reset paging when searching
+        // no need to manually call fetchAudit; queryParams change triggers it,
+        // but it doesn't hurt—keeping it clean:
         void fetchAudit();
     };
 
@@ -67,7 +69,7 @@ export default function AdminAuditLog() {
                     <div>
                         <h1 style={{ margin: 0 }}>Audit Log</h1>
                         <p className="audit-subtitle">
-                            Admin access to sensitive endpoints (latest first).
+                            Admin changes to racers, races, registrations, and results (latest first).
                         </p>
                     </div>
 
@@ -76,7 +78,7 @@ export default function AdminAuditLog() {
                             type="text"
                             value={q}
                             onChange={(e) => setQ(e.target.value)}
-                            placeholder="Search email, path, method, status, IP..."
+                            placeholder="Search admin, path, method, status, details…"
                             aria-label="Search audit log"
                         />
                         <button type="submit">Search</button>
@@ -98,18 +100,8 @@ export default function AdminAuditLog() {
                     </form>
                 </div>
 
+                {/* ✅ Removed Clear button per request */}
                 <div className="audit-actions">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setQ("");
-                            setPage(0);
-                        }}
-                        className="audit-secondary"
-                    >
-                        Clear
-                    </button>
-
                     <div className="audit-pager">
                         <button
                             type="button"
@@ -147,7 +139,7 @@ export default function AdminAuditLog() {
                                 <th>Method</th>
                                 <th>Status</th>
                                 <th>Path</th>
-                                <th>IP</th>
+                                <th>Details</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -160,18 +152,23 @@ export default function AdminAuditLog() {
                                     <tr key={row.id}>
                                         <td>{fmt(row.createdAt)}</td>
                                         <td>{row.actorEmail || "-"}</td>
+
                                         <td>
                         <span className={`pill pill-${String(row.method || "").toUpperCase()}`}>
                           {row.method || "-"}
                         </span>
                                         </td>
+
                                         <td>
                         <span className={`pill pill-status-${row.status >= 400 ? "bad" : "ok"}`}>
                           {row.status}
                         </span>
                                         </td>
+
                                         <td className="mono">{row.path || "-"}</td>
-                                        <td className="mono">{row.ip || "-"}</td>
+
+                                        {/* ✅ NEW: note/details from backend */}
+                                        <td title={row.note || ""}>{row.note || "-"}</td>
                                     </tr>
                                 ))
                             )}
