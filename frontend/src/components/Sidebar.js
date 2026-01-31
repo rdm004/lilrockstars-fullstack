@@ -19,7 +19,7 @@ const Sidebar = () => {
         { path: "/admin/results/manage", label: "Results", icon: <FaChartBar /> },
         { path: "/admin/races/manage", label: "Events", icon: <FaCalendarAlt /> },
         { path: "/admin/registrations/manage", label: "Registrations", icon: <FaClipboardList /> },
-        { path: "/admin/audit", label: "Audit", icon: <FaShieldAlt /> },
+        // { path: "/admin/audit", label: "Audit", icon: <FaShieldAlt /> },
     ];
 
     return (

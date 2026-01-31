@@ -18,12 +18,15 @@ public class AdminAuditFilter extends OncePerRequestFilter {
 
     private static final Set<String> MUTATING_METHODS = Set.of("POST", "PUT", "PATCH", "DELETE");
 
-    // Only log these admin areas
+    // ✅ Log mutations to these resources
     private static final Set<String> SENSITIVE_PREFIXES = Set.of(
             "/api/admin/racers",
             "/api/admin/races",
             "/api/admin/registrations",
-            "/api/admin/results"
+            "/api/admin/results",
+
+            // ✅ IMPORTANT: your admin Events page is writing here:
+            "/api/races"
     );
 
     private final AuditEventRepository auditRepo;
@@ -44,18 +47,17 @@ public class AdminAuditFilter extends OncePerRequestFilter {
         // 1) Only mutating methods
         if (!MUTATING_METHODS.contains(method)) return true;
 
-        // 2) Must be under /api/admin/*
-        if (path == null || !path.startsWith("/api/admin/")) return true;
+        if (path == null) return true;
 
-        // 3) Never audit the audit endpoints themselves
+        // 2) Never audit audit endpoints
         if (path.startsWith("/api/admin/audit")) return true;
 
-        // 4) Only log the sensitive resources listed above
+        // 3) Only log the sensitive resources listed above
         for (String prefix : SENSITIVE_PREFIXES) {
-            if (path.startsWith(prefix)) return false;
+            if (path.startsWith(prefix)) return false; // do filter (log)
         }
 
-        return true;
+        return true; // otherwise skip
     }
 
     @Override
@@ -90,13 +92,6 @@ public class AdminAuditFilter extends OncePerRequestFilter {
             ev.setPath(req.getRequestURI());
             ev.setStatus(res.getStatus());
             ev.setUserAgent(safeUserAgent(req.getHeader("User-Agent")));
-
-            // ✅ NEW: attach controller-provided details (safe, no tokens, no passwords)
-            Object noteObj = req.getAttribute("auditNote");
-            if (noteObj instanceof String s) {
-                String note = s.trim();
-                if (!note.isBlank()) ev.setNote(note);
-            }
 
             auditRepo.save(ev);
         }
