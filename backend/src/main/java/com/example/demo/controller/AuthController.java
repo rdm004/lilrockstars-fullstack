@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
@@ -20,9 +22,14 @@ public class AuthController {
     private final ParentRepository parentRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-
-
     private final PasswordResetService passwordResetService;
+
+    // ----------------------------------
+    // Login attempt limiting (tweak as needed)
+    // ----------------------------------
+    private static final int MAX_FAILED_ATTEMPTS = 5;
+    private static final Duration LOCK_DURATION = Duration.ofMinutes(15);
+    private static final String GENERIC_LOGIN_ERROR = "Invalid email or password";
 
     public AuthController(
             ParentRepository parentRepository,
@@ -41,6 +48,14 @@ public class AuthController {
     // ----------------------------------
     private String normalizeEmail(String email) {
         return email == null ? null : email.trim().toLowerCase();
+    }
+
+    private void tinyDelayOnFailure() {
+        // Optional: slows brute-force without needing Redis/WAF
+        try {
+            Thread.sleep(250);
+        } catch (InterruptedException ignored) {
+        }
     }
 
     // ----------------------------------
@@ -87,7 +102,7 @@ public class AuthController {
     }
 
     // ----------------------------------
-    // LOGIN
+    // LOGIN (with lockout)
     // ----------------------------------
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Parent loginRequest) {
@@ -101,21 +116,48 @@ public class AuthController {
             }
 
             Optional<Parent> parentOpt = parentRepository.findByEmailIgnoreCase(email);
+
+            // ✅ Do NOT reveal whether email exists
             if (parentOpt.isEmpty()) {
+                tinyDelayOnFailure();
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "Invalid credentials."));
+                        .body(Map.of("message", GENERIC_LOGIN_ERROR));
             }
 
             Parent parent = parentOpt.get();
 
-            if (!passwordEncoder.matches(password, parent.getPassword())) {
+            // ✅ If locked, keep response generic
+            if (parent.isLockedNow()) {
+                tinyDelayOnFailure();
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "Invalid credentials."));
+                        .body(Map.of("message", GENERIC_LOGIN_ERROR));
             }
+
+            // ✅ Password check
+            if (!passwordEncoder.matches(password, parent.getPassword())) {
+
+                // Increment attempts and possibly lock
+                int attempts = parent.getFailedLoginAttempts() + 1;
+                parent.setFailedLoginAttempts(attempts);
+
+                if (attempts >= MAX_FAILED_ATTEMPTS) {
+                    parent.setLockedUntil(Instant.now().plus(LOCK_DURATION));
+                }
+
+                parentRepository.save(parent);
+
+                tinyDelayOnFailure();
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", GENERIC_LOGIN_ERROR));
+            }
+
+            // ✅ Success: clear lock counters
+            parent.resetLoginLock();
+            parentRepository.save(parent);
 
             String roleName = (parent.getRole() == null) ? "USER" : parent.getRole().name();
 
-            // ✅ JWT includes role claim (your JwtUtil must support this signature)
+            // ✅ JWT includes role claim
             String token = jwtUtil.generateToken(parent.getEmail(), roleName);
 
             return ResponseEntity.ok(Map.of(

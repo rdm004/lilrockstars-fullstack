@@ -1,9 +1,7 @@
 package com.example.demo.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -29,12 +27,6 @@ public class Parent {
     @Column(unique = true, nullable = false)
     private String email;
 
-    /**
-     * ✅ SECURITY CRITICAL
-     * Accept password in requests, but NEVER serialize it back in responses
-     * (even hashed passwords must not be exposed).
-     */
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
     private String password;
 
@@ -42,13 +34,6 @@ public class Parent {
     @Column(nullable = false)
     private Role role = Role.USER;
 
-    /**
-     * ✅ Avoid recursive JSON / huge payloads:
-     * You don't want Parent -> racers -> parent -> racers...
-     *
-     * This is a JPA mapping but not needed in API responses.
-     */
-    @JsonIgnore
     @ManyToMany
     @JoinTable(
             name = "parent_racer_link",
@@ -57,17 +42,31 @@ public class Parent {
     )
     private Set<Racer> racers = new HashSet<>();
 
+    // ✅ NEW: login attempt limiting
+    @Column(nullable = false)
+    private int failedLoginAttempts = 0;
+
+    // ✅ NEW: if set and in the future, account is locked
+    private Instant lockedUntil;
+
     public Parent() {}
 
-    // --------------------
-    // Normalize email
-    // --------------------
     @PrePersist
     @PreUpdate
     private void normalizeEmail() {
-        if (email != null) {
-            email = email.trim().toLowerCase();
-        }
+        if (email != null) email = email.trim().toLowerCase();
+    }
+
+    // --------------------
+    // Helpers
+    // --------------------
+    public boolean isLockedNow() {
+        return lockedUntil != null && lockedUntil.isAfter(Instant.now());
+    }
+
+    public void resetLoginLock() {
+        this.failedLoginAttempts = 0;
+        this.lockedUntil = null;
     }
 
     // --------------------
@@ -92,4 +91,10 @@ public class Parent {
 
     public Set<Racer> getRacers() { return racers; }
     public void setRacers(Set<Racer> racers) { this.racers = racers; }
+
+    public int getFailedLoginAttempts() { return failedLoginAttempts; }
+    public void setFailedLoginAttempts(int failedLoginAttempts) { this.failedLoginAttempts = failedLoginAttempts; }
+
+    public Instant getLockedUntil() { return lockedUntil; }
+    public void setLockedUntil(Instant lockedUntil) { this.lockedUntil = lockedUntil; }
 }
