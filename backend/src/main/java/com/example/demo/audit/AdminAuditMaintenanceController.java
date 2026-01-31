@@ -1,33 +1,32 @@
 package com.example.demo.audit;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/admin/audit")
+@RequestMapping("/api/admin/audit/maintenance")
 public class AdminAuditMaintenanceController {
 
     private final AuditRetentionService retentionService;
-    private final AuditEventRepository auditRepo;
 
-    public AdminAuditMaintenanceController(AuditRetentionService retentionService, AuditEventRepository auditRepo) {
+    public AdminAuditMaintenanceController(AuditRetentionService retentionService) {
         this.retentionService = retentionService;
-        this.auditRepo = auditRepo;
     }
 
-    // ✅ Call once after deploying the new filter to remove old GET spam
-    @PostMapping("/purge-get")
-    public ResponseEntity<?> purgeGet() {
-        int deleted = retentionService.purgeNoisyMethods();
-        return ResponseEntity.ok(Map.of("deleted", deleted));
-    }
-
-    // ✅ Optional: nuke all audit logs (if you want a “Clear All” button)
-    @DeleteMapping("/clear")
-    public ResponseEntity<?> clearAll() {
-        auditRepo.deleteAllInBatch();
-        return ResponseEntity.ok(Map.of("message", "Audit cleared"));
+    /**
+     * Optional: one-time cleanup endpoint (admin-only)
+     * Deletes GET noise immediately (non-write methods are already handled nightly by scheduler).
+     */
+    @PostMapping("/purge-gets")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> purgeGets() {
+        int deleted = retentionService.purgeGetsOnce();
+        return ResponseEntity.ok(Map.of(
+                "message", "Purged GET audit events.",
+                "deleted", deleted
+        ));
     }
 }
