@@ -16,7 +16,15 @@ import java.util.Set;
 @Component
 public class AdminAuditFilter extends OncePerRequestFilter {
 
-    private static final Set<String> MUTATION_METHODS = Set.of("POST", "PUT", "PATCH", "DELETE");
+    private static final Set<String> MUTATING_METHODS = Set.of("POST", "PUT", "PATCH", "DELETE");
+
+    // Only log these admin areas
+    private static final Set<String> SENSITIVE_PREFIXES = Set.of(
+            "/api/admin/racers",
+            "/api/admin/races",
+            "/api/admin/registrations",
+            "/api/admin/results"
+    );
 
     private final AuditEventRepository auditRepo;
     private final JwtUtil jwtUtil;
@@ -33,19 +41,21 @@ public class AdminAuditFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         String method = request.getMethod();
 
-        if (path == null) return true;
+        // 1) Only mutating methods
+        if (!MUTATING_METHODS.contains(method)) return true;
 
-        // Only admin endpoints
-        if (!path.startsWith("/api/admin/")) return true;
+        // 2) Must be under /api/admin/*
+        if (path == null || !path.startsWith("/api/admin/")) return true;
 
-        // Only create/update/delete (no GET)
-        if (!MUTATION_METHODS.contains(method)) return true;
+        // 3) Never audit the audit endpoints themselves
+        if (path.startsWith("/api/admin/audit")) return true;
 
-        // Only the “sensitive” admin resources
-        return !(path.startsWith("/api/admin/racers")
-                || path.startsWith("/api/admin/races")
-                || path.startsWith("/api/admin/registrations")
-                || path.startsWith("/api/admin/results"));
+        // 4) Only log the sensitive resources listed above
+        for (String prefix : SENSITIVE_PREFIXES) {
+            if (path.startsWith(prefix)) return false; // do filter (log)
+        }
+
+        return true; // otherwise skip
     }
 
     @Override
@@ -59,7 +69,6 @@ public class AdminAuditFilter extends OncePerRequestFilter {
         String actorRole = null;
 
         try {
-            // Identify actor (do NOT log token)
             String auth = req.getHeader("Authorization");
             if (auth != null && auth.startsWith("Bearer ")) {
                 String token = auth.substring(7);
@@ -82,7 +91,6 @@ public class AdminAuditFilter extends OncePerRequestFilter {
             ev.setStatus(res.getStatus());
             ev.setUserAgent(safeUserAgent(req.getHeader("User-Agent")));
 
-            // ✅ No IP stored/logged
             auditRepo.save(ev);
         }
     }
