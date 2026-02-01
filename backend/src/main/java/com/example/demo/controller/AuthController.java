@@ -123,8 +123,15 @@ public class AuthController {
 
             // ✅ Don’t reveal whether email exists
             if (parentOpt.isEmpty()) {
-                // optional: small uniform delay to reduce brute forcing
-                // Thread.sleep(150);
+                Optional<Parent> parentOpt = parentRepository.findByEmailIgnoreCase(email);
+                if (parentOpt.isEmpty()) {
+
+                    // 🔒 Uniform delay (prevents user enumeration + brute force)
+                    try { Thread.sleep(150); } catch (InterruptedException ignored) {}
+
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(Map.of("message", "Invalid credentials."));
+                }
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "Invalid credentials."));
             }
