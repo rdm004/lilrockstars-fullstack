@@ -102,10 +102,14 @@ public class AuthController {
     }
 
     // ----------------------------------
-    // LOGIN (with lockout)
-    // ----------------------------------
+// LOGIN (rate limit by email)
+// ----------------------------------
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Parent loginRequest) {
+        // tune these as you want
+        final int MAX_ATTEMPTS = 5;
+        final int LOCK_MINUTES = 15;
+
         try {
             String email = normalizeEmail(loginRequest.getEmail());
             String password = loginRequest.getPassword();
@@ -117,47 +121,46 @@ public class AuthController {
 
             Optional<Parent> parentOpt = parentRepository.findByEmailIgnoreCase(email);
 
-            // ✅ Do NOT reveal whether email exists
+            // ✅ Don’t reveal whether email exists
             if (parentOpt.isEmpty()) {
-                tinyDelayOnFailure();
+                // optional: small uniform delay to reduce brute forcing
+                // Thread.sleep(150);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", GENERIC_LOGIN_ERROR));
+                        .body(Map.of("message", "Invalid credentials."));
             }
 
             Parent parent = parentOpt.get();
 
-            // ✅ If locked, keep response generic
+            // ✅ If locked, block login
             if (parent.isLockedNow()) {
-                tinyDelayOnFailure();
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", GENERIC_LOGIN_ERROR));
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .body(Map.of("message", "Too many failed attempts. Try again later."));
             }
 
-            // ✅ Password check
-            if (!passwordEncoder.matches(password, parent.getPassword())) {
+            // ✅ Check password against stored hash
+            boolean ok = passwordEncoder.matches(password, parent.getPassword());
 
-                // Increment attempts and possibly lock
+            if (!ok) {
+                // increment attempts
                 int attempts = parent.getFailedLoginAttempts() + 1;
                 parent.setFailedLoginAttempts(attempts);
 
-                if (attempts >= MAX_FAILED_ATTEMPTS) {
-                    parent.setLockedUntil(Instant.now().plus(LOCK_DURATION));
+                // lock if threshold reached
+                if (attempts >= MAX_ATTEMPTS) {
+                    parent.setLockedUntil(java.time.Instant.now().plusSeconds(LOCK_MINUTES * 60L));
                 }
 
                 parentRepository.save(parent);
 
-                tinyDelayOnFailure();
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", GENERIC_LOGIN_ERROR));
+                        .body(Map.of("message", "Invalid credentials."));
             }
 
-            // ✅ Success: clear lock counters
+            // ✅ Success: reset lock/attempts
             parent.resetLoginLock();
             parentRepository.save(parent);
 
             String roleName = (parent.getRole() == null) ? "USER" : parent.getRole().name();
-
-            // ✅ JWT includes role claim
             String token = jwtUtil.generateToken(parent.getEmail(), roleName);
 
             return ResponseEntity.ok(Map.of(
