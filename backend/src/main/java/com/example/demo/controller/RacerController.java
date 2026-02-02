@@ -79,6 +79,63 @@ public class RacerController {
         return parentRacerLinkRepository.existsByParentAndRacer(parent, racer);
     }
 
+    private static final String DIV_3 = "3 Year Old Division";
+    private static final String DIV_4 = "4 Year Old Division";
+    private static final String DIV_5 = "5 Year Old Division";
+    private static final String DIV_SNACK = "Snack Pack Division";
+    private static final String DIV_STINGERS = "Lil Stingers";
+
+    private String normalizeDivision(String div) {
+        String d = normalize(div);
+        if (d.isBlank()) return "";
+
+        String lc = d.toLowerCase();
+        if (lc.contains("stinger")) return DIV_STINGERS;
+        if (lc.contains("snack")) return DIV_SNACK;
+        if (lc.contains("3")) return DIV_3;
+        if (lc.contains("4")) return DIV_4;
+        if (lc.contains("5")) return DIV_5;
+
+        return d; // fallback (won't pass validation if unknown)
+    }
+
+    private String divisionFromAgeBackend(int age) {
+        if (age == 2 || age == 3) return DIV_3;
+        if (age == 4) return DIV_4;
+        if (age == 5) return DIV_5;
+        if (age == 6) return DIV_SNACK;
+        if (age == 7) return DIV_SNACK;      // default if not specified
+        if (age == 8 || age == 9) return DIV_STINGERS;
+        return DIV_SNACK;
+    }
+
+    private String validateAndResolveDivision(int age, String requestedDivisionRaw) {
+        String requested = normalizeDivision(requestedDivisionRaw);
+
+        // Under 7 cannot do stingers
+        if (age < 7) {
+            if (DIV_STINGERS.equals(requested)) {
+                throw new IllegalArgumentException("Under age 7 cannot race in Lil Stingers.");
+            }
+            return divisionFromAgeBackend(age);
+        }
+
+        // Age 8–9 must be stingers
+        if (age == 8 || age == 9) {
+            return DIV_STINGERS;
+        }
+
+        // Age 7: can be Snack Pack OR Lil Stingers
+        if (age == 7) {
+            if (requested.isBlank()) return DIV_SNACK;
+            if (DIV_SNACK.equals(requested) || DIV_STINGERS.equals(requested)) return requested;
+            throw new IllegalArgumentException("Age 7 must be Snack Pack or Lil Stingers.");
+        }
+
+        // Any other age -> default mapping
+        return divisionFromAgeBackend(age);
+    }
+
     /* ==============================
        GET – visible racers
        ============================== */
@@ -98,8 +155,8 @@ public class RacerController {
     }
 
     /* ==============================
-       POST – add racer
-       ============================== */
+   POST – add racer
+   ============================== */
 
     @PostMapping
     public ResponseEntity<?> addRacer(
@@ -117,16 +174,15 @@ public class RacerController {
 
             if (firstName.isBlank() || lastName.isBlank() || age <= 0) {
                 return ResponseEntity.badRequest()
-                        .body(Map.of("message",
-                                "First name, last name, and age are required."));
+                        .body(Map.of("message", "First name, last name, and age are required."));
             }
 
             if (!isValidCarNumber(carNumber)) {
                 return ResponseEntity.badRequest()
-                        .body(Map.of("message",
-                                "Car number must be 1–10 characters (letters, numbers, #, -)."));
+                        .body(Map.of("message", "Car number must be 1–10 characters (letters, numbers, #, -)."));
             }
 
+            // Nickname is optional, but used for duplicate detection
             String nicknameForCheck = nickname.isBlank() ? "" : nickname;
 
             boolean dup = racerRepository
@@ -145,12 +201,20 @@ public class RacerController {
                 ));
             }
 
+            // ✅ Apply normalized fields
             racer.setFirstName(firstName);
             racer.setLastName(lastName);
             racer.setNickname(nicknameForCheck);
             racer.setAge(age);
             racer.setCarNumber(carNumber);
             racer.setParent(parent);
+
+            // ✅ IMPORTANT: enforce division rules (Lil Stingers logic)
+            try {
+                racer.setDivision(validateAndResolveDivision(age, racer.getDivision()));
+            } catch (IllegalArgumentException ex) {
+                return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+            }
 
             Racer saved = racerRepository.save(racer);
             return ResponseEntity.ok(saved);
@@ -161,9 +225,9 @@ public class RacerController {
         }
     }
 
-    /* ==============================
-       PUT – update racer
-       ============================== */
+/* ==============================
+   PUT – update racer
+   ============================== */
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateRacer(
@@ -197,14 +261,12 @@ public class RacerController {
 
         if (firstName.isBlank() || lastName.isBlank() || age <= 0) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("message",
-                            "First name, last name, and age are required."));
+                    .body(Map.of("message", "First name, last name, and age are required."));
         }
 
         if (!isValidCarNumber(carNumber)) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("message",
-                            "Car number must be 1–10 characters."));
+                    .body(Map.of("message", "Car number must be 1–10 characters."));
         }
 
         String nicknameForCheck = nickname.isBlank() ? "" : nickname;
@@ -230,12 +292,19 @@ public class RacerController {
             ));
         }
 
+        // ✅ Apply normalized fields
         existing.setFirstName(firstName);
         existing.setLastName(lastName);
         existing.setNickname(nicknameForCheck);
         existing.setAge(age);
         existing.setCarNumber(carNumber);
-        existing.setDivision(updated.getDivision());
+
+        // ✅ IMPORTANT: enforce division rules on update too
+        try {
+            existing.setDivision(validateAndResolveDivision(age, updated.getDivision()));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        }
 
         Racer saved = racerRepository.save(existing);
         return ResponseEntity.ok(saved);

@@ -36,19 +36,29 @@ const RegistrationsManagement = () => {
     const divisionFromAge = (age) => {
         const n = Number(age);
         if (!n) return "-";
-        if (n === 3) return "3 Year Old Division";
+
+        if (n === 2 || n === 3) return "3 Year Old Division";
         if (n === 4) return "4 Year Old Division";
         if (n === 5) return "5 Year Old Division";
-        if (n === 6 || n === 7) return "Snack Pack Division";
+        if (n === 6) return "Snack Pack Division";
+
+        // age 7 defaults snack pack unless explicitly set on racer/registration
+        if (n === 7) return "Snack Pack Division";
+
+        if (n === 8 || n === 9) return "Lil Stingers";
+
         return "Snack Pack Division";
     };
 
     const divisionRank = (division) => {
         const d = (division || "").toLowerCase();
+
         if (d.includes("3")) return 1;
         if (d.includes("4")) return 2;
         if (d.includes("5")) return 3;
         if (d.includes("snack")) return 4;
+        if (d.includes("stinger")) return 5;
+
         return 99;
     };
 

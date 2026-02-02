@@ -52,6 +52,9 @@ public class AdminRacersController {
             String parentEmail
     ) {}
 
+    // -----------------------
+    // Helpers
+    // -----------------------
     private String normalize(String s) {
         return s == null ? "" : s.trim();
     }
@@ -63,10 +66,60 @@ public class AdminRacersController {
         return c.matches("^[A-Za-z0-9#-]{1,10}$");
     }
 
+    /**
+     * ✅ Division rules (Lil Stingers added):
+     * - age 2–3 => 3 Year Old Division
+     * - age 4   => 4 Year Old Division
+     * - age 5   => 5 Year Old Division
+     * - age 6   => Snack Pack Division
+     * - age 7   => Snack Pack OR Lil Stingers (if provided); default Snack Pack
+     * - age 8–9 => Lil Stingers Division (forced)
+     * - else    => Snack Pack Division (safe fallback)
+     */
+    private String validateAndResolveDivision(int age, String requestedDivisionRaw) {
+        String requested = normalize(requestedDivisionRaw);
+
+        // Normalize common labels (optional)
+        String reqLower = requested.toLowerCase();
+        boolean wantsStingers = reqLower.contains("stinger");
+        boolean wantsSnack = reqLower.contains("snack");
+
+        // Forced by age
+        if (age == 2 || age == 3) return "3 Year Old Division";
+        if (age == 4) return "4 Year Old Division";
+        if (age == 5) return "5 Year Old Division";
+        if (age == 6) return "Snack Pack Division";
+
+        // age 8–9 MUST be Lil Stingers
+        if (age == 8 || age == 9) {
+            if (!requested.isBlank() && !wantsStingers) {
+                throw new IllegalArgumentException("Age " + age + " must be in Lil Stingers Division.");
+            }
+            return "Lil Stingers Division";
+        }
+
+        // age 7 can choose Snack Pack OR Lil Stingers
+        if (age == 7) {
+            if (requested.isBlank()) return "Snack Pack Division"; // default
+            if (wantsSnack) return "Snack Pack Division";
+            if (wantsStingers) return "Lil Stingers Division";
+            throw new IllegalArgumentException("Age 7 must be Snack Pack Division or Lil Stingers Division.");
+        }
+
+        // under 7 cannot be Lil Stingers (covered above), but keep guard anyway
+        if (age < 7) {
+            if (wantsStingers) {
+                throw new IllegalArgumentException("Under age 7 cannot be in Lil Stingers Division.");
+            }
+        }
+
+        // Fallback: if they typed something weird, keep your system stable
+        return "Snack Pack Division";
+    }
+
     // -----------------------
     // GET: list/search
     // -----------------------
-
     @GetMapping
     public List<RacerSearchDto> listAll() {
         return racerRepository.findAll()
@@ -169,6 +222,13 @@ public class AdminRacersController {
         r.setCarNumber(carNumber);
         r.setParent(guardian);
 
+        // ✅ enforce division rules (Lil Stingers)
+        try {
+            r.setDivision(validateAndResolveDivision(age, req.getDivision()));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        }
+
         Racer saved = racerRepository.save(r);
         return ResponseEntity.ok(saved);
     }
@@ -227,6 +287,13 @@ public class AdminRacersController {
         existing.setNickname(nickname.isBlank() ? "" : nickname);
         existing.setAge(age);
         existing.setCarNumber(carNumber);
+
+        // ✅ enforce division rules (Lil Stingers)
+        try {
+            existing.setDivision(validateAndResolveDivision(age, updated.getDivision()));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        }
 
         Racer saved = racerRepository.save(existing);
         return ResponseEntity.ok(saved);

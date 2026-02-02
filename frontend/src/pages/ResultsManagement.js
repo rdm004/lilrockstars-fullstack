@@ -8,14 +8,23 @@ const DIVISIONS = [
     "4 Year Old Division",
     "5 Year Old Division",
     "Snack Pack Division",
+    "Lil Stingers",
 ];
 
 const divisionFromAge = (ageRaw) => {
     const age = Number(ageRaw);
+
     if (age === 2 || age === 3) return "3 Year Old Division";
     if (age === 4) return "4 Year Old Division";
     if (age === 5) return "5 Year Old Division";
-    if (age === 6 || age === 7) return "Snack Pack Division";
+    if (age === 6) return "Snack Pack Division";
+
+    // age 7 can be snack pack OR stingers (defaults snack pack if unknown)
+    if (age === 7) return "Snack Pack Division";
+
+    // age 8–9 must be stingers
+    if (age === 8 || age === 9) return "Lil Stingers";
+
     return "Snack Pack Division";
 };
 
@@ -447,7 +456,9 @@ const ResultsManagement = () => {
         try {
             for (const row of cleaned) {
                 const racer = racersById.get(Number(row.racerId));
-                const division = racer?.division || divisionFromAge(racer?.age);
+
+                const stored = (racer?.division || "").trim();
+                const division = stored ? stored : divisionFromAge(racer?.age);
 
                 const payload = {
                     raceId: raceIdNum,

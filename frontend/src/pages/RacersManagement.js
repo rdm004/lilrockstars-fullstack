@@ -6,13 +6,46 @@ import apiClient from "../utils/apiClient";
 import "../styles/RacersManagement.css";
 import DeleteRacerConfirmModal from "../components/DeleteRacerConfirmModal";
 
+const DIVISIONS = {
+    THREE: "3 Year Old Division",
+    FOUR: "4 Year Old Division",
+    FIVE: "5 Year Old Division",
+    SNACK: "Snack Pack Division",
+    STINGERS: "Lil Stingers",
+};
+
 const getDivisionFromAge = (ageRaw) => {
     const age = Number(ageRaw);
-    if (age === 2 || age === 3) return "3 Year Old Division";
-    if (age === 4) return "4 Year Old Division";
-    if (age === 5) return "5 Year Old Division";
-    if (age === 6 || age === 7) return "Snack Pack Division";
+
+    if (age === 2 || age === 3) return DIVISIONS.THREE;
+    if (age === 4) return DIVISIONS.FOUR;
+    if (age === 5) return DIVISIONS.FIVE;
+    if (age === 6) return DIVISIONS.SNACK;
+
+    // ✅ default for age 7 if admin doesn’t choose
+    if (age === 7) return DIVISIONS.SNACK;
+
+    // ✅ ages 8–9 must be Lil Stingers
+    if (age === 8 || age === 9) return DIVISIONS.STINGERS;
+
     return "N/A";
+};
+
+const getDivisionForSave = (ageRaw, selectedDivisionRaw) => {
+    const age = Number(ageRaw);
+    const selected = (selectedDivisionRaw || "").trim();
+
+    // Age 7: allow Snack Pack OR Lil Stingers
+    if (age === 7) {
+        if (selected === DIVISIONS.STINGERS) return DIVISIONS.STINGERS;
+        return DIVISIONS.SNACK; // default
+    }
+
+    // Age 8–9: force Lil Stingers
+    if (age === 8 || age === 9) return DIVISIONS.STINGERS;
+
+    // Under 7: force computed (and prevents stingers)
+    return getDivisionFromAge(age);
 };
 
 // ✅ Guardian Email helper (safe fallbacks)
@@ -46,6 +79,7 @@ const RacersManagement = () => {
         nickname: "",
         age: "",
         carNumber: "",
+        division: "", // ✅ NEW (only used when age === 7)
     };
 
     const [formData, setFormData] = useState(emptyForm);
@@ -101,29 +135,27 @@ const RacersManagement = () => {
         setEditMode(true);
         setFormData({
             id: racer.id,
-            guardianEmail: getGuardianEmail(racer) === "-" ? "" : getGuardianEmail(racer), // show but read-only
+            guardianEmail: getGuardianEmail(racer) === "-" ? "" : getGuardianEmail(racer),
             firstName: racer.firstName || "",
             lastName: racer.lastName || "",
             nickname: racer.nickname || "",
             age: racer.age ?? "",
             carNumber: racer.carNumber || "",
+            division: racer.division || "", // ✅ NEW
         });
         setIsModalOpen(true);
     };
 
     const handleSave = async () => {
-        // For admin create:
-        // POST /api/admin/racers requires guardianEmail + normal fields
-        // For admin update:
-        // PUT /api/admin/racers/{id} should NOT change guardian; it updates racer fields only
+        const ageNum = Number(formData.age);
 
         const base = {
             firstName: (formData.firstName || "").trim(),
             lastName: (formData.lastName || "").trim(),
             nickname: (formData.nickname || "").trim(),
-            age: Number(formData.age),
+            age: ageNum,
             carNumber: String(formData.carNumber || "").trim(),
-            division: getDivisionFromAge(formData.age || 0), // optional (backend may ignore)
+            division: getDivisionForSave(ageNum, formData.division), // ✅ NEW
         };
 
         if (!base.firstName || !base.lastName || !base.age || !base.carNumber) {
@@ -131,14 +163,24 @@ const RacersManagement = () => {
             return;
         }
 
+        // ✅ guardrails (UI) — backend will also enforce
+        if (ageNum < 7 && base.division === DIVISIONS.STINGERS) {
+            alert("Under age 7 cannot be in Lil Stingers.");
+            return;
+        }
+        if ((ageNum === 8 || ageNum === 9) && base.division !== DIVISIONS.STINGERS) {
+            alert("Age 8–9 must be in Lil Stingers.");
+            return;
+        }
+        if (ageNum === 7 && ![DIVISIONS.SNACK, DIVISIONS.STINGERS].includes(base.division)) {
+            alert("Age 7 must be Snack Pack or Lil Stingers.");
+            return;
+        }
+
         try {
             if (editMode && formData.id) {
-                // ✅ ADMIN UPDATE
-                await apiClient.put(`/admin/racers/${formData.id}`, {
-                    ...base,
-                });
+                await apiClient.put(`/admin/racers/${formData.id}`, { ...base });
             } else {
-                // ✅ ADMIN CREATE (guardianEmail required)
                 const guardianEmail = (formData.guardianEmail || "").trim().toLowerCase();
                 if (!guardianEmail) {
                     alert("Guardian Email is required when adding a racer as admin.");
@@ -218,7 +260,7 @@ const RacersManagement = () => {
 
                                     <td>{racer.age}</td>
 
-                                    <td>{getDivisionFromAge(racer.age)}</td>
+                                    <td>{racer.division || getDivisionFromAge(racer.age)}</td>
 
                                     <td>{racer.carNumber}</td>
 
@@ -316,11 +358,31 @@ const RacersManagement = () => {
                     id="age"
                     type="number"
                     min="2"
-                    max="7"
+                    max="9"
                     value={formData.age}
                     onChange={(e) => setFormData((prev) => ({ ...prev, age: e.target.value }))}
                     required
                 />
+                {Number(formData.age) === 7 ? (
+                    <>
+                        <label htmlFor="division">Division</label>
+                        <select
+                            id="division"
+                            value={getDivisionForSave(formData.age, formData.division)}
+                            onChange={(e) =>
+                                setFormData((prev) => ({ ...prev, division: e.target.value }))
+                            }
+                            required
+                        >
+                            <option value={DIVISIONS.SNACK}>Snack Pack Division</option>
+                            <option value={DIVISIONS.STINGERS}>Lil Stingers</option>
+                        </select>
+
+                        <p className="help-note">
+                            Age 7 may choose Snack Pack or Lil Stingers.
+                        </p>
+                    </>
+                ) : null}
 
                 <label htmlFor="carNumber">Car Number</label>
                 <input
@@ -333,7 +395,7 @@ const RacersManagement = () => {
 
                 <p className="division-note">
                     Division will be calculated automatically:{" "}
-                    <strong>{getDivisionFromAge(formData.age || 0)}</strong>
+                    <strong>{getDivisionForSave(formData.age || 0, formData.division)}</strong>
                 </p>
             </Modal>
         </Layout>

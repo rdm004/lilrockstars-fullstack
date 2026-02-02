@@ -19,10 +19,19 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 // Division mapping (matches your app rules)
 const getDivisionFromAge = (ageRaw) => {
     const age = Number(ageRaw);
+
     if (age === 2 || age === 3) return "3 Year Old";
     if (age === 4) return "4 Year Old";
     if (age === 5) return "5 Year Old";
-    if (age === 6 || age === 7) return "Snack Pack";
+    if (age === 6) return "Snack Pack";
+
+    // ✅ Age 7 can be Snack Pack OR Lil Stingers.
+    // For the dashboard/chart, default to Snack Pack unless the racer has an explicit division.
+    if (age === 7) return "Snack Pack";
+
+    // ✅ Age 8–9 = Lil Stingers
+    if (age === 8 || age === 9) return "Lil Stingers";
+
     return "Unknown";
 };
 
@@ -38,6 +47,7 @@ const AdminDashboard = () => {
         "4 Year Old": 0,
         "5 Year Old": 0,
         "Snack Pack": 0,
+        "Lil Stingers": 0,
     });
 
     const [loading, setLoading] = useState(true);
@@ -72,10 +82,22 @@ const AdminDashboard = () => {
                     "4 Year Old": 0,
                     "5 Year Old": 0,
                     "Snack Pack": 0,
+                    "Lil Stingers": 0,
                 };
 
                 racers.forEach((r) => {
-                    const div = getDivisionFromAge(r.age);
+                    // Prefer stored division if present (especially for age 7)
+                    const stored = (r?.division || "").toLowerCase();
+
+                    let div = null;
+
+                    if (stored.includes("stingers")) div = "Lil Stingers";
+                    else if (stored.includes("snack")) div = "Snack Pack";
+                    else if (stored.includes("3")) div = "3 Year Old";
+                    else if (stored.includes("4")) div = "4 Year Old";
+                    else if (stored.includes("5")) div = "5 Year Old";
+                    else div = getDivisionFromAge(r.age);
+
                     if (counts[div] !== undefined) counts[div] += 1;
                 });
 
