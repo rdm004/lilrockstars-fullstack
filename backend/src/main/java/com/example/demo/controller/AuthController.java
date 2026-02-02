@@ -1,4 +1,7 @@
-package com.example.demo.controller;
+current authcontroller.... is it lined up with what you just put?
+
+
+        package com.example.demo.controller;
 
 import com.example.demo.model.Parent;
 import com.example.demo.repository.ParentRepository;
@@ -106,15 +109,12 @@ public class AuthController {
 // ----------------------------------
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Parent loginRequest) {
-        // tune these as you want
-        final int MAX_ATTEMPTS = 5;
-        final int LOCK_MINUTES = 15;
-
         try {
             String email = normalizeEmail(loginRequest.getEmail());
             String password = loginRequest.getPassword();
 
             if (email == null || email.isBlank() || password == null || password.isBlank()) {
+                tinyDelayOnFailure();
                 return ResponseEntity.badRequest()
                         .body(Map.of("message", "Email and password are required."));
             }
@@ -123,15 +123,7 @@ public class AuthController {
 
             // ✅ Don’t reveal whether email exists
             if (parentOpt.isEmpty()) {
-                Optional<Parent> parentOpt = parentRepository.findByEmailIgnoreCase(email);
-                if (parentOpt.isEmpty()) {
-
-                    // 🔒 Uniform delay (prevents user enumeration + brute force)
-                    try { Thread.sleep(150); } catch (InterruptedException ignored) {}
-
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body(Map.of("message", "Invalid credentials."));
-                }
+                tinyDelayOnFailure();
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "Invalid credentials."));
             }
@@ -140,6 +132,7 @@ public class AuthController {
 
             // ✅ If locked, block login
             if (parent.isLockedNow()) {
+                tinyDelayOnFailure();
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                         .body(Map.of("message", "Too many failed attempts. Try again later."));
             }
@@ -148,17 +141,16 @@ public class AuthController {
             boolean ok = passwordEncoder.matches(password, parent.getPassword());
 
             if (!ok) {
-                // increment attempts
                 int attempts = parent.getFailedLoginAttempts() + 1;
                 parent.setFailedLoginAttempts(attempts);
 
-                // lock if threshold reached
-                if (attempts >= MAX_ATTEMPTS) {
-                    parent.setLockedUntil(java.time.Instant.now().plusSeconds(LOCK_MINUTES * 60L));
+                if (attempts >= MAX_FAILED_ATTEMPTS) {
+                    parent.setLockedUntil(Instant.now().plus(LOCK_DURATION));
                 }
 
                 parentRepository.save(parent);
 
+                tinyDelayOnFailure();
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "Invalid credentials."));
             }
@@ -181,6 +173,7 @@ public class AuthController {
 
         } catch (Exception e) {
             e.printStackTrace();
+            tinyDelayOnFailure();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Login failed"));
         }

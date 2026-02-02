@@ -23,8 +23,6 @@ public class AdminRacersController {
 
     private final RacerRepository racerRepository;
     private final ParentRepository parentRepository;
-
-    // ✅ for safe cascade delete
     private final RegistrationRepository registrationRepository;
     private final RaceResultRepository raceResultRepository;
     private final ParentRacerLinkRepository parentRacerLinkRepository;
@@ -43,6 +41,9 @@ public class AdminRacersController {
         this.parentRacerLinkRepository = parentRacerLinkRepository;
     }
 
+    /* ==============================
+       DTO
+       ============================== */
     public record RacerSearchDto(
             Long id,
             String firstName,
@@ -52,83 +53,30 @@ public class AdminRacersController {
             String parentEmail
     ) {}
 
-    // -----------------------
-    // Helpers
-    // -----------------------
+    /* ==============================
+       Helpers
+       ============================== */
     private String normalize(String s) {
         return s == null ? "" : s.trim();
     }
 
-    // 1–10 chars, allow #, letters, numbers, dash
-    private boolean isValidCarNumber(String carNumberRaw) {
-        String c = normalize(carNumberRaw);
-        if (c.isBlank()) return false;
-        return c.matches("^[A-Za-z0-9#-]{1,10}$");
+    private boolean isValidCarNumber(String raw) {
+        String c = normalize(raw);
+        return !c.isBlank() && c.matches("^[A-Za-z0-9#-]{1,10}$");
     }
 
-    /**
-     * ✅ Division rules (Lil Stingers added):
-     * - age 2–3 => 3 Year Old Division
-     * - age 4   => 4 Year Old Division
-     * - age 5   => 5 Year Old Division
-     * - age 6   => Snack Pack Division
-     * - age 7   => Snack Pack OR Lil Stingers (if provided); default Snack Pack
-     * - age 8–9 => Lil Stingers Division (forced)
-     * - else    => Snack Pack Division (safe fallback)
-     */
-    private String validateAndResolveDivision(int age, String requestedDivisionRaw) {
-        String requested = normalize(requestedDivisionRaw);
-
-        // Normalize common labels (optional)
-        String reqLower = requested.toLowerCase();
-        boolean wantsStingers = reqLower.contains("stinger");
-        boolean wantsSnack = reqLower.contains("snack");
-
-        // Forced by age
-        if (age == 2 || age == 3) return "3 Year Old Division";
-        if (age == 4) return "4 Year Old Division";
-        if (age == 5) return "5 Year Old Division";
-        if (age == 6) return "Snack Pack Division";
-
-        // age 8–9 MUST be Lil Stingers
-        if (age == 8 || age == 9) {
-            if (!requested.isBlank() && !wantsStingers) {
-                throw new IllegalArgumentException("Age " + age + " must be in Lil Stingers Division.");
-            }
-            return "Lil Stingers Division";
-        }
-
-        // age 7 can choose Snack Pack OR Lil Stingers
-        if (age == 7) {
-            if (requested.isBlank()) return "Snack Pack Division"; // default
-            if (wantsSnack) return "Snack Pack Division";
-            if (wantsStingers) return "Lil Stingers Division";
-            throw new IllegalArgumentException("Age 7 must be Snack Pack Division or Lil Stingers Division.");
-        }
-
-        // under 7 cannot be Lil Stingers (covered above), but keep guard anyway
-        if (age < 7) {
-            if (wantsStingers) {
-                throw new IllegalArgumentException("Under age 7 cannot be in Lil Stingers Division.");
-            }
-        }
-
-        // Fallback: if they typed something weird, keep your system stable
-        return "Snack Pack Division";
-    }
-
-    // -----------------------
-    // GET: list/search
-    // -----------------------
+    /* ==============================
+       GET – list all racers
+       ============================== */
     @GetMapping
     public List<RacerSearchDto> listAll() {
         return racerRepository.findAll()
                 .stream()
                 .filter(r -> r.getParent() != null)
                 .sorted(Comparator
-                        .comparing((Racer r) -> r.getLastName() == null ? "" : r.getLastName(), String.CASE_INSENSITIVE_ORDER)
-                        .thenComparing(r -> r.getFirstName() == null ? "" : r.getFirstName(), String.CASE_INSENSITIVE_ORDER)
-                        .thenComparing(r -> r.getCarNumber() == null ? "" : r.getCarNumber(), String.CASE_INSENSITIVE_ORDER)
+                        .comparing((Racer r) -> normalize(r.getLastName()), String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(r -> normalize(r.getFirstName()), String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(r -> normalize(r.getCarNumber()), String.CASE_INSENSITIVE_ORDER)
                 )
                 .map(r -> new RacerSearchDto(
                         r.getId(),
@@ -136,46 +84,27 @@ public class AdminRacersController {
                         r.getLastName(),
                         r.getCarNumber(),
                         r.getAge(),
-                        r.getParent() != null ? r.getParent().getEmail() : null
+                        r.getParent().getEmail()
                 ))
                 .toList();
     }
 
-    @GetMapping("/search")
-    public List<RacerSearchDto> search(@RequestParam("q") String q) {
-        String term = (q == null) ? "" : q.trim();
-        if (term.isBlank()) return List.of();
-
-        return racerRepository.searchAdminRacers(term)
-                .stream()
-                .filter(r -> r.getParent() != null)
-                .map(r -> new RacerSearchDto(
-                        r.getId(),
-                        r.getFirstName(),
-                        r.getLastName(),
-                        r.getCarNumber(),
-                        r.getAge(),
-                        r.getParent() != null ? r.getParent().getEmail() : null
-                ))
-                .toList();
-    }
-
-    // ------------------------------------------------------------------
-    // POST: Admin create racer by guardian email (verified)
-    // ------------------------------------------------------------------
+    /* ==============================
+       POST – admin create racer
+       ============================== */
     @PostMapping
     public ResponseEntity<?> adminCreate(@RequestBody AdminCreateRacerRequest req) {
 
         String guardianEmail = normalize(req.getGuardianEmail()).toLowerCase();
         if (guardianEmail.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Guardian email is required."));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Guardian email is required."));
         }
 
         Parent guardian = parentRepository.findByEmailIgnoreCase(guardianEmail).orElse(null);
         if (guardian == null) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "message", "Guardian email not found. Please verify the email and try again."
-            ));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Guardian email not found."));
         }
 
         String firstName = normalize(req.getFirstName());
@@ -185,63 +114,55 @@ public class AdminRacersController {
         int age = req.getAge();
 
         if (firstName.isBlank() || lastName.isBlank() || age <= 0) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "message", "First name, last name, and age are required."
-            ));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "First name, last name, and age are required."));
         }
 
         if (!isValidCarNumber(carNumber)) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "message", "Car number is required (1-10 chars). Example: 21, #21, 21A."
-            ));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Car number must be 1–10 characters (letters, numbers, #, -)."));
         }
 
-        String nicknameForCheck = nickname.isBlank() ? "" : nickname;
+        String nicknameCheck = nickname.isBlank() ? "" : nickname;
 
-        boolean dup = racerRepository.existsByParentIdAndFirstNameIgnoreCaseAndLastNameIgnoreCaseAndAgeAndNicknameIgnoreCase(
-                guardian.getId(),
-                firstName,
-                lastName,
-                age,
-                nicknameForCheck
-        );
+        boolean duplicate = racerRepository
+                .existsByParentIdAndFirstNameIgnoreCaseAndLastNameIgnoreCaseAndAgeAndNicknameIgnoreCase(
+                        guardian.getId(),
+                        firstName,
+                        lastName,
+                        age,
+                        nicknameCheck
+                );
 
-        if (dup) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "message",
-                    "This racer already exists for that guardian (same first/last/age/nickname). " +
-                            "Use a nickname to distinguish if needed."
-            ));
+        if (duplicate) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "This racer already exists for that guardian."));
         }
 
-        Racer r = new Racer();
-        r.setFirstName(firstName);
-        r.setLastName(lastName);
-        r.setNickname(nickname.isBlank() ? "" : nickname);
-        r.setAge(age);
-        r.setCarNumber(carNumber);
-        r.setParent(guardian);
+        Racer racer = new Racer();
+        racer.setFirstName(firstName);
+        racer.setLastName(lastName);
+        racer.setNickname(nicknameCheck);
+        racer.setAge(age);
+        racer.setCarNumber(carNumber);
+        racer.setParent(guardian);
 
-        // ✅ enforce division rules (Lil Stingers)
-        try {
-            r.setDivision(validateAndResolveDivision(age, req.getDivision()));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
-        }
-
-        Racer saved = racerRepository.save(r);
+        Racer saved = racerRepository.save(racer);
         return ResponseEntity.ok(saved);
     }
 
-    // ------------------------------------------------------------------
-    // PUT: Admin update racer
-    // ------------------------------------------------------------------
+    /* ==============================
+       PUT – admin update racer
+       ============================== */
     @PutMapping("/{id}")
-    public ResponseEntity<?> adminUpdate(@PathVariable Long id, @RequestBody Racer updated) {
-        Optional<Racer> existingOpt = racerRepository.findById(id);
-        if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
+    public ResponseEntity<?> adminUpdate(
+            @PathVariable Long id,
+            @RequestBody Racer updated
+    ) {
+        Optional<Racer> opt = racerRepository.findById(id);
+        if (opt.isEmpty()) return ResponseEntity.notFound().build();
 
-        Racer existing = existingOpt.get();
+        Racer existing = opt.get();
 
         String firstName = normalize(updated.getFirstName());
         String lastName  = normalize(updated.getLastName());
@@ -250,35 +171,31 @@ public class AdminRacersController {
         int age = updated.getAge();
 
         if (firstName.isBlank() || lastName.isBlank() || age <= 0) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "message", "First name, last name, and age are required."
-            ));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "First name, last name, and age are required."));
         }
 
         if (!isValidCarNumber(carNumber)) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "message", "Car number is required (1-10 chars). Example: 21, #21, 21A."
-            ));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Invalid car number."));
         }
 
-        // Duplicate check under the racer’s owning guardian
         if (existing.getParent() != null) {
-            Long guardianId = existing.getParent().getId();
-            String nicknameForCheck = nickname.isBlank() ? "" : nickname;
+            String nicknameCheck = nickname.isBlank() ? "" : nickname;
 
-            boolean dup = racerRepository.existsByParentIdAndFirstNameIgnoreCaseAndLastNameIgnoreCaseAndAgeAndNicknameIgnoreCaseAndIdNot(
-                    guardianId,
-                    firstName,
-                    lastName,
-                    age,
-                    nicknameForCheck,
-                    existing.getId()
-            );
+            boolean duplicate = racerRepository
+                    .existsByParentIdAndFirstNameIgnoreCaseAndLastNameIgnoreCaseAndAgeAndNicknameIgnoreCaseAndIdNot(
+                            existing.getParent().getId(),
+                            firstName,
+                            lastName,
+                            age,
+                            nicknameCheck,
+                            existing.getId()
+                    );
 
-            if (dup) {
-                return ResponseEntity.badRequest().body(Map.of(
-                        "message", "Another racer already exists for that guardian with the same first/last/age/nickname."
-                ));
+            if (duplicate) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "Duplicate racer exists for that guardian."));
             }
         }
 
@@ -288,32 +205,23 @@ public class AdminRacersController {
         existing.setAge(age);
         existing.setCarNumber(carNumber);
 
-        // ✅ enforce division rules (Lil Stingers)
-        try {
-            existing.setDivision(validateAndResolveDivision(age, updated.getDivision()));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
-        }
-
         Racer saved = racerRepository.save(existing);
         return ResponseEntity.ok(saved);
     }
 
-    // ------------------------------------------------------------------
-    // DELETE: Admin delete racer (safe cascade delete)
-    // ------------------------------------------------------------------
+    /* ==============================
+       DELETE – admin delete racer
+       ============================== */
     @DeleteMapping("/{id}")
     @Transactional
     public ResponseEntity<?> adminDelete(@PathVariable Long id) {
 
-        Optional<Racer> existingOpt = racerRepository.findById(id);
-        if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
+        Optional<Racer> opt = racerRepository.findById(id);
+        if (opt.isEmpty()) return ResponseEntity.notFound().build();
 
-        // ✅ delete dependent rows first to avoid FK issues
         registrationRepository.deleteByRacerId(id);
         raceResultRepository.deleteByRacerId(id);
         parentRacerLinkRepository.deleteByRacerId(id);
-
         racerRepository.deleteById(id);
 
         return ResponseEntity.ok(Map.of("message", "Racer deleted successfully."));
