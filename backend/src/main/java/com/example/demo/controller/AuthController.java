@@ -1,7 +1,4 @@
-current authcontroller.... is it lined up with what you just put?
-
-
-        package com.example.demo.controller;
+package com.example.demo.controller;
 
 import com.example.demo.model.Parent;
 import com.example.demo.repository.ParentRepository;
