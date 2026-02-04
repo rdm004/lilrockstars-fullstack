@@ -11,6 +11,20 @@ const DIVISIONS = [
     "Lil Stingers",
 ];
 
+// ✅ normalize division strings (backward compatible)
+const normalizeDivision = (raw) => {
+    const d = String(raw || "").trim();
+    if (!d) return "";
+
+    // Backward compatibility if older rows stored "Lil Stingers Division"
+    if (d.toLowerCase() === "lil stingers division") return "Lil Stingers";
+
+    // Optional casing normalization
+    if (d.toLowerCase() === "lil stingers") return "Lil Stingers";
+
+    return d;
+};
+
 const divisionFromAge = (ageRaw) => {
     const age = Number(ageRaw);
 
@@ -251,10 +265,11 @@ const ResultsManagement = () => {
             const racerId = Number(row.racerId ?? row.racer_id ?? 0) || null;
             const age = row.racerAge ?? row.age ?? null;
 
-            const division =
+            const division = normalizeDivision(
                 row.racerDivision ||
                 row.division ||
-                divisionFromAge(age);
+                divisionFromAge(age)
+            );
 
             const carNumber =
                 row.carNumber ??
@@ -290,7 +305,7 @@ const ResultsManagement = () => {
                 row.racerName ||
                 (racer ? `${racer.firstName || ""} ${racer.lastName || ""}`.trim() : "");
 
-            const division =
+            const division = normalizeDivision()
                 row.division ||
                 (racer ? (racer.division || divisionFromAge(racer.age)) : "");
 

@@ -1,8 +1,11 @@
+// frontend/src/utils/standingUtils.js
+
 export const DIVISIONS = [
     "3 Year Old Division",
     "4 Year Old Division",
     "5 Year Old Division",
     "Snack Pack Division",
+    "Lil Stingers", // ✅ match the rest of the app
 ];
 
 export const POINTS_BY_PLACEMENT = { 1: 13, 2: 10, 3: 8 };
@@ -18,7 +21,24 @@ export const standingsSort = (a, b) => {
     if (b.races !== a.races) return b.races - a.races;
 
     // stable final tie-breaker (ASC)
-    return String(a.name || "").localeCompare(String(b.name || ""), undefined, { sensitivity: "base" });
+    return String(a.name || "").localeCompare(String(b.name || ""), undefined, {
+        sensitivity: "base",
+    });
+};
+
+// ✅ Backward-compatible normalization (handles old stored values)
+const normalizeDivision = (raw) => {
+    const d = String(raw || "").trim();
+
+    if (!d) return "";
+
+    // If you previously stored "Lil Stingers Division", normalize it
+    if (d.toLowerCase() === "lil stingers division") return "Lil Stingers";
+
+    // Optional: normalize case/spacing for stingers
+    if (d.toLowerCase() === "lil stingers") return "Lil Stingers";
+
+    return d;
 };
 
 /**
@@ -29,7 +49,7 @@ export const buildStandingsFromFlatResults = (flatResults = []) => {
     const totals = {};
 
     for (const row of flatResults) {
-        const division = row.division;
+        const division = normalizeDivision(row.division);
         const name = row.racerName;
 
         if (!division || !name) continue;
@@ -68,6 +88,7 @@ export const buildStandingsFromFlatResults = (flatResults = []) => {
     Object.values(totals).forEach((r) => {
         if (!out[r.division]) out[r.division] = [];
     });
+
     Object.keys(out).forEach((div) => {
         out[div] = out[div].sort(standingsSort);
     });

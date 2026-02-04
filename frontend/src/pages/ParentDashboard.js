@@ -6,6 +6,55 @@ import "../styles/ParentDashboard.css";
 import { formatRaceDate } from "../utils/dateUtils";
 import DeleteRacerConfirmModal from "../components/DeleteRacerConfirmModal"; // ✅
 
+/** ---------------------------
+ * Division rules (2026)
+ * ---------------------------
+ * - Ages 8–9: MUST be Lil Stingers
+ * - Age 7: may be Snack Pack OR Lil Stingers
+ * - Under 7: cannot be Lil Stingers
+ */
+const DIVISIONS = {
+    THREE: "3 Year Old Division",
+    FOUR: "4 Year Old Division",
+    FIVE: "5 Year Old Division",
+    SNACK: "Snack Pack Division",
+    STINGERS: "Lil Stingers",
+};
+
+const getDivisionFromAge = (ageRaw) => {
+    const age = Number(ageRaw);
+
+    if (age === 2 || age === 3) return DIVISIONS.THREE;
+    if (age === 4) return DIVISIONS.FOUR;
+    if (age === 5) return DIVISIONS.FIVE;
+    if (age === 6) return DIVISIONS.SNACK;
+
+    // default for age 7 if parent doesn’t choose
+    if (age === 7) return DIVISIONS.SNACK;
+
+    // ages 8–9 must be Lil Stingers
+    if (age === 8 || age === 9) return DIVISIONS.STINGERS;
+
+    return "N/A";
+};
+
+const getDivisionForSave = (ageRaw, selectedDivisionRaw) => {
+    const age = Number(ageRaw);
+    const selected = (selectedDivisionRaw || "").trim();
+
+    // Age 7: allow Snack Pack OR Lil Stingers
+    if (age === 7) {
+        if (selected === DIVISIONS.STINGERS) return DIVISIONS.STINGERS;
+        return DIVISIONS.SNACK; // default
+    }
+
+    // Age 8–9: force Lil Stingers
+    if (age === 8 || age === 9) return DIVISIONS.STINGERS;
+
+    // Under 7: force computed (and prevents stingers)
+    return getDivisionFromAge(age);
+};
+
 function ParentDashboard() {
     const [parent, setParent] = useState(null);
     const [racers, setRacers] = useState([]);
@@ -14,9 +63,10 @@ function ParentDashboard() {
     const [newRacer, setNewRacer] = useState({
         firstName: "",
         lastName: "",
-        nickname: "", // ✅ NEW
+        nickname: "",
         age: "",
         carNumber: "",
+        division: "", // ✅ NEW (only used when age === 7)
     });
 
     const [editingRacer, setEditingRacer] = useState(null);
@@ -73,7 +123,7 @@ function ParentDashboard() {
                     requiresRegistration: race.requiresRegistration ?? true,
                 }));
 
-                // ✅ Option A: remove info-only events from parent dashboard
+                // ✅ Remove info-only events from parent dashboard
                 const registrationOnlyRaces = mappedRaces.filter(
                     (r) => r.requiresRegistration === true
                 );
@@ -97,7 +147,10 @@ function ParentDashboard() {
                 const status = err.response?.status;
 
                 if (status === 401 || status === 403) {
-                    sessionStorage.setItem("authMessage", "Your session expired. Please log in again.");
+                    sessionStorage.setItem(
+                        "authMessage",
+                        "Your session expired. Please log in again."
+                    );
                     localStorage.removeItem("token");
                     localStorage.removeItem("firstName");
                     localStorage.removeItem("role");
@@ -156,52 +209,97 @@ function ParentDashboard() {
     const handleAddRacer = (e) => {
         e.preventDefault();
 
+        const ageNum = Number(newRacer.age);
+
         const payload = {
             firstName: (newRacer.firstName || "").trim(),
             lastName: (newRacer.lastName || "").trim(),
-            nickname: (newRacer.nickname || "").trim(), // ✅ NEW
-            age: Number(newRacer.age),
+            nickname: (newRacer.nickname || "").trim(),
+            age: ageNum,
             carNumber: (newRacer.carNumber || "").trim(),
+            division: getDivisionForSave(ageNum, newRacer.division), // ✅ NEW
         };
+
+        // UI guardrails (backend should enforce too)
+        if (ageNum < 7 && payload.division === DIVISIONS.STINGERS) {
+            setStatusMessage("❌ Under age 7 cannot be in Lil Stingers.");
+            setTimeout(() => setStatusMessage(""), 3500);
+            return;
+        }
+        if ((ageNum === 8 || ageNum === 9) && payload.division !== DIVISIONS.STINGERS) {
+            setStatusMessage("❌ Age 8–9 must be in Lil Stingers.");
+            setTimeout(() => setStatusMessage(""), 3500);
+            return;
+        }
+        if (ageNum === 7 && ![DIVISIONS.SNACK, DIVISIONS.STINGERS].includes(payload.division)) {
+            setStatusMessage("❌ Age 7 must be Snack Pack or Lil Stingers.");
+            setTimeout(() => setStatusMessage(""), 3500);
+            return;
+        }
 
         apiClient
             .post("/racers", payload)
             .then((res) => {
                 setRacers([...racers, res.data]);
-                setNewRacer({ firstName: "", lastName: "", nickname: "", age: "", carNumber: "" });
+                setNewRacer({
+                    firstName: "",
+                    lastName: "",
+                    nickname: "",
+                    age: "",
+                    carNumber: "",
+                    division: "",
+                });
                 setStatusMessage("✅ Racer added successfully!");
                 setTimeout(() => setStatusMessage(""), 2500);
             })
             .catch((err) => {
                 console.error("Error adding racer:", err);
                 const msg =
-                    err?.response?.data?.message ||
-                    err?.response?.data ||
-                    "❌ Error adding racer.";
+                    err?.response?.data?.message || err?.response?.data || "❌ Error adding racer.";
                 setStatusMessage(typeof msg === "string" ? msg : "❌ Error adding racer.");
                 setTimeout(() => setStatusMessage(""), 3500);
             });
     };
 
     const startEdit = (racer) => {
-        // Ensure the edit state includes nickname so the input is controlled
         setEditingRacer({
             ...racer,
             nickname: racer?.nickname || "",
+            division: racer?.division || "", // ✅ NEW (only used when age === 7)
         });
     };
 
     const handleSaveEdit = () => {
         if (!editingRacer?.id) return;
 
+        const ageNum = Number(editingRacer.age);
+
         const payload = {
             ...editingRacer,
             firstName: (editingRacer.firstName || "").trim(),
             lastName: (editingRacer.lastName || "").trim(),
-            nickname: (editingRacer.nickname || "").trim(), // ✅ NEW
-            age: Number(editingRacer.age),
+            nickname: (editingRacer.nickname || "").trim(),
+            age: ageNum,
             carNumber: (editingRacer.carNumber || "").trim(),
+            division: getDivisionForSave(ageNum, editingRacer.division), // ✅ NEW
         };
+
+        // UI guardrails (backend should enforce too)
+        if (ageNum < 7 && payload.division === DIVISIONS.STINGERS) {
+            setStatusMessage("❌ Under age 7 cannot be in Lil Stingers.");
+            setTimeout(() => setStatusMessage(""), 3500);
+            return;
+        }
+        if ((ageNum === 8 || ageNum === 9) && payload.division !== DIVISIONS.STINGERS) {
+            setStatusMessage("❌ Age 8–9 must be in Lil Stingers.");
+            setTimeout(() => setStatusMessage(""), 3500);
+            return;
+        }
+        if (ageNum === 7 && ![DIVISIONS.SNACK, DIVISIONS.STINGERS].includes(payload.division)) {
+            setStatusMessage("❌ Age 7 must be Snack Pack or Lil Stingers.");
+            setTimeout(() => setStatusMessage(""), 3500);
+            return;
+        }
 
         apiClient
             .put(`/racers/${editingRacer.id}`, payload)
@@ -215,9 +313,7 @@ function ParentDashboard() {
             .catch((err) => {
                 console.error("Error saving racer:", err);
                 const msg =
-                    err?.response?.data?.message ||
-                    err?.response?.data ||
-                    "❌ Error updating racer.";
+                    err?.response?.data?.message || err?.response?.data || "❌ Error updating racer.";
                 setStatusMessage(typeof msg === "string" ? msg : "❌ Error updating racer.");
                 setTimeout(() => setStatusMessage(""), 3500);
             });
@@ -229,7 +325,7 @@ function ParentDashboard() {
         setDeleteModalOpen(true);
     };
 
-    // ✅ confirmed delete (checkbox was checked)
+    // ✅ confirmed delete
     const confirmDeleteRacer = async (racerId) => {
         try {
             await apiClient.delete(`/racers/${racerId}`);
@@ -304,7 +400,8 @@ function ParentDashboard() {
             setCoParentEmail("");
         } catch (err) {
             console.error("Error sending co-parent invite:", err);
-            const msg = err.response?.data?.message || "Sorry, we couldn't send that invite. Please try again.";
+            const msg =
+                err.response?.data?.message || "Sorry, we couldn't send that invite. Please try again.";
             setInviteStatus("❌ " + msg);
         } finally {
             setInviteLoading(false);
@@ -398,76 +495,102 @@ function ParentDashboard() {
                 <h2>Your Racers</h2>
 
                 <ul className="racer-list">
-                    {racers.map((racer) => (
-                        <li key={racer.id} className="racer-item">
-                            {editingRacer && editingRacer.id === racer.id ? (
-                                <div className="edit-form">
-                                    <input
-                                        type="text"
-                                        value={editingRacer.firstName || ""}
-                                        onChange={(e) => setEditingRacer({ ...editingRacer, firstName: e.target.value })}
-                                        placeholder="First Name"
-                                    />
+                    {racers.map((racer) => {
+                        const shownDivision = racer.division || getDivisionFromAge(racer.age);
 
-                                    <input
-                                        type="text"
-                                        value={editingRacer.lastName || ""}
-                                        onChange={(e) => setEditingRacer({ ...editingRacer, lastName: e.target.value })}
-                                        placeholder="Last Name"
-                                    />
+                        return (
+                            <li key={racer.id} className="racer-item">
+                                {editingRacer && editingRacer.id === racer.id ? (
+                                    <div className="edit-form">
+                                        <input
+                                            type="text"
+                                            value={editingRacer.firstName || ""}
+                                            onChange={(e) =>
+                                                setEditingRacer({ ...editingRacer, firstName: e.target.value })
+                                            }
+                                            placeholder="First Name"
+                                        />
 
-                                    {/* ✅ NEW nickname field */}
-                                    <input
-                                        type="text"
-                                        value={editingRacer.nickname || ""}
-                                        onChange={(e) => setEditingRacer({ ...editingRacer, nickname: e.target.value })}
-                                        placeholder="Nickname (optional)"
-                                    />
+                                        <input
+                                            type="text"
+                                            value={editingRacer.lastName || ""}
+                                            onChange={(e) =>
+                                                setEditingRacer({ ...editingRacer, lastName: e.target.value })
+                                            }
+                                            placeholder="Last Name"
+                                        />
 
-                                    <input
-                                        type="number"
-                                        value={editingRacer.age || ""}
-                                        onChange={(e) => setEditingRacer({ ...editingRacer, age: e.target.value })}
-                                        placeholder="Age"
-                                    />
+                                        <input
+                                            type="text"
+                                            value={editingRacer.nickname || ""}
+                                            onChange={(e) =>
+                                                setEditingRacer({ ...editingRacer, nickname: e.target.value })
+                                            }
+                                            placeholder="Nickname (optional)"
+                                        />
 
-                                    <input
-                                        type="text"
-                                        value={editingRacer.carNumber || ""}
-                                        onChange={(e) => setEditingRacer({ ...editingRacer, carNumber: e.target.value })}
-                                        placeholder="Car Number"
-                                    />
+                                        <input
+                                            type="number"
+                                            value={editingRacer.age || ""}
+                                            onChange={(e) => setEditingRacer({ ...editingRacer, age: e.target.value })}
+                                            placeholder="Age"
+                                            min="2"
+                                            max="9"
+                                        />
 
-                                    <div className="edit-buttons">
-                                        <button className="save-btn" onClick={handleSaveEdit}>
-                                            Save
-                                        </button>
-                                        <button className="cancel-btn" onClick={() => setEditingRacer(null)}>
-                                            Cancel
-                                        </button>
+                                        {/* ✅ Division select only if age 7 */}
+                                        {Number(editingRacer.age) === 7 ? (
+                                            <select
+                                                value={getDivisionForSave(editingRacer.age, editingRacer.division)}
+                                                onChange={(e) =>
+                                                    setEditingRacer({ ...editingRacer, division: e.target.value })
+                                                }
+                                            >
+                                                <option value={DIVISIONS.SNACK}>Snack Pack Division</option>
+                                                <option value={DIVISIONS.STINGERS}>Lil Stingers</option>
+                                            </select>
+                                        ) : null}
+
+                                        <input
+                                            type="text"
+                                            value={editingRacer.carNumber || ""}
+                                            onChange={(e) =>
+                                                setEditingRacer({ ...editingRacer, carNumber: e.target.value })
+                                            }
+                                            placeholder="Car Number"
+                                        />
+
+                                        <div className="edit-buttons">
+                                            <button className="save-btn" onClick={handleSaveEdit}>
+                                                Save
+                                            </button>
+                                            <button className="cancel-btn" onClick={() => setEditingRacer(null)}>
+                                                Cancel
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="racer-info">
-                                        <strong>
-                                            {racer.firstName} {racer.lastName}
-                                            {racer.nickname ? ` (${racer.nickname})` : ""}
-                                        </strong>{" "}
-                                        — #{racer.carNumber} ({racer.age} yrs)
-                                    </div>
-                                    <div className="racer-actions">
-                                        <button className="edit-btn" onClick={() => startEdit(racer)}>
-                                            Edit
-                                        </button>
-                                        <button className="remove-btn" onClick={() => openDeleteRacer(racer)}>
-                                            Remove
-                                        </button>
-                                    </div>
-                                </>
-                            )}
-                        </li>
-                    ))}
+                                ) : (
+                                    <>
+                                        <div className="racer-info">
+                                            <strong>
+                                                {racer.firstName} {racer.lastName}
+                                                {racer.nickname ? ` (${racer.nickname})` : ""}
+                                            </strong>{" "}
+                                            — #{racer.carNumber} ({racer.age} yrs) — <b>{shownDivision}</b>
+                                        </div>
+                                        <div className="racer-actions">
+                                            <button className="edit-btn" onClick={() => startEdit(racer)}>
+                                                Edit
+                                            </button>
+                                            <button className="remove-btn" onClick={() => openDeleteRacer(racer)}>
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </li>
+                        );
+                    })}
                 </ul>
 
                 {/* === Add Racer Form === */}
@@ -491,7 +614,6 @@ function ParentDashboard() {
                         required
                     />
 
-                    {/* ✅ NEW nickname field */}
                     <input
                         type="text"
                         placeholder="Nickname (optional)"
@@ -505,7 +627,27 @@ function ParentDashboard() {
                         value={newRacer.age}
                         onChange={(e) => setNewRacer({ ...newRacer, age: e.target.value })}
                         required
+                        min="2"
+                        max="9"
                     />
+
+                    {/* ✅ Only show division choice for age 7 */}
+                    {Number(newRacer.age) === 7 ? (
+                        <>
+                            <label style={{ marginTop: 8, fontWeight: 600 }}>Division (Age 7 only)</label>
+                            <select
+                                value={getDivisionForSave(newRacer.age, newRacer.division)}
+                                onChange={(e) => setNewRacer({ ...newRacer, division: e.target.value })}
+                                required
+                            >
+                                <option value={DIVISIONS.SNACK}>Snack Pack Division</option>
+                                <option value={DIVISIONS.STINGERS}>Lil Stingers</option>
+                            </select>
+                            <p className="age-note" style={{ marginTop: 6 }}>
+                                Age 7 can choose Snack Pack or Lil Stingers. Ages 8–9 are Lil Stingers automatically.
+                            </p>
+                        </>
+                    ) : null}
 
                     <input
                         type="text"
