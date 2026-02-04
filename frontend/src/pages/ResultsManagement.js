@@ -305,9 +305,10 @@ const ResultsManagement = () => {
                 row.racerName ||
                 (racer ? `${racer.firstName || ""} ${racer.lastName || ""}`.trim() : "");
 
-            const division = normalizeDivision()
+            const division = normalizeDivision(
                 row.division ||
-                (racer ? (racer.division || divisionFromAge(racer.age)) : "");
+                (racer ? (racer.division || divisionFromAge(racer.age)) : "")
+            );
 
             return {
                 id: row.id,
