@@ -34,8 +34,6 @@
     margin: 0 2rem 2rem;
 }
 
-
-
 .home-section h2 {
     color: #f47c2a;
     margin: 0 0 1rem;
@@ -72,14 +70,14 @@
     border: 2px solid #f47c2a;
     border-radius: 10px;
 
-    width: 210px;          /* ⬅ slightly narrower */
-    padding: 0.85rem;     /* ⬅ MUCH less padding */
+    width: 210px;          /* slightly narrower */
+    padding: 0.85rem;      /* less padding */
 
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;         /* ⬅ controls vertical spacing */
+    gap: 0.35rem;         /* vertical spacing */
 }
 
 .race-card h3 {
@@ -99,13 +97,15 @@
 }
 
 /* =========================================================
-   Standings
+   Standings (UPDATED: 5 columns on desktop)
 ========================================================= */
 .standings-grid {
-    display: flex;
-    justify-content: center;
+    display: grid;
     gap: 1rem;
-    flex-wrap: wrap;
+    align-items: stretch;
+
+    /* ✅ Desktop default: 5 columns */
+    grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .standing-card {
@@ -113,7 +113,9 @@
     border: 1px solid #f47c2a;
     border-radius: 6px;
     padding: 1rem;
-    width: 275px;
+
+    width: auto;      /* ✅ allow grid sizing */
+    min-width: 0;     /* ✅ prevent overflow */
 }
 
 .division-title {
@@ -137,6 +139,25 @@
     width: 1.4em;
     text-align: center;
     margin-right: 6px;
+}
+
+/* ✅ Responsive breakpoints for leaders grid */
+@media (max-width: 1200px) {
+    .standings-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .standings-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .standings-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* =========================================================
@@ -213,7 +234,7 @@
     align-items: center;
 }
 
-/* Fixed logo frame (THIS fixes uneven sizing) */
+/* Fixed logo frame */
 .sponsor-logo-box {
     width: 100%;
     max-width: 320px;
@@ -237,7 +258,7 @@
 .sponsor-logo {
     width: 100%;
     height: 100%;
-    object-fit: contain;   /* keeps all logos visible */
+    object-fit: contain;
     display: block;
     filter: grayscale(30%);
     transition: transform 0.25s ease, filter 0.25s ease;

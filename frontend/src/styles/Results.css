@@ -112,31 +112,37 @@
     font-size: 1.45rem;
 }
 
-/* ===== Standings grid: 1 -> 2 -> 4 ===== */
+/* ===== Standings grid: 1 -> 2 -> 3 -> 5 ===== */
 .standings-grid {
     display: grid;
     gap: 1rem;
     grid-template-columns: 1fr; /* mobile */
 }
 
-/* Tablet: 2 columns */
 @media (min-width: 700px) {
     .standings-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         align-items: start;
     }
 }
 
-/* Desktop: 4 columns (one row) */
+@media (min-width: 900px) {
+    .standings-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: start;
+    }
+}
+
+/* Desktop: 5 columns */
 @media (min-width: 1200px) {
     .standings-grid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         align-items: start;
     }
 
-    /* Widen container so 4 columns fit inside orange border */
+    /* Widen container so 5 columns fit inside orange border */
     .results-container .championship-standings {
-        max-width: 1400px;
+        max-width: 1700px;
     }
 }
 
@@ -149,7 +155,8 @@
     border: 1px solid #eee;
     display: flex;
     flex-direction: column;
-    min-height: 320px; /* helps alignment */
+    min-height: 320px;
+    min-width: 0; /* ✅ prevents overflow in tight grids */
 }
 
 .division-column h3,
@@ -180,12 +187,10 @@
     font-size: 1.45rem;
 }
 
-
-
-/* Widen race results container on large screens so 4 columns fit */
+/* Widen race results container on large screens so 5 columns fit */
 @media (min-width: 1200px) {
     .results-container .race-results-section {
-        max-width: 1400px;
+        max-width: 1700px;
     }
 }
 
@@ -208,9 +213,8 @@
     text-align: center;
 }
 
-
 .race-results-section .race-date {
-    display: block;       /* override display:flex from RaceList.css */
+    display: block;
     width: 100%;
     text-align: center;
     margin: 0 0 1rem;
@@ -223,35 +227,42 @@
     text-align: center;
 }
 
-/* ===== Race Results division grid: 1 -> 2 -> 4 ===== */
+/* ===== Race Results division grid: 1 -> 2 -> 3 -> 5 ===== */
 .race-division-grid {
     display: grid;
     gap: 1rem;
     grid-template-columns: 1fr; /* mobile */
 }
 
-/* Tablet: 2 columns */
 @media (min-width: 700px) {
     .race-division-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         align-items: start;
     }
 }
 
-/* Desktop: 4 columns (one row) */
+@media (min-width: 900px) {
+    .race-division-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: start;
+    }
+}
+
+/* Desktop: 5 columns */
 @media (min-width: 1200px) {
     .race-division-grid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         align-items: start;
     }
 }
 
-/* Division card inside each race (re-uses the same look) */
+/* Division card inside each race */
 .race-division-block {
     border-radius: 10px;
     padding: 0.9rem;
     background: #fffaf5;
     border: 1px solid #eee;
+    min-width: 0; /* ✅ prevents overflow */
 }
 
 /* ===== Tables (shared) ===== */
@@ -342,6 +353,15 @@
 .division-block[data-division="Snack Pack Division"] {
     border-color: #2196f3;
     background: #f0f7ff;
+}
+
+/* ✅ NEW: Lil Stingers theme */
+.division-column[data-division="Lil Stingers"],
+.division-block[data-division="Lil Stingers"],
+.division-column[data-division="Lil Stingers Division"],
+.division-block[data-division="Lil Stingers Division"] {
+    border-color: #7c3aed;     /* purple accent */
+    background: #f7f3ff;
 }
 
 /* ===== Mobile tweaks ===== */
