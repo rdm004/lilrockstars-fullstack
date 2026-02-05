@@ -291,112 +291,127 @@ const RacersManagement = () => {
                 onSubmit={handleSave}
                 submitLabel={editMode ? "Update Racer" : "Add Racer"}
             >
-                {/* ✅ Only show Guardian Email on ADD.
-                    On edit, show it read-only (optional), but don't allow changing ownership. */}
-                {!editMode ? (
-                    <>
-                        <label htmlFor="guardianEmail">Guardian Email</label>
+                <div className="racer-form-grid">
+
+                    {/* Guardian Email spans both columns */}
+                    {!editMode ? (
+                        <div className="span-2">
+                            <label htmlFor="guardianEmail">Guardian Email</label>
+                            <input
+                                id="guardianEmail"
+                                type="email"
+                                value={formData.guardianEmail}
+                                onChange={(e) => setFormData((prev) => ({ ...prev, guardianEmail: e.target.value }))}
+                                placeholder="guardian@example.com"
+                                required
+                            />
+                            <p className="help-note">
+                                Must match an existing registered account. This links the racer to that guardian.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="span-2">
+                            <label htmlFor="guardianEmail">Guardian Email</label>
+                            <input
+                                id="guardianEmail"
+                                type="email"
+                                value={formData.guardianEmail || ""}
+                                readOnly
+                                className="read-only"
+                            />
+                            <p className="help-note">Guardian ownership can’t be changed here.</p>
+                        </div>
+                    )}
+
+                    {/* First / Last */}
+                    <div>
+                        <label htmlFor="firstName">First Name</label>
                         <input
-                            id="guardianEmail"
-                            type="email"
-                            value={formData.guardianEmail}
-                            onChange={(e) =>
-                                setFormData((prev) => ({ ...prev, guardianEmail: e.target.value }))
-                            }
-                            placeholder="guardian@example.com"
+                            id="firstName"
+                            type="text"
+                            value={formData.firstName}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, firstName: e.target.value }))}
                             required
                         />
-                        <p className="help-note">
-                            Must match an existing registered account. This links the racer to that guardian.
-                        </p>
-                    </>
-                ) : (
-                    <>
-                        <label htmlFor="guardianEmail">Guardian Email</label>
+                    </div>
+
+                    <div>
+                        <label htmlFor="lastName">Last Name</label>
                         <input
-                            id="guardianEmail"
-                            type="email"
-                            value={formData.guardianEmail || ""}
-                            readOnly
-                            className="read-only"
-                        />
-                        <p className="help-note">
-                            Guardian ownership can’t be changed here.
-                        </p>
-                    </>
-                )}
-
-                <label htmlFor="firstName">First Name</label>
-                <input
-                    id="firstName"
-                    type="text"
-                    value={formData.firstName}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, firstName: e.target.value }))}
-                    required
-                />
-
-                <label htmlFor="lastName">Last Name</label>
-                <input
-                    id="lastName"
-                    type="text"
-                    value={formData.lastName}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, lastName: e.target.value }))}
-                    required
-                />
-
-                <label htmlFor="nickname">Nickname (optional)</label>
-                <input
-                    id="nickname"
-                    type="text"
-                    value={formData.nickname}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, nickname: e.target.value }))}
-                    placeholder="Optional"
-                />
-
-                <label htmlFor="age">Age</label>
-                <input
-                    id="age"
-                    type="number"
-                    min="2"
-                    max="9"
-                    value={formData.age}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, age: e.target.value }))}
-                    required
-                />
-                {Number(formData.age) === 7 ? (
-                    <>
-                        <label htmlFor="division">Division</label>
-                        <select
-                            id="division"
-                            value={getDivisionForSave(formData.age, formData.division)}
-                            onChange={(e) =>
-                                setFormData((prev) => ({ ...prev, division: e.target.value }))
-                            }
+                            id="lastName"
+                            type="text"
+                            value={formData.lastName}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, lastName: e.target.value }))}
                             required
-                        >
-                            <option value={DIVISIONS.SNACK}>Snack Pack Division</option>
-                            <option value={DIVISIONS.STINGERS}>Lil Stingers</option>
-                        </select>
+                        />
+                    </div>
 
-                        <p className="help-note">
-                            Age 7 may choose Snack Pack or Lil Stingers.
+                    {/* Nickname / Age */}
+                    <div>
+                        <label htmlFor="nickname">Nickname (optional)</label>
+                        <input
+                            id="nickname"
+                            type="text"
+                            value={formData.nickname}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, nickname: e.target.value }))}
+                            placeholder="Optional"
+                        />
+                    </div>
+
+                    <div>
+                        <label htmlFor="age">Age</label>
+                        <input
+                            id="age"
+                            type="number"
+                            min="2"
+                            max="9"
+                            value={formData.age}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, age: e.target.value }))}
+                            required
+                        />
+                    </div>
+
+                    {/* Division chooser only when age 7 (span both columns) */}
+                    {Number(formData.age) === 7 ? (
+                        <div className="span-2">
+                            <label htmlFor="division">Division (Age 7 only)</label>
+                            <select
+                                id="division"
+                                value={formData.division || "Snack Pack Division"}
+                                onChange={(e) => setFormData((prev) => ({ ...prev, division: e.target.value }))}
+                                required
+                            >
+                                <option value="Snack Pack Division">Snack Pack Division — Electric Battery</option>
+                                <option value="Lil Stingers Division">Lil Stingers Division — 50 CC Engine</option>
+                            </select>
+
+                            <p className="help-note">
+                                Snack Pack = <b>Electric Battery</b> • Lil Stingers = <b>50 CC Engine</b>
+                            </p>
+                        </div>
+                    ) : null}
+
+                    {/* Car Number spans both columns */}
+                    <div className="span-2">
+                        <label htmlFor="carNumber">Car Number</label>
+                        <input
+                            id="carNumber"
+                            type="text"
+                            value={formData.carNumber}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, carNumber: e.target.value }))}
+                            required
+                        />
+                    </div>
+
+                    {/* Division note spans both */}
+                    <div className="span-2">
+                        <p className="division-note">
+                            Division will be saved as:{" "}
+                            <strong>{getDivisionForSave(formData.age || 0, formData.division)}</strong>
                         </p>
-                    </>
-                ) : null}
+                    </div>
 
-                <label htmlFor="carNumber">Car Number</label>
-                <input
-                    id="carNumber"
-                    type="text"
-                    value={formData.carNumber}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, carNumber: e.target.value }))}
-                    required
-                />
-
-                <p className="division-note">
-                    Division will be calculated automatically:{" "}
-                    <strong>{getDivisionForSave(formData.age || 0, formData.division)}</strong>
-                </p>
+                </div>
             </Modal>
         </Layout>
     );

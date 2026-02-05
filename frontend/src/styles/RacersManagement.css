@@ -142,3 +142,44 @@
     color: #555;
     cursor: not-allowed;
 }
+
+/* ===========================
+   Modal 2-column form layout
+=========================== */
+.racer-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 16px;
+}
+
+.racer-form-grid .span-2 {
+    grid-column: 1 / -1;
+}
+
+/* Make label/input stack nicely within each grid cell */
+.racer-form-grid label {
+    display: block;
+    margin: 0 0 6px;
+    font-weight: 600;
+}
+
+.racer-form-grid input,
+.racer-form-grid select {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Reduce help-note spacing inside grid */
+.racer-form-grid .help-note {
+    margin: 6px 0 0;
+}
+
+/* Stack on smaller screens */
+@media (max-width: 720px) {
+    .racer-form-grid {
+        grid-template-columns: 1fr;
+    }
+    .racer-form-grid .span-2 {
+        grid-column: auto;
+    }
+}

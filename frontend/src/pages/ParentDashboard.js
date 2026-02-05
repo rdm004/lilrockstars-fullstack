@@ -9,16 +9,24 @@ import DeleteRacerConfirmModal from "../components/DeleteRacerConfirmModal"; // 
 /** ---------------------------
  * Division rules (2026)
  * ---------------------------
- * - Ages 8–9: MUST be Lil Stingers
- * - Age 7: may be Snack Pack OR Lil Stingers
- * - Under 7: cannot be Lil Stingers
+ * - Ages 8–9: MUST be Lil Stingers Division
+ * - Age 7: may be Snack Pack OR Lil Stingers Division
+ * - Under 7: cannot be Lil Stingers Division
+ *
+ * NOTE: We use ONE canonical string everywhere:
+ * ✅ "Lil Stingers Division"
  */
 const DIVISIONS = {
     THREE: "3 Year Old Division",
     FOUR: "4 Year Old Division",
     FIVE: "5 Year Old Division",
     SNACK: "Snack Pack Division",
-    STINGERS: "Lil Stingers",
+    STINGERS: "Lil Stingers Division",
+};
+
+const DIVISION_DESCRIPTIONS = {
+    [DIVISIONS.SNACK]: "Electric Battery",
+    [DIVISIONS.STINGERS]: "50 CC Engine",
 };
 
 const getDivisionFromAge = (ageRaw) => {
@@ -55,6 +63,11 @@ const getDivisionForSave = (ageRaw, selectedDivisionRaw) => {
     return getDivisionFromAge(age);
 };
 
+const divisionLabelWithDesc = (division) => {
+    const desc = DIVISION_DESCRIPTIONS[division];
+    return desc ? `${division} — ${desc}` : division;
+};
+
 function ParentDashboard() {
     const [parent, setParent] = useState(null);
     const [racers, setRacers] = useState([]);
@@ -66,7 +79,7 @@ function ParentDashboard() {
         nickname: "",
         age: "",
         carNumber: "",
-        division: "", // ✅ NEW (only used when age === 7)
+        division: "", // ✅ only used when age === 7
     });
 
     const [editingRacer, setEditingRacer] = useState(null);
@@ -124,10 +137,7 @@ function ParentDashboard() {
                 }));
 
                 // ✅ Remove info-only events from parent dashboard
-                const registrationOnlyRaces = mappedRaces.filter(
-                    (r) => r.requiresRegistration === true
-                );
-
+                const registrationOnlyRaces = mappedRaces.filter((r) => r.requiresRegistration === true);
                 setRaces(registrationOnlyRaces);
 
                 // 4) Existing registrations
@@ -147,10 +157,7 @@ function ParentDashboard() {
                 const status = err.response?.status;
 
                 if (status === 401 || status === 403) {
-                    sessionStorage.setItem(
-                        "authMessage",
-                        "Your session expired. Please log in again."
-                    );
+                    sessionStorage.setItem("authMessage", "Your session expired. Please log in again.");
                     localStorage.removeItem("token");
                     localStorage.removeItem("firstName");
                     localStorage.removeItem("role");
@@ -217,7 +224,7 @@ function ParentDashboard() {
             nickname: (newRacer.nickname || "").trim(),
             age: ageNum,
             carNumber: (newRacer.carNumber || "").trim(),
-            division: getDivisionForSave(ageNum, newRacer.division), // ✅ NEW
+            division: getDivisionForSave(ageNum, newRacer.division),
         };
 
         // UI guardrails (backend should enforce too)
@@ -254,8 +261,7 @@ function ParentDashboard() {
             })
             .catch((err) => {
                 console.error("Error adding racer:", err);
-                const msg =
-                    err?.response?.data?.message || err?.response?.data || "❌ Error adding racer.";
+                const msg = err?.response?.data?.message || err?.response?.data || "❌ Error adding racer.";
                 setStatusMessage(typeof msg === "string" ? msg : "❌ Error adding racer.");
                 setTimeout(() => setStatusMessage(""), 3500);
             });
@@ -265,7 +271,7 @@ function ParentDashboard() {
         setEditingRacer({
             ...racer,
             nickname: racer?.nickname || "",
-            division: racer?.division || "", // ✅ NEW (only used when age === 7)
+            division: racer?.division || "",
         });
     };
 
@@ -281,7 +287,7 @@ function ParentDashboard() {
             nickname: (editingRacer.nickname || "").trim(),
             age: ageNum,
             carNumber: (editingRacer.carNumber || "").trim(),
-            division: getDivisionForSave(ageNum, editingRacer.division), // ✅ NEW
+            division: getDivisionForSave(ageNum, editingRacer.division),
         };
 
         // UI guardrails (backend should enforce too)
@@ -312,8 +318,7 @@ function ParentDashboard() {
             })
             .catch((err) => {
                 console.error("Error saving racer:", err);
-                const msg =
-                    err?.response?.data?.message || err?.response?.data || "❌ Error updating racer.";
+                const msg = err?.response?.data?.message || err?.response?.data || "❌ Error updating racer.";
                 setStatusMessage(typeof msg === "string" ? msg : "❌ Error updating racer.");
                 setTimeout(() => setStatusMessage(""), 3500);
             });
@@ -400,8 +405,7 @@ function ParentDashboard() {
             setCoParentEmail("");
         } catch (err) {
             console.error("Error sending co-parent invite:", err);
-            const msg =
-                err.response?.data?.message || "Sorry, we couldn't send that invite. Please try again.";
+            const msg = err.response?.data?.message || "Sorry, we couldn't send that invite. Please try again.";
             setInviteStatus("❌ " + msg);
         } finally {
             setInviteLoading(false);
@@ -496,7 +500,13 @@ function ParentDashboard() {
 
                 <ul className="racer-list">
                     {racers.map((racer) => {
-                        const shownDivision = racer.division || getDivisionFromAge(racer.age);
+                        // ✅ normalize "Lil Stingers" -> "Lil Stingers Division" if older data exists
+                        const rawDiv = (racer?.division || "").trim();
+                        const normalizedDiv =
+                            rawDiv === "Lil Stingers" ? DIVISIONS.STINGERS : rawDiv;
+
+                        const shownDivision = normalizedDiv || getDivisionFromAge(racer.age);
+                        const shownDivisionWithDesc = divisionLabelWithDesc(shownDivision);
 
                         return (
                             <li key={racer.id} className="racer-item">
@@ -505,27 +515,21 @@ function ParentDashboard() {
                                         <input
                                             type="text"
                                             value={editingRacer.firstName || ""}
-                                            onChange={(e) =>
-                                                setEditingRacer({ ...editingRacer, firstName: e.target.value })
-                                            }
+                                            onChange={(e) => setEditingRacer({ ...editingRacer, firstName: e.target.value })}
                                             placeholder="First Name"
                                         />
 
                                         <input
                                             type="text"
                                             value={editingRacer.lastName || ""}
-                                            onChange={(e) =>
-                                                setEditingRacer({ ...editingRacer, lastName: e.target.value })
-                                            }
+                                            onChange={(e) => setEditingRacer({ ...editingRacer, lastName: e.target.value })}
                                             placeholder="Last Name"
                                         />
 
                                         <input
                                             type="text"
                                             value={editingRacer.nickname || ""}
-                                            onChange={(e) =>
-                                                setEditingRacer({ ...editingRacer, nickname: e.target.value })
-                                            }
+                                            onChange={(e) => setEditingRacer({ ...editingRacer, nickname: e.target.value })}
                                             placeholder="Nickname (optional)"
                                         />
 
@@ -538,25 +542,30 @@ function ParentDashboard() {
                                             max="9"
                                         />
 
-                                        {/* ✅ Division select only if age 7 */}
+                                        {/* ✅ Division select only if age 7 (with descriptions) */}
                                         {Number(editingRacer.age) === 7 ? (
-                                            <select
-                                                value={getDivisionForSave(editingRacer.age, editingRacer.division)}
-                                                onChange={(e) =>
-                                                    setEditingRacer({ ...editingRacer, division: e.target.value })
-                                                }
-                                            >
-                                                <option value={DIVISIONS.SNACK}>Snack Pack Division</option>
-                                                <option value={DIVISIONS.STINGERS}>Lil Stingers</option>
-                                            </select>
+                                            <>
+                                                <select
+                                                    value={getDivisionForSave(editingRacer.age, editingRacer.division)}
+                                                    onChange={(e) => setEditingRacer({ ...editingRacer, division: e.target.value })}
+                                                >
+                                                    <option value={DIVISIONS.SNACK}>
+                                                        {divisionLabelWithDesc(DIVISIONS.SNACK)}
+                                                    </option>
+                                                    <option value={DIVISIONS.STINGERS}>
+                                                        {divisionLabelWithDesc(DIVISIONS.STINGERS)}
+                                                    </option>
+                                                </select>
+                                                <p className="age-note" style={{ marginTop: 6 }}>
+                                                    Snack Pack = <b>Electric Battery</b> • Lil Stingers = <b>50 CC Engine</b>
+                                                </p>
+                                            </>
                                         ) : null}
 
                                         <input
                                             type="text"
                                             value={editingRacer.carNumber || ""}
-                                            onChange={(e) =>
-                                                setEditingRacer({ ...editingRacer, carNumber: e.target.value })
-                                            }
+                                            onChange={(e) => setEditingRacer({ ...editingRacer, carNumber: e.target.value })}
                                             placeholder="Car Number"
                                         />
 
@@ -576,7 +585,7 @@ function ParentDashboard() {
                                                 {racer.firstName} {racer.lastName}
                                                 {racer.nickname ? ` (${racer.nickname})` : ""}
                                             </strong>{" "}
-                                            — #{racer.carNumber} ({racer.age} yrs) — <b>{shownDivision}</b>
+                                            — #{racer.carNumber} ({racer.age} yrs) — <b>{shownDivisionWithDesc}</b>
                                         </div>
                                         <div className="racer-actions">
                                             <button className="edit-btn" onClick={() => startEdit(racer)}>
@@ -631,7 +640,7 @@ function ParentDashboard() {
                         max="9"
                     />
 
-                    {/* ✅ Only show division choice for age 7 */}
+                    {/* ✅ Only show division choice for age 7 (with descriptions) */}
                     {Number(newRacer.age) === 7 ? (
                         <>
                             <label style={{ marginTop: 8, fontWeight: 600 }}>Division (Age 7 only)</label>
@@ -640,11 +649,12 @@ function ParentDashboard() {
                                 onChange={(e) => setNewRacer({ ...newRacer, division: e.target.value })}
                                 required
                             >
-                                <option value={DIVISIONS.SNACK}>Snack Pack Division</option>
-                                <option value={DIVISIONS.STINGERS}>Lil Stingers</option>
+                                <option value={DIVISIONS.SNACK}>{divisionLabelWithDesc(DIVISIONS.SNACK)}</option>
+                                <option value={DIVISIONS.STINGERS}>{divisionLabelWithDesc(DIVISIONS.STINGERS)}</option>
                             </select>
+
                             <p className="age-note" style={{ marginTop: 6 }}>
-                                Age 7 can choose Snack Pack or Lil Stingers. Ages 8–9 are Lil Stingers automatically.
+                                Snack Pack = <b>Electric Battery</b> • Lil Stingers = <b>50 CC Engine</b>
                             </p>
                         </>
                     ) : null}
@@ -687,9 +697,7 @@ function ParentDashboard() {
                                                 <input
                                                     type="checkbox"
                                                     checked={isRegistered}
-                                                    onChange={(e) =>
-                                                        handleRaceRegistration(racer.id, race.id, e.target.checked)
-                                                    }
+                                                    onChange={(e) => handleRaceRegistration(racer.id, race.id, e.target.checked)}
                                                 />
                                                 {`${race.name} — ${formatRaceDate(race.date)}`}
                                             </label>
