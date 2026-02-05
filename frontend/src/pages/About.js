@@ -39,6 +39,7 @@ const About = () => {
                     <li>👶 <strong>Age Requirement:</strong> 7 and under (as of January 1, 2025)</li>
                     <li>🚗 <strong>Ages 3–5:</strong> Radio Flyer Ultimate Go-Kart (24V only)</li>
                     <li>🏎️ <strong>Ages 6–7:</strong> “Snack Pack” Radio Flyer Extreme Drift Go-Kart (36V only)</li>
+                    <li>🏎️ <strong>Ages 7–9:</strong> “Lil Stingers” 50cc comer 2 cycle engine</li>
                 </ul>
                 <p className="note">
                     <em>Note:</em> The “Snack Pack” division is exclusive to the Rockstars Series and is not recognized by the Juicebox Division for events outside our series.
@@ -47,7 +48,7 @@ const About = () => {
                     <strong>Driver Age Policy:</strong> A driver’s age as of January 1, 2025 determines their division for the entire year.
                 </p>
                 <p>
-                    Example: If your child is 4 years old as of January 1, 2025, they will remain in the 3–5
+                    Example: If your child is 4 years old as of January 1, 2025, they will remain in the 4 year old
                     division for the full season. Changing divisions mid-season will impact points standings.
                 </p>
             </section>
@@ -113,7 +114,9 @@ const About = () => {
                         Pre-Registration: Event registration will have a cut-off time, announced with event details.
                     </p>
                     <p>
-                        If you do not have Facebook, you may register at the event or by phone:{" "}
+                        Please create an account on our site by clicking the 'Dashboard' link in the top right of your
+                        screen. You can create and manage your racers there. If you are having issues with registering
+                        your racer, please reach out to us by phone:{" "}
                         <a href="tel:9102371343">(910) 237-1343</a>.
                     </p>
                 </div>
@@ -133,6 +136,60 @@ const About = () => {
                         If you modify your child's kart for an unfair advantage, you are part of the problem — not the solution!
                     </p>
                 </div>
+            </section>
+            {/* === LIL STINGERS RULES (MATCHING UI) === */}
+            <section className="about-section">
+                <h2>Lil Stingers Division Rules</h2>
+
+                <div className="rules-grid">
+                    <div>
+                        <h3>👦 Driver Eligibility</h3>
+                        <ul>
+                            <li><b>Ages:</b> 7–9 (age determined as of January 1)</li>
+                            <li>Designed for safe seat time and learning</li>
+                            <li>Karts reach approx. <b>25–30 mph</b> — safety is the top priority</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3>🛠️ Kart & Engine Specs</h3>
+                        <ul>
+                            <li><b>Chassis:</b> Kid Kart chassis (Emmick, Top Kart, Birel)</li>
+                            <li><b>Engine:</b> 50cc Comer (2-cycle only)</li>
+                            <li><b>Gearing:</b> 10–89</li>
+                            <li><b>Tires:</b> 4.5 × 5 inch (any tire)</li>
+                            <li><b>Weight:</b> 150 lb combined kart + driver</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3>🧤 Required Safety Gear</h3>
+                        <ul>
+                            <li><b>Raceceiver</b> (one-way radio receiver required)</li>
+                            <li><b>Full-face helmet</b></li>
+                            <li><b>Neck brace</b></li>
+                            <li><b>Closed-toe shoes</b> (required)</li>
+                            <li><b>Clothing:</b> Blue jeans + jacket minimum</li>
+                            <li><b>Preferred:</b> Racing jacket or full suit</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3>🏁 Race Procedures</h3>
+                        <ul>
+                            <li><b>First 4 points races:</b> seat time learning only</li>
+                            <li><b>Format:</b> three (3) 10-lap practice sessions</li>
+                            <li>No staging: return to trailers after sessions</li>
+                            <li>Must be lined up on time for your section (check running order)</li>
+                            <li>Drivers must understand flagman signals</li>
+                            <li>Enter/exit track safely and <b>roll across scales</b> when instructed</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <p className="note">
+                    <em>Note:</em> “Raceceiver” is a small one-way radio receiver so track staff can communicate with drivers safely.
+                </p>
             </section>
         </div>
     );
