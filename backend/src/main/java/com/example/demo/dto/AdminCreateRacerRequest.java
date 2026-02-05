@@ -10,6 +10,9 @@ public class AdminCreateRacerRequest {
     private int age;
     private String carNumber;
 
+    // ✅ NEW
+    private String division;
+
     public String getGuardianEmail() { return guardianEmail; }
     public void setGuardianEmail(String guardianEmail) { this.guardianEmail = guardianEmail; }
 
@@ -27,4 +30,8 @@ public class AdminCreateRacerRequest {
 
     public String getCarNumber() { return carNumber; }
     public void setCarNumber(String carNumber) { this.carNumber = carNumber; }
+
+    // ✅ NEW
+    public String getDivision() { return division; }
+    public void setDivision(String division) { this.division = division; }
 }
