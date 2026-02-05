@@ -373,22 +373,22 @@ const RacersManagement = () => {
 
                     {/* Division chooser only when age 7 (span both columns) */}
                     {Number(formData.age) === 7 ? (
-                        <div className="span-2">
+                        <>
                             <label htmlFor="division">Division (Age 7 only)</label>
                             <select
                                 id="division"
-                                value={formData.division || "Snack Pack Division"}
+                                value={formData.division || DIVISIONS.SNACK}
                                 onChange={(e) => setFormData((prev) => ({ ...prev, division: e.target.value }))}
                                 required
                             >
-                                <option value="Snack Pack Division">Snack Pack Division — Electric Battery</option>
-                                <option value="Lil Stingers Division">Lil Stingers Division — 50 CC Engine</option>
+                                <option value={DIVISIONS.SNACK}>Snack Pack Division — Electric Battery</option>
+                                <option value={DIVISIONS.STINGERS}>Lil Stingers — 50 CC Engine</option>
                             </select>
 
                             <p className="help-note">
-                                Snack Pack = <b>Electric Battery</b> • Lil Stingers = <b>50 CC Engine</b>
+                                Snack Pack = <b>Electric Battery</b> · Lil Stingers = <b>50 CC Engine</b>
                             </p>
-                        </div>
+                        </>
                     ) : null}
 
                     {/* Car Number spans both columns */}
