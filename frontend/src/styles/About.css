@@ -1,7 +1,7 @@
 .about-container {
     position: relative;
     text-align: center;
-    background-image: url("../staticimages/rockstarslogowhite.png"); /* replace with your image */
+    background-image: url("../staticimages/rockstarslogowhite.png");
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
@@ -13,11 +13,8 @@
 .about-container::before {
     content: "";
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(255, 255, 255, 0.95); /* light transparent overlay */
+    inset: 0;
+    background-color: rgba(255, 255, 255, 0.95);
     z-index: 0;
 }
 
@@ -29,7 +26,6 @@
 /* === HERO === */
 .about-hero {
     position: relative;
-    /*background: url("/images/track-banner.jpg") center/cover no-repeat;*/
     height: 250px;
     display: flex;
     align-items: center;
@@ -135,8 +131,71 @@ a:hover {
     font-style: italic;
     color: #666;
     font-size: 0.9rem;
+    margin-top: 12px;
 }
 
+/* Remove bullet points from all About page lists */
+.about-section ul,
+.about-grid-section ul {
+    list-style-type: none;
+    padding-left: 0;
+    margin-left: 0;
+    margin-top: 0.75rem;
+}
+
+.about-section ul li,
+.about-grid-section ul li {
+    margin: 6px 0;
+}
+
+/* =========================================================
+   ✅ Lil Stingers 2x2 Grid (NEW - does NOT affect Tech rules)
+========================================================= */
+.stingers-grid {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1rem;
+
+    /* Mobile */
+    grid-template-columns: 1fr;
+}
+
+/* Tablet + Desktop: FORCE 2 columns = 2x2 with 4 cards */
+@media (min-width: 700px) {
+    .stingers-grid {
+        grid-template-columns: repeat(2, 1fr);
+        align-items: start;
+    }
+}
+
+.stingers-card {
+    background: #fffaf5;
+    border: 1px solid #f47c2a;
+    border-radius: 8px;
+    padding: 1rem;
+    height: 100%;
+}
+
+.stingers-card h3 {
+    margin: 0 0 0.75rem;
+    text-align: center;
+    color: #d96a21;
+    font-weight: 800;
+}
+
+.stingers-card ul {
+    margin: 0;
+    padding-left: 0;
+}
+
+.stingers-card li {
+    margin: 8px 0;
+    line-height: 1.35;
+}
+
+/* =========================================================
+   Responsive tweaks
+========================================================= */
 @media (max-width: 768px) {
     .about-hero {
         height: 180px;
@@ -146,59 +205,5 @@ a:hover {
     }
     .about-grid-section {
         grid-template-columns: 1fr;
-    }
-}
-
-/* Remove bullet points from all About page lists */
-.about-section ul,
-.about-grid-section ul {
-    list-style-type: none;
-    padding-left: 0;
-    margin-left: 0;
-}
-
-/* Optional: Add a little vertical spacing for readability */
-.about-section ul li,
-.about-grid-section ul li {
-    margin: 6px 0;
-}
-
-/* ✅ Lil Stingers rules layout inside a single card */
-.stingers-sections{
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 14px;
-    margin-top: 10px;
-}
-
-.stingers-section{
-    background: #fff;
-    border: 1px solid rgba(0,0,0,0.07);
-    border-radius: 10px;
-    padding: 12px 14px;
-}
-
-.stingers-section h4{
-    margin: 0 0 8px;
-    font-size: 1.05rem;
-    color: #d96a21; /* matches your orange theme */
-    font-weight: 800;
-}
-
-.stingers-section ul{
-    margin: 0;
-    padding-left: 18px;
-    color: #222;
-}
-
-.stingers-section li{
-    margin: 6px 0;
-    line-height: 1.35;
-}
-
-/* Desktop: 2 columns inside the one card */
-@media (min-width: 900px){
-    .stingers-sections{
-        grid-template-columns: 1fr 1fr;
     }
 }

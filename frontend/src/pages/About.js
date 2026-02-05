@@ -4,8 +4,6 @@ import "../styles/About.css";
 const About = () => {
     return (
         <div className="about-container">
-
-
             {/* === INTRO === */}
             <section className="about-section">
                 <h2>Lil Rockstars History</h2>
@@ -20,10 +18,9 @@ const About = () => {
                 <p>
                     Our series is about more than just racing. We emphasize the belief that{" "}
                     <strong>“God is #1”</strong>, no matter where we finish on the track. We also value
-                    family and friendships, celebrating every victory—big or small. And of course, we all strive for the big prize 🏆!<br />
+                    family and friendships, celebrating every victory—big or small. And of course, we all strive for the big prize 🏆!
                 </p>
                 <p>
-
                     <strong>Our mission:</strong> <em>Build Champions One Lap at a Time!</em>
                 </p>
             </section>
@@ -39,10 +36,11 @@ const About = () => {
                     <li>👶 <strong>Age Requirement:</strong> 7 and under (as of January 1, 2025)</li>
                     <li>🚗 <strong>Ages 3–5:</strong> Radio Flyer Ultimate Go-Kart (24V only)</li>
                     <li>🏎️ <strong>Ages 6–7:</strong> “Snack Pack” Radio Flyer Extreme Drift Go-Kart (36V only)</li>
-                    <li>🏎️ <strong>Ages 7–9:</strong> “Lil Stingers” 50cc comer 2 cycle engine</li>
+                    <li>🏎️ <strong>Ages 7–9:</strong> “Lil Stingers” 50cc Comer 2-cycle engine</li>
                 </ul>
                 <p className="note">
-                    <em>Note:</em> The “Snack Pack” division is exclusive to the Rockstars Series and is not recognized by the Juicebox Division for events outside our series.
+                    <em>Note:</em> The “Snack Pack” division is exclusive to the Rockstars Series and is not recognized
+                    by the Juicebox Division for events outside our series.
                 </p>
                 <p>
                     <strong>Driver Age Policy:</strong> A driver’s age as of January 1, 2025 determines their division for the entire year.
@@ -137,12 +135,14 @@ const About = () => {
                     </p>
                 </div>
             </section>
-            {/* === LIL STINGERS RULES (MATCHING UI) === */}
+
+            {/* === LIL STINGERS RULES (2x2) === */}
             <section className="about-section">
                 <h2>Lil Stingers Division Rules</h2>
 
-                <div className="rules-grid">
-                    <div>
+                {/* ✅ This grid is ONLY for Stingers so it won’t break Tech Rules */}
+                <div className="stingers-grid">
+                    <div className="stingers-card">
                         <h3>👦 Driver Eligibility</h3>
                         <ul>
                             <li><b>Ages:</b> 7–9 (age determined as of January 1)</li>
@@ -151,7 +151,7 @@ const About = () => {
                         </ul>
                     </div>
 
-                    <div>
+                    <div className="stingers-card">
                         <h3>🛠️ Kart & Engine Specs</h3>
                         <ul>
                             <li><b>Chassis:</b> Kid Kart chassis (Emmick, Top Kart, Birel)</li>
@@ -162,7 +162,7 @@ const About = () => {
                         </ul>
                     </div>
 
-                    <div>
+                    <div className="stingers-card">
                         <h3>🧤 Required Safety Gear</h3>
                         <ul>
                             <li><b>Raceceiver</b> (one-way radio receiver required)</li>
@@ -174,7 +174,7 @@ const About = () => {
                         </ul>
                     </div>
 
-                    <div>
+                    <div className="stingers-card">
                         <h3>🏁 Race Procedures</h3>
                         <ul>
                             <li><b>First 4 points races:</b> seat time learning only</li>
