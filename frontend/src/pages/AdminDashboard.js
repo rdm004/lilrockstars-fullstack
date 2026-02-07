@@ -20,20 +20,27 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 const getDivisionFromAge = (ageRaw) => {
     const age = Number(ageRaw);
 
-    if (age === 2 || age === 3) return "3 Year Old";
-    if (age === 4) return "4 Year Old";
-    if (age === 5) return "5 Year Old";
-    if (age === 6) return "Snack Pack";
+    if (age === 2 || age === 3) return "3 Year Old Division";
+    if (age === 4) return "4 Year Old Division";
+    if (age === 5) return "5 Year Old Division";
+    if (age === 6) return "Snack Pack Division";
 
-    // ✅ Age 7 can be Snack Pack OR Lil Stingers.
-    // For the dashboard/chart, default to Snack Pack unless the racer has an explicit division.
-    if (age === 7) return "Snack Pack";
+    // Age 7 defaults to Snack Pack unless racer.division is explicitly set
+    if (age === 7) return "Snack Pack Division";
 
-    // ✅ Age 8–9 = Lil Stingers
+    // Age 8–9 = Lil Stingers
     if (age === 8 || age === 9) return "Lil Stingers";
 
     return "Unknown";
 };
+
+const DIVISION_LABELS = [
+    "3 Year Old Division",
+    "4 Year Old Division",
+    "5 Year Old Division",
+    "Snack Pack Division",
+    "Lil Stingers",
+];
 
 const AdminDashboard = () => {
     const [stats, setStats] = useState({
@@ -42,25 +49,29 @@ const AdminDashboard = () => {
         upcomingRaces: 0,
     });
 
-    const [divisionCounts, setDivisionCounts] = useState({
-        "3 Year Old": 0,
-        "4 Year Old": 0,
-        "5 Year Old": 0,
-        "Snack Pack": 0,
+    // ✅ keys match DB/app strings
+    const [divisionCounts, setDivisionCounts] = useState(() => ({
+        "3 Year Old Division": 0,
+        "4 Year Old Division": 0,
+        "5 Year Old Division": 0,
+        "Snack Pack Division": 0,
         "Lil Stingers": 0,
-    });
+    }));
 
     const [loading, setLoading] = useState(true);
 
-    // chartData derived from divisionCounts
+    // chartData derived from divisionCounts (stable ordering)
     const chartData = useMemo(() => {
+        const data = DIVISION_LABELS.map((k) => divisionCounts[k] ?? 0);
+
         return {
-            labels: Object.keys(divisionCounts),
+            labels: DIVISION_LABELS,
             datasets: [
                 {
                     label: "Racers by Division",
-                    data: Object.values(divisionCounts),
-                    backgroundColor: ["#1E63FF", "#FF9F1C", "#2ECC71", "#E74C3C"],
+                    data,
+                    // ✅ 5 colors; Lil Stingers = yellow (last)
+                    backgroundColor: ["#1E63FF", "#FF9F1C", "#2ECC71", "#E74C3C", "#FFD700"],
                     borderRadius: 6,
                 },
             ],
@@ -73,32 +84,26 @@ const AdminDashboard = () => {
                 setLoading(true);
 
                 // --- Load racers ---
-                const racersRes = await apiClient.get("/racers"); // GET /api/racers
+                const racersRes = await apiClient.get("/admin/racers"); // GET /api/admin/racers
                 const racers = racersRes.data || [];
 
-                // Count divisions
+                // Count divisions (match your DB / app strings)
                 const counts = {
-                    "3 Year Old": 0,
-                    "4 Year Old": 0,
-                    "5 Year Old": 0,
-                    "Snack Pack": 0,
+                    "3 Year Old Division": 0,
+                    "4 Year Old Division": 0,
+                    "5 Year Old Division": 0,
+                    "Snack Pack Division": 0,
                     "Lil Stingers": 0,
                 };
 
                 racers.forEach((r) => {
-                    // Prefer stored division if present (especially for age 7)
-                    const stored = (r?.division || "").toLowerCase();
+                    // Prefer stored division if present (especially for age 7 selection)
+                    const stored = r?.division ? String(r.division).trim() : "";
+                    const div = stored ? stored : getDivisionFromAge(r?.age);
 
-                    let div = null;
-
-                    if (stored.includes("stingers")) div = "Lil Stingers";
-                    else if (stored.includes("snack")) div = "Snack Pack";
-                    else if (stored.includes("3")) div = "3 Year Old";
-                    else if (stored.includes("4")) div = "4 Year Old";
-                    else if (stored.includes("5")) div = "5 Year Old";
-                    else div = getDivisionFromAge(r.age);
-
-                    if (counts[div] !== undefined) counts[div] += 1;
+                    if (counts[div] !== undefined) {
+                        counts[div] += 1;
+                    }
                 });
 
                 // --- Load races (for upcoming count) ---
@@ -115,13 +120,13 @@ const AdminDashboard = () => {
                     return d >= today;
                 }).length;
 
-                // --- Load registrations (if endpoint exists) ---
+                // --- Load registrations ---
                 let registrationsCount = 0;
                 try {
-                    const regRes = await apiClient.get("/admin/registrations"); // GET /api/registrations
+                    const regRes = await apiClient.get("/admin/registrations"); // GET /api/admin/registrations
                     registrationsCount = (regRes.data || []).length;
                 } catch (err) {
-                    // If you don't have this endpoint yet, don't break dashboard
+                    // If endpoint doesn't exist or fails, don't break dashboard
                     registrationsCount = 0;
                 }
 
