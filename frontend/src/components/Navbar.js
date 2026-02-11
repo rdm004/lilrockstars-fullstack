@@ -57,7 +57,7 @@ export default function Navbar() {
 
                 {/* Logged in → Parent Dashboard */}
                 {isLoggedIn && (
-                    <Link to="/dashboard" className="nav-button">
+                    <Link to="/My Racers" className="nav-button">
                         Dashboard
                     </Link>
                 )}
