@@ -4,7 +4,7 @@
     align-items: center;
     min-height: 100vh;
     font-family: "Inter", sans-serif;
-    background-image: url("../staticimages/rockstarslogowhite.png"); /* replace with your image */
+    background-image: url("../staticimages/rockstarslogowhite.webp"); /* replace with your image */
 }
 
 .login-container {
