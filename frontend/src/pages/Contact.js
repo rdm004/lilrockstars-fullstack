@@ -41,11 +41,11 @@ const Contact = () => {
                     <hr />
 
                     <p>
-                        If you’re having issues with our site, please contact our webmaster:
+                        If you’re having issues with our site, please contact our admin:
                         <br /><br />
                         <strong>Email:</strong>{" "}
-                        <a href="mailto:webmaster@lilrockstarsracing.com">
-                            webmaster@lilrockstarsracing.com
+                        <a href="mailto:admin@lilrockstarsracing.com">
+                            admin@lilrockstarsracing.com
                         </a>
                     </p>
                 </div>
